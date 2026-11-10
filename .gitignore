@@ -46,3 +46,9 @@ next-env.d.ts
 public/uploads
 
 nul
+
+# artifacts
+artifacts
+
+# local env files
+.env.local

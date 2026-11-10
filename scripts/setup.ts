@@ -122,9 +122,6 @@ function checkEnvVariables(): EnvStatus {
   const optional = [
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_MODEL",
-    "BLOB_READ_WRITE_TOKEN",
     "NEXT_PUBLIC_APP_URL",
   ];
 
@@ -203,10 +200,6 @@ function printNextSteps(envStatus: EnvStatus) {
 
   if (envStatus.optional.includes("GOOGLE_CLIENT_ID")) {
     steps.push("Set up Google OAuth at https://console.cloud.google.com/");
-  }
-
-  if (envStatus.optional.includes("OPENROUTER_API_KEY")) {
-    steps.push("Get an OpenRouter API key at https://openrouter.ai/settings/keys");
   }
 
   steps.push("Start the development server: pnpm dev");

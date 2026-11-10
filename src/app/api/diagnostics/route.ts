@@ -9,7 +9,6 @@ interface DiagnosticsResponse {
     BETTER_AUTH_SECRET: boolean;
     GOOGLE_CLIENT_ID: boolean;
     GOOGLE_CLIENT_SECRET: boolean;
-    OPENROUTER_API_KEY: boolean;
     NEXT_PUBLIC_APP_URL: boolean;
   };
   database: {
@@ -21,26 +20,16 @@ interface DiagnosticsResponse {
     configured: boolean;
     routeResponding: boolean | null;
   };
-  ai: {
-    configured: boolean;
-  };
-  storage: {
-    configured: boolean;
-    type: "local" | "remote";
-  };
   overallStatus: StatusLevel;
 }
 
-// This endpoint is intentionally public (no auth required) because it's used
-// by the setup checklist on the homepage before users are logged in.
-// It only returns boolean flags about configuration status, not sensitive data.
+// Access control for diagnostics is enforced with the admin routes in the auth wave.
 export async function GET(req: Request) {
   const env = {
     POSTGRES_URL: Boolean(process.env.POSTGRES_URL),
     BETTER_AUTH_SECRET: Boolean(process.env.BETTER_AUTH_SECRET),
     GOOGLE_CLIENT_ID: Boolean(process.env.GOOGLE_CLIENT_ID),
     GOOGLE_CLIENT_SECRET: Boolean(process.env.GOOGLE_CLIENT_SECRET),
-    OPENROUTER_API_KEY: Boolean(process.env.OPENROUTER_API_KEY),
     NEXT_PUBLIC_APP_URL: Boolean(process.env.NEXT_PUBLIC_APP_URL),
   } as const;
 
@@ -120,17 +109,9 @@ export async function GET(req: Request) {
 
   const authConfigured =
     env.BETTER_AUTH_SECRET && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET;
-  const aiConfigured = env.OPENROUTER_API_KEY; // We avoid live-calling the AI provider here
-
-  // Storage configuration check
-  const storageConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-  const storageType: "local" | "remote" = storageConfigured ? "remote" : "local";
-
   const overallStatus: StatusLevel = (() => {
     if (!env.POSTGRES_URL || !dbConnected || !schemaApplied) return "error";
     if (!authConfigured) return "error";
-    // AI is optional; warn if not configured
-    if (!aiConfigured) return "warn";
     return "ok";
   })();
 
@@ -145,13 +126,6 @@ export async function GET(req: Request) {
     auth: {
       configured: authConfigured,
       routeResponding: authRouteResponding,
-    },
-    ai: {
-      configured: aiConfigured,
-    },
-    storage: {
-      configured: storageConfigured,
-      type: storageType,
     },
     overallStatus,
   };

@@ -1,44 +1,18 @@
 import Link from "next/link";
-import { Bot } from "lucide-react";
-import { UserProfile } from "@/components/auth/user-profile";
-import { ModeToggle } from "./ui/mode-toggle";
+import { Gift } from "lucide-react";
+import { AppMenu } from "@/components/secret-santa/app-menu";
 
 export function SiteHeader() {
   return (
     <>
-      {/* Skip to main content link for accessibility */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:rounded-md"
-      >
-        Skip to main content
-      </a>
-      <header className="border-b" role="banner">
-        <nav
-          className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center"
-          aria-label="Main navigation"
-        >
-          <h1 className="text-xl sm:text-2xl font-bold">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-              aria-label="Starter Kit - Go to homepage"
-            >
-              <div
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10"
-                aria-hidden="true"
-              >
-                <Bot className="h-5 w-5" />
-              </div>
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Starter Kit
-              </span>
-            </Link>
-          </h1>
-          <div className="flex items-center gap-2 sm:gap-4" role="group" aria-label="User actions">
-            <UserProfile />
-            <ModeToggle />
-          </div>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:border focus:bg-background focus:px-4 focus:py-2 focus:text-foreground">Skip to main content</a>
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/90 shadow-sm backdrop-blur-xl" role="banner">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6" aria-label="Main navigation">
+          <Link href="/" className="group flex items-center gap-2.5" aria-label="Secret Santa home">
+            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform group-hover:-rotate-6"><Gift className="size-5" aria-hidden="true" /></span>
+            <span className="text-lg font-extrabold tracking-tight text-foreground sm:text-xl">Secret <span className="text-primary">Santa</span></span>
+          </Link>
+          <AppMenu />
         </nav>
       </header>
     </>

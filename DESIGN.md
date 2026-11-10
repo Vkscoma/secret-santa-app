@@ -1,451 +1,83 @@
-# Design System
+# Secret Santa Design System
 
-This document defines the visual design system for the project. All new components and pages **must** follow these tokens, patterns, and conventions.
+This is the source of truth for the Secret Santa web app UI. Keep pages airy and friendly, with a quiet winter atmosphere and festive details used as accents. Drawnames is a layout and interaction reference only: do not reuse its brand, artwork, or product imagery.
 
----
+## Stack and conventions
 
-## Stack
+- Next.js App Router, React, strict TypeScript.
+- Tailwind CSS v4 with CSS variables in `src/app/globals.css`; do not add `tailwind.config.ts` or another CSS library.
+- Reuse shadcn/ui primitives under `src/components/ui/`; create app-specific pieces under `src/components/secret-santa/`.
+- Lucide React icons, `next-themes` class-based dark mode, and `cn()` from `@/lib/utils`.
+- Font: Plus Jakarta Sans via `next/font/google`, variable `--font-jakarta`.
+- Use semantic theme utilities (`bg-pine`, `text-gold`, `bg-card`, `text-muted-foreground`). Avoid raw hex and arbitrary color utilities.
 
-- **Framework:** Next.js (App Router) + React + TypeScript
-- **Styling:** Tailwind CSS v4 (CSS-first config via `@theme inline` in `globals.css` — no `tailwind.config.ts`)
-- **Components:** shadcn/ui (new-york style, neutral base)
-- **Icons:** Lucide React
-- **Fonts:** Geist (sans) + Geist Mono (mono) via `next/font/google`
-- **Dark mode:** next-themes (class-based, system default)
-- **Utilities:** `cn()` from `@/lib/utils` (clsx + tailwind-merge)
+## Brand direction
 
----
+Fresh Snow is crisp, calm, and warm. Use open whitespace, soft white cards, pine headers, cranberry actions, and candle-gold progress/details. Christmas Eve keeps a deep evergreen page, lifted pine cards, glowing cranberry and gold accents. Avoid novelty type, busy patterns, candy-cane stripes behind text, glitter, and red text on green.
 
-## Colors
+### Theme tokens
 
-All values use the **oklch** color space. Colors are defined as CSS custom properties in `globals.css` and bridged to Tailwind via `@theme inline`.
+Tokens live in `:root` and `.dark`, bridged through `@theme inline`. The values below are the approved starting palette. Keep body text contrast at WCAG AA (4.5:1) and large text/UI boundaries at least 3:1; adjust lightness if needed.
 
-### Semantic Tokens
-
-| Token | Light | Dark | Usage |
+| Token | Fresh Snow | Christmas Eve | Use |
 |---|---|---|---|
-| `background` | `oklch(1 0 0)` | `oklch(0.141 0.005 285.823)` | Page background |
-| `foreground` | `oklch(0.141 0.005 285.823)` | `oklch(0.985 0 0)` | Primary text |
-| `primary` | `oklch(0.21 0.034 270)` | `oklch(0.92 0.02 270)` | Buttons, links, accents |
-| `primary-foreground` | `oklch(0.985 0 0)` | `oklch(0.21 0.006 285.885)` | Text on primary |
-| `secondary` | `oklch(0.967 0.001 286.375)` | `oklch(0.274 0.006 286.033)` | Secondary buttons, subtle bg |
-| `secondary-foreground` | `oklch(0.21 0.006 285.885)` | `oklch(0.985 0 0)` | Text on secondary |
-| `muted` | `oklch(0.967 0.001 286.375)` | `oklch(0.274 0.006 286.033)` | Subdued backgrounds |
-| `muted-foreground` | `oklch(0.552 0.016 285.938)` | `oklch(0.705 0.015 286.067)` | Subdued text, placeholders |
-| `accent` | `oklch(0.96 0.012 270)` | `oklch(0.28 0.018 270)` | Hover backgrounds, highlights |
-| `accent-foreground` | `oklch(0.21 0.006 285.885)` | `oklch(0.985 0 0)` | Text on accent |
-| `destructive` | `oklch(0.577 0.245 27.325)` | `oklch(0.704 0.191 22.216)` | Error states, delete actions |
-| `card` | `oklch(1 0 0)` | `oklch(0.21 0.006 285.885)` | Card backgrounds |
-| `card-foreground` | `oklch(0.141 0.005 285.823)` | `oklch(0.985 0 0)` | Card text |
-| `popover` | `oklch(1 0 0)` | `oklch(0.21 0.006 285.885)` | Popover/dropdown bg |
-| `popover-foreground` | `oklch(0.141 0.005 285.823)` | `oklch(0.985 0 0)` | Popover/dropdown text |
-| `border` | `oklch(0.92 0.004 286.32)` | `oklch(1 0 0 / 10%)` | Borders, dividers |
-| `input` | `oklch(0.92 0.004 286.32)` | `oklch(1 0 0 / 15%)` | Input borders |
-| `ring` | `oklch(0.705 0.06 270)` | `oklch(0.552 0.05 270)` | Focus rings |
+| `background` | `oklch(0.985 0.004 200)` | `oklch(0.17 0.03 175)` | Frosty page / evergreen night |
+| `foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Main copy |
+| `card`, `popover` | `oklch(1 0 0)` | `oklch(0.22 0.035 168)` | Raised surfaces |
+| `card-foreground`, `popover-foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Surface copy |
+| `primary` | `oklch(0.44 0.17 25)` | `oklch(0.50 0.17 25)` | Cranberry actions and active states |
+| `primary-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.99 0.005 90)` | Text on primary |
+| `secondary` | `oklch(0.95 0.025 155)` | `oklch(0.29 0.045 162)` | Pine-tinted controls/chips |
+| `secondary-foreground` | `oklch(0.31 0.07 158)` | `oklch(0.94 0.015 90)` | Text on secondary |
+| `muted` | `oklch(0.965 0.006 160)` | `oklch(0.25 0.03 170)` | Quiet surfaces |
+| `muted-foreground` | `oklch(0.46 0.02 160)` | `oklch(0.76 0.025 155)` | Helper/store text |
+| `accent` | `oklch(0.96 0.025 25)` | `oklch(0.30 0.06 25)` | Blush/warm hover |
+| `accent-foreground` | `oklch(0.34 0.13 25)` | `oklch(0.96 0.01 90)` | Text on accent |
+| `border`, `input` | `oklch(0.91 0.01 170)` | `oklch(0.33 0.035 168)` | Edges and form controls |
+| `ring` | `oklch(0.44 0.17 25)` | `oklch(0.64 0.19 25)` | Keyboard focus |
+| `destructive` | `oklch(0.48 0.19 30)` | `oklch(0.64 0.19 28)` | Destructive actions |
+| `pine` | `oklch(0.36 0.09 158)` | `oklch(0.42 0.10 155)` | Panel headers and brand |
+| `pine-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.99 0.005 90)` | Pine header copy |
+| `gold` | `oklch(0.80 0.13 82)` | `oklch(0.85 0.14 85)` | Progress, stars, ribbons |
+| `gold-foreground` | `oklch(0.28 0.05 70)` | `oklch(0.22 0.04 70)` | Copy on gold |
+| `snow` | `oklch(0.97 0.01 230)` | `oklch(0.95 0.015 230)` | Decorations |
 
-### Chart Colors
-
-| Token | Light | Dark |
-|---|---|---|
-| `chart-1` | `oklch(0.646 0.222 41.116)` | `oklch(0.488 0.243 264.376)` |
-| `chart-2` | `oklch(0.6 0.118 184.704)` | `oklch(0.696 0.17 162.48)` |
-| `chart-3` | `oklch(0.398 0.07 227.392)` | `oklch(0.769 0.188 70.08)` |
-| `chart-4` | `oklch(0.828 0.189 84.429)` | `oklch(0.627 0.265 303.9)` |
-| `chart-5` | `oklch(0.769 0.188 70.08)` | `oklch(0.645 0.246 16.439)` |
-
-### Sidebar Colors
-
-| Token | Light | Dark |
-|---|---|---|
-| `sidebar` | `oklch(0.985 0 0)` | `oklch(0.21 0.006 285.885)` |
-| `sidebar-foreground` | `oklch(0.141 0.005 285.823)` | `oklch(0.985 0 0)` |
-| `sidebar-primary` | `oklch(0.21 0.006 285.885)` | `oklch(0.488 0.243 264.376)` |
-| `sidebar-primary-foreground` | `oklch(0.985 0 0)` | `oklch(0.985 0 0)` |
-| `sidebar-accent` | `oklch(0.967 0.001 286.375)` | `oklch(0.274 0.006 286.033)` |
-| `sidebar-accent-foreground` | `oklch(0.21 0.006 285.885)` | `oklch(0.985 0 0)` |
-| `sidebar-border` | `oklch(0.92 0.004 286.32)` | `oklch(1 0 0 / 10%)` |
-| `sidebar-ring` | `oklch(0.705 0.015 286.067)` | `oklch(0.552 0.016 285.938)` |
-
-### Ad-hoc Status Colors
-
-Use these Tailwind utilities for status indicators — they are not part of the token system but are used consistently:
-
-- **Success:** `text-green-600` / `dark:text-green-400`, `bg-green-500`
-- **Error:** `text-red-600`, `text-destructive`
-
----
+Set `--radius` to `0.75rem`. Surface and foreground pairs must retain readable contrast in both themes.
 
 ## Typography
 
-### Font Families
-
-| Token | Font | Usage |
-|---|---|---|
-| `--font-geist-sans` | Geist | All UI text (applied to body) |
-| `--font-geist-mono` | Geist Mono | Code, monospace content |
-
-Body has `font-feature-settings: "rlig" 1, "calt" 1` and `antialiased` enabled.
-
-### Type Scale
-
-| Class | Size | Usage |
-|---|---|---|
-| `text-xs` | 12px | Timestamps, shortcuts, helper text, code |
-| `text-sm` | 14px | Descriptions, labels, body copy, card descriptions |
-| `text-base` | 16px | Base text, inputs (mobile) |
-| `text-lg` | 18px | Dialog titles, sub-headings |
-| `text-xl` | 20px | Section titles, header logo |
-| `text-2xl` | 24px | Page titles, card titles |
-| `text-3xl` | 30px | Dashboard/profile headings |
-| `text-4xl` | 36px | Large display text |
-| `text-5xl` | 48px | Hero title |
-
-### Font Weights
-
-| Class | Weight | Usage |
-|---|---|---|
-| `font-medium` | 500 | Buttons, labels, nav items |
-| `font-semibold` | 600 | Card titles, section headings, badges, dialog titles |
-| `font-bold` | 700 | Page titles, hero heading |
-
-### Line Heights & Tracking
-
-| Class | Usage |
-|---|---|
-| `leading-none` | Labels, card titles |
-| `leading-5` | Code blocks |
-| `leading-6` | List items |
-| `leading-7` | Paragraphs (markdown) |
-| `tracking-tight` | Hero/display text |
-| `tracking-widest` | Keyboard shortcuts |
-
----
-
-## Spacing
-
-### Container Pattern
-
-```
-container mx-auto px-4
-```
-
-Responsive overrides where needed:
-- Header: `px-3 sm:px-4`
-- Footer: `px-4 sm:px-6 lg:px-8`
-
-### Max Widths
-
-| Class | Value | Usage |
-|---|---|---|
-| `max-w-sm` | 24rem | Auth forms |
-| `max-w-md` | 28rem | Login/register cards, error pages |
-| `max-w-lg` | 32rem | Dialog content (sm+) |
-| `max-w-2xl` | 42rem | Large dialogs |
-| `max-w-3xl` | 48rem | Embeds, protected state |
-| `max-w-4xl` | 56rem | Main content pages |
-
-### Vertical Spacing (space-y)
-
-| Class | Usage |
-|---|---|
-| `space-y-1` | Tight lists, inline stacks |
-| `space-y-1.5` | Card header |
-| `space-y-2` | Form field groups, small stacks |
-| `space-y-3` | Footer stacks |
-| `space-y-4` | Form sections, dialog content |
-| `space-y-6` | Card content sections |
-| `space-y-8` | Page-level sections |
-
-### Padding
-
-| Class | Usage |
-|---|---|
-| `p-1` | Dropdown content, icon buttons |
-| `p-2` | Code blocks, muted backgrounds |
-| `p-3` | Chat bubbles, inputs |
-| `p-4` | Grid items, action buttons, list items |
-| `p-6` | Cards, dialog content |
-
-### Page Vertical Padding
-
-| Class | Usage |
-|---|---|
-| `py-3 sm:py-4` | Header |
-| `py-4 sm:py-6` | Footer |
-| `py-8` | Standard content pages |
-| `py-12` | Home page, dashboard |
-| `py-16` | Error/not-found pages |
-
----
-
-## Border Radius
-
-| Token | Value | Class |
-|---|---|---|
-| `--radius` | `0.625rem` (10px) | Base |
-| `--radius-sm` | `calc(--radius - 4px)` = 6px | `rounded-sm` |
-| `--radius-md` | `calc(--radius - 2px)` = 8px | `rounded-md` |
-| `--radius-lg` | `var(--radius)` = 10px | `rounded-lg` |
-| `--radius-xl` | `calc(--radius + 4px)` = 14px | `rounded-xl` |
-| — | 9999px | `rounded-full` |
-
-**Usage:**
-- `rounded-md` — Buttons, inputs, textarea, code blocks, dropdowns
-- `rounded-lg` — Cards, dialogs, feature cards, chat bubbles
-- `rounded-xl` — Hero logo container
-- `rounded-full` — Badges, avatars
-
----
-
-## Shadows
-
-| Class | Usage |
-|---|---|
-| `shadow-xs` | Inputs, textarea, secondary/outline buttons |
-| `shadow-sm` | Card base |
-| `shadow-md` | Card hover, dropdown content |
-| `shadow-lg` | Dialogs, dropdown sub-content |
-
-No custom shadow definitions — all Tailwind defaults.
-
----
-
-## Animations
-
-### Custom Keyframes
-
-| Name | Effect | Duration | Easing |
-|---|---|---|---|
-| `fade-in` | Opacity 0 → 1 | 0.3s | ease-out |
-| `fade-up` | Opacity 0 → 1 + translateY(8px → 0) | 0.4s | ease-out |
-| `scale-in` | Opacity 0 → 1 + scale(0.97 → 1) | 0.2s | ease-out |
-
-Use via: `animate-fade-in`, `animate-fade-up`, `animate-scale-in`
-
-### tw-animate-css Animations
-
-Used on dialogs and dropdowns:
-- `animate-in` / `animate-out`
-- `fade-in-0` / `fade-out-0`
-- `zoom-in-95` / `zoom-out-95`
-- `slide-in-from-{top|bottom|left|right}-2`
-
-### Transition Classes
-
-| Class | Usage |
-|---|---|
-| `transition-colors` | Links, hover color changes |
-| `transition-opacity` | Avatar hover, reveal-on-hover |
-| `transition-all duration-200` | Card interactive hover, buttons |
-| `transition-[color,box-shadow]` | Input/textarea focus |
-
-### Utility Classes
-
-```css
-.card-interactive {
-  @apply transition-all duration-200 ease-out;
-}
-.card-interactive:hover {
-  @apply shadow-md -translate-y-0.5;
-}
-```
-
-```css
-.auth-bg {
-  background-image: radial-gradient(
-    circle at 50% 0%,
-    var(--accent) 0%,
-    transparent 50%
-  );
-}
-```
-
----
-
-## Layout
-
-### Root Structure
-
-```
-<body class="antialiased min-h-screen flex flex-col">
-  <SiteHeader />
-  <main id="main-content" class="flex-1">{children}</main>
-  <SiteFooter />
-  <Toaster />
-</body>
-```
-
-### Page Layout Patterns
-
-**Auth pages:**
-```
-flex min-h-[calc(100vh-4rem)] items-center justify-center p-4
-  → Card w-full max-w-md
-```
-
-**Standard content pages:**
-```
-container mx-auto px-4 py-8
-  → max-w-4xl mx-auto
-```
-
-**Error/not-found pages:**
-```
-container mx-auto px-4 py-16
-  → max-w-md mx-auto text-center
-```
-
-### Grid Patterns
-
-| Pattern | Usage |
-|---|---|
-| `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6` | Feature cards (4-col) |
-| `grid grid-cols-1 md:grid-cols-2 gap-6` | Dashboard cards |
-| `grid grid-cols-1 md:grid-cols-2 gap-4` | Profile info |
-| `grid grid-cols-1 md:grid-cols-3 gap-4` | Quick actions |
-
-### Responsive Breakpoints
-
-Standard Tailwind breakpoints:
-- `sm:` (640px) — Padding adjustments, text alignment, button sizing
-- `md:` (768px) — Grid column changes (→ 2 col), input font size
-- `lg:` (1024px) — Grid column changes (→ 4 col), wide padding
-
----
-
-## Icons
-
-**Library:** Lucide React
-
-### Sizing Convention
-
-| Size | Classes | Usage |
-|---|---|---|
-| XS | `h-3 w-3` | Inline badge icons |
-| SM | `h-3.5 w-3.5` | Copy buttons |
-| Default | `h-4 w-4` or `size-4` | Standard UI icons |
-| MD | `h-5 w-5` | Header logo icon |
-| LG | `h-7 w-7` | Hero logo icon |
-| XL | `h-16 w-16` | Error/empty state illustrations |
-
-### Commonly Used Icons
-
-`Bot`, `User`, `Lock`, `Shield`, `Mail`, `Calendar`, `Copy`, `Check`, `Loader2`, `LogOut`, `Sun`, `Moon`, `Github`, `ArrowLeft`, `RefreshCw`, `AlertCircle`, `FileQuestion`, `Database`, `Palette`, `Video`
-
----
-
-## Components (shadcn/ui)
-
-All components live in `src/components/ui/`. They use `data-slot` attributes, accept `className` for overrides via `cn()`, and follow either `React.forwardRef` or functional component patterns.
-
-### Button
-
-6 variants, 4 sizes (CVA-based):
-
-| Variant | Usage |
-|---|---|
-| `default` | Primary actions |
-| `secondary` | Secondary actions |
-| `outline` | Tertiary actions |
-| `ghost` | Subtle/icon actions |
-| `destructive` | Delete/danger actions |
-| `link` | Inline text links |
-
-| Size | Height | Padding |
-|---|---|---|
-| `sm` | h-8 | px-3 |
-| `default` | h-9 | px-4 |
-| `lg` | h-10 | px-6 |
-| `icon` | size-9 | — |
-
-### Card
-
-6 sub-components: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
-
-Base: `rounded-lg border bg-card text-card-foreground shadow-sm`
-
-### Input / Textarea
-
-- Height: `h-9` (input), `min-h-16` (textarea)
-- Border: `border bg-transparent rounded-md shadow-xs`
-- Focus: `focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]`
-- Validation: `aria-invalid:border-destructive aria-invalid:ring-destructive/20`
-- Responsive font: `text-base md:text-sm`
-
-### Badge
-
-4 variants: `default`, `secondary`, `destructive`, `outline`
-
-Base: `rounded-full border px-2.5 py-0.5 text-xs font-semibold`
-
-### Dialog
-
-Radix-based with overlay (`bg-black/50`), fade + zoom animations, optional close button.
-
-### DropdownMenu
-
-Radix-based. Content: `rounded-md border p-1 shadow-md min-w-[8rem]`. Items support a `destructive` variant.
-
-### Spinner
-
-Sizes: `sm` (h-4 w-4), `md` (h-6 w-6), `lg` (h-8 w-8). Uses `Loader2` with `animate-spin`.
-
-### Toast (Sonner)
-
-Custom icons per state (success, info, warning, error, loading). Themed via CSS variable overrides.
-
----
-
-## Focus & Interaction States
-
-### Focus Ring (Global)
-
-```css
-outline-2 outline-offset-2 outline-ring/70
-```
-
-Component-level override:
-```
-focus-visible:ring-ring/50 focus-visible:ring-[3px]
-```
-
-### Disabled
-
-```
-disabled:pointer-events-none disabled:opacity-50
-```
-
-### Interactive Card Hover
-
-```
-transition-all duration-200 ease-out
-hover:shadow-md hover:-translate-y-0.5
-```
-
----
-
-## Dark Mode
-
-- **Method:** Class-based via `next-themes` with `attribute="class"` and `disableTransitionOnChange`
-- **Default:** System preference
-- **Toggle:** 3-way dropdown — Light / Dark / System
-- All semantic color tokens swap automatically via `.dark` CSS selector
-- Use `dark:` prefix for component-specific overrides (e.g., `dark:bg-input/30`)
-
----
-
-## Branding
-
-### Logo Text
-
-```
-bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent
-```
-
-### Logo Icon Container
-
-```
-w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center
-```
-
-Hero variant: `w-12 h-12 rounded-xl`
+- Plus Jakarta Sans for all UI text, loaded with `next/font/google`.
+- Headings are 700–800 weight; body copy 400–500; countdown numbers use bold tabular figures.
+- Page titles: 30–36px; section titles: 18–22px; body: 14–16px; labels/helper text: 12–14px.
+- Use sentence case and short, friendly copy.
+
+## Layout and spacing
+
+- Sticky translucent header with subtle lower border/shadow; app content centered at about 960px (up to `max-w-6xl` when an illustration is present).
+- Phone layouts use full width with 16px gutters. Desktop uses one main column with a small right-side illustration only when space permits.
+- Standard content: `mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12`.
+- Cards use 12px corners, thin borders, generous padding and a soft shadow. Keep 16–24px between sections.
+- Wishlist editor is two columns on desktop; on phones the list panel comes before the composer and the floating plus button opens the composer in a bottom sheet.
+- Support `env(safe-area-inset-bottom)` for phone overlays.
+
+## Components
+
+- **Panel header:** pine, subtle diagonal gradient and faint snowflake pattern; white title/subtitle; small settings/share actions; string-light accent below.
+- **Progress nudge:** icon, concise nudge, subline and thin gold progress bar. Gold text uses `gold-foreground`.
+- **Wishlist item:** square festive placeholder/image, title, muted store/domain, priority, optional note and price chips. Reorder/remove controls appear only in the owner's editor.
+- **Wish composer:** URL-or-text input, editable metadata, notes, priority and price. Use a mobile bottom sheet on small screens.
+- **Gift tag:** notched/tag silhouette with punched hole, fine gold line, and warm dark-mode glow.
+- **Empty state:** helpful and kind; e.g. “Your list is as empty as Santa’s sleigh on Dec 26.”
+- **Illustration:** original inline SVG/simple shapes only; hide on phones and adapt colors for dark mode.
+- Use supplied button/card/input/textarea/badge/dialog/dropdown primitives where possible; preserve keyboard focus, accessible names, and visible focus rings.
+
+## Festive details and motion
+
+- String-light dots use cranberry, pine and gold; glow softly in dark mode.
+- CSS snowfall is decorative and never sits behind body copy. It is off in light mode, may appear behind the Home hero in dark mode, and is disabled by `prefers-reduced-motion`.
+- Twinkle and snowfall use CSS only. Disable animation when reduced motion is requested. Decorations must not carry meaning.
+- Use `bg-snow`, `text-gold`, and semantic colors rather than hard-coded colors.
+
+## Dark mode
+
+Use `next-themes` with `attribute="class"`, `defaultTheme="system"`, and a three-way Light / Dark / System menu. Keep surfaces pine-tinted rather than neutral gray; use gold for warm accents and ensure the cranberry action foreground remains legible.

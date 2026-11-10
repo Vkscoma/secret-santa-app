@@ -17,13 +17,6 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
-  // AI
-  OPENROUTER_API_KEY: z.string().optional(),
-  OPENROUTER_MODEL: z.string().default("openai/gpt-5-mini"),
-
-  // Storage
-  BLOB_READ_WRITE_TOKEN: z.string().optional(),
-
   // App
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -98,14 +91,6 @@ export function checkEnv(): void {
   // Check optional variables and warn
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     warnings.push("Google OAuth is not configured. Social login will be disabled.");
-  }
-
-  if (!process.env.OPENROUTER_API_KEY) {
-    warnings.push("OPENROUTER_API_KEY is not set. AI chat will not work.");
-  }
-
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    warnings.push("BLOB_READ_WRITE_TOKEN is not set. Using local storage for file uploads.");
   }
 
   // Log warnings in development
