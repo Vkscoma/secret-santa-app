@@ -8,7 +8,7 @@ This is the source of truth for the Secret Santa web app UI. Keep pages airy and
 - Tailwind CSS v4 with CSS variables in `src/app/globals.css`; do not add `tailwind.config.ts` or another CSS library.
 - Reuse shadcn/ui primitives under `src/components/ui/`; create app-specific pieces under `src/components/secret-santa/`.
 - Lucide React icons, `next-themes` class-based dark mode, and `cn()` from `@/lib/utils`.
-- Font: Plus Jakarta Sans via `next/font/google`, variable `--font-jakarta`.
+- Font: locally bundled Geist via `next/font/local`, exposed as `--font-jakarta`.
 - Use semantic theme utilities (`bg-pine`, `text-gold`, `bg-card`, `text-muted-foreground`). Avoid raw hex and arbitrary color utilities.
 
 ## Brand direction
@@ -46,7 +46,7 @@ Set `--radius` to `0.75rem`. Surface and foreground pairs must retain readable c
 
 ## Typography
 
-- Plus Jakarta Sans for all UI text, loaded with `next/font/google`.
+- Geist for all UI text, loaded locally with `next/font/local` so production builds do not depend on Google Fonts availability.
 - Headings are 700–800 weight; body copy 400–500; countdown numbers use bold tabular figures.
 - Page titles: 30–36px; section titles: 18–22px; body: 14–16px; labels/helper text: 12–14px.
 - Use sentence case and short, friendly copy.
