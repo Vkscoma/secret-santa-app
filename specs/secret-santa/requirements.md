@@ -47,7 +47,7 @@ The supplied `specs/secret-santa-spec.md` is the product source of truth. Preser
 ## Short Plan
 
 1. **Wave 1 — Starter cleanup and visual foundation:** remove unused chat/payment/blob/API-key functionality, add Vitest, implement festive light/dark themes and shared UI, then render preview routes and capture desktop/mobile screenshots. Stop for visual approval.
-2. **Wave 2 — Access:** implement Google-only account creation, existing-account magic links, allowlist/invite redemption, role bootstrap, and secure access checks.
+2. **Wave 2 — Access:** implement Google and eligible magic-link account creation/sign-in, allowlist/invite redemption, role bootstrap, and secure access checks.
 3. **Wave 3 — Admin and exchange core:** build allowlist/exchange administration, exclusions, auditable draw/reveal, transactional assignments, and draw tests.
 4. **Wave 4 — Wishlists:** build editing/claims/copy-forward and hardened URL unfurl with parser/SSRF tests.
 5. **Wave 5 — Participant experience:** build countdown, assignments, recipient list, and anonymous message APIs/UI with anonymity tests.

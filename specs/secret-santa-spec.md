@@ -32,7 +32,7 @@ This repo was created from Leon van Zyl's Agentic Coding Starter Kit (https://gi
 - **Framework:** Next.js 16 (App Router, Server Components, Server Actions) with TypeScript in strict mode, using Turbopack (the default).
 - **Hosting:** Vercel, including Vercel Cron Jobs for scheduled emails.
 - **Database:** Neon Postgres + Drizzle (already set up).
-- **Auth:** Better Auth: Google OAuth to create an account, plus magic links for returning users. No passwords.
+- **Auth:** Better Auth: Google OAuth and approved magic links can create accounts and sign users in. No passwords.
 - **Email:** Resend, with templates written in React Email.
 - **Validation:** Zod on every Server Action, route handler and form.
 - **Styling:** Tailwind CSS v4 + shadcn/ui, as provided by the starter (see below).
@@ -168,10 +168,10 @@ After building the themes, layout shell and components, render static preview ve
 
 ## Authentication & access
 
-- **Account creation is Google only.** Use `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
-- **Magic links are for existing accounts only.** The sign-in page offers "Continue with Google" and "Email me a sign-in link."
-  - Send a link only if the email belongs to an existing user. The magic link flow must never create a user (disable sign-up on the plugin).
-  - Always show the same "If you have an account, check your inbox" message, whether or not the email exists.
+- **Account creation is limited to emails on the allowlist or a valid invite.** Eligible users can create an account with Google or by verifying a magic link. Use `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` for Google OAuth.
+- **Magic links are for approved addresses.** The sign-in page offers "Continue with Google" and "Email me a secure link."
+  - Send a link only if the email is eligible under the same allowlist, super-admin, or pending-invite gate as Google sign-in. A first-time eligible user can create an account after verifying the link; unknown and ineligible addresses receive no email.
+  - Always show the same "If this email is approved, a secure link will be sent shortly" response for existing, new eligible, and ineligible addresses.
   - Links expire after 15 minutes and work only once. Rate-limit requests per email and per IP.
   - A magic-link sign-in and a Google sign-in with the same email reach the same account.
 - **Who can join:** Only people who are on the allowlist or who used a valid invite link can create an account. Anyone else sees a friendly "You're not on the list yet — ask the organizer" page, and no account is created.

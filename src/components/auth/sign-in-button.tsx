@@ -1,97 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { signIn, useSession } from "@/lib/auth-client"
+import { useState, useTransition } from "react";
+import { requestMagicLink } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { signIn, useSession } from "@/lib/auth-client";
 
 export function SignInButton() {
-  const { data: session, isPending: sessionPending } = useSession()
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isPending, setIsPending] = useState(false)
-
-  if (sessionPending) {
-    return <Button disabled>Loading...</Button>
-  }
-
-  if (session) {
-    return null
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsPending(true)
-
-    try {
-      const result = await signIn.email({
-        email,
-        password,
-        callbackURL: "/dashboard",
-      })
-
-      if (result.error) {
-        setError(result.error.message || "Failed to sign in")
-      } else {
-        router.push("/dashboard")
-        router.refresh()
-      }
-    } catch {
-      setError("An unexpected error occurred")
-    } finally {
-      setIsPending(false)
-    }
-  }
+  const { data: session, isPending } = useSession();
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, startTransition] = useTransition();
+  if (isPending) return <Button disabled>Loading…</Button>;
+  if (session) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-sm">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={isPending}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Your password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={isPending}
-        />
-      </div>
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Signing in..." : "Sign in"}
+    <div className="w-full max-w-sm space-y-5">
+      <Button className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: "/dashboard", errorCallbackURL: "/not-allowed" })}>
+        Continue with Google
       </Button>
-      <div className="text-center text-sm text-muted-foreground">
-        <Link href="/forgot-password" className="hover:underline">
-          Forgot password?
-        </Link>
-      </div>
-      <div className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-primary hover:underline">
-          Sign up
-        </Link>
-      </div>
-    </form>
-  )
+      <div className="relative text-center text-xs text-muted-foreground"><span className="bg-card px-2">or continue with email</span></div>
+      <form action={(data) => startTransition(async () => {
+        const response = await requestMagicLink(data);
+        setMessage(response.message);
+      })} className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email address</Label>
+          <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={busy} />
+        </div>
+        <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
+        {message && <p role="status" className="text-center text-sm text-muted-foreground">{message}</p>}
+        <p className="text-center text-xs text-muted-foreground">Links are one-use and expire after 15 minutes.</p>
+      </form>
+    </div>
+  );
 }

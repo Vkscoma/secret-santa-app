@@ -10,7 +10,7 @@ pending
 
 ## Description
 
-Replace password authentication with Google account creation and magic-link sign-in for existing accounts only. Gate all membership through the allowlist or valid exchange invite, bootstrap the configured super-admin, and establish server-side authorization helpers and protected app routes. Keep the Better Auth adapter and database connection unchanged.
+Replace password authentication with Google and allowlist/invite-eligible magic-link account creation and sign-in. Gate all membership through the allowlist or valid exchange invite, bootstrap the configured super-admin, and establish server-side authorization helpers and protected app routes. Keep the Better Auth adapter and database connection unchanged.
 
 ## Dependencies
 
@@ -37,12 +37,12 @@ Replace password authentication with Google account creation and magic-link sign
 ### Implementation Steps
 
 1. Review current official Better Auth docs for Google provider, magic-link plugin, user `additionalFields`, hooks/database lifecycle, and rate-limiting approach. Use Next.js 16 Proxy docs; proxy is not the authorization boundary.
-2. Disable email/password and email verification; Google is the only account creation path. Magic link expiry is 15 minutes, one-use, `disableSignUp: true`; show identical response for existing and unknown emails. Rate-limit by normalized email and IP.
+2. Disable email/password and email verification. Google and eligible magic-link verification may create accounts; allowlist, super-admin, or valid pending invite is required before sending a link and again before account creation. Magic link expiry is 15 minutes, one-use, `disableSignUp: false`; show the same generic response for existing, new eligible, and ineligible emails. Rate-limit by normalized email and IP.
 3. Enforce allowlist/invite eligibility before creating accounts. Bootstrap `SUPER_ADMIN_EMAIL` as always allowed and admin. A valid invite's raw token is generated from 32 random bytes; only a cryptographic hash is stored. Handle redeemed/expired/revoked/max-use invites and already-drawn exchanges as specified.
 4. Build normalized-email allowlist checks and invite redemption with transaction-safe use counts. Never expose whether a magic-link email exists.
 5. Add server guard helpers and call them in every action/handler introduced here. Route proxy checks remain a convenience only.
 6. Generate and apply schema migration with `pnpm db:generate` then `pnpm db:migrate`; never use `db:push`. Use UUIDs for all newly added non-Better-Auth IDs.
-7. Add Vitest cases for invite token validation, expiration/revocation/max uses, and no magic-link signup.
+7. Add Vitest cases for invite token validation, expiration/revocation/max uses, eligible first-time magic-link signup, and blocked ineligible addresses.
 
 ### Environment Variables
 
@@ -52,7 +52,7 @@ Replace password authentication with Google account creation and magic-link sign
 
 ### Acceptance Criteria
 
-- [ ] Google creates accounts only for allowlisted/invited emails; magic link signs in existing accounts and cannot create accounts.
+- [ ] Google and magic-link verification create accounts only for allowlisted/invited emails; eligible existing accounts can sign in by either method.
 - [ ] Existing and unknown email magic-link requests return the same public response; rate limits apply per email/IP.
 - [ ] Invite token raw value is never persisted; token validation tests pass.
 - [ ] Super admin bootstraps and remains allowed; app authorization helpers verify role/membership server-side.

@@ -1,4 +1,8 @@
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { isEmailAllowlisted } from "@/lib/auth-access";
+import { hasCurrentAdminRole } from "@/lib/authz";
 
 type StatusLevel = "ok" | "warn" | "error";
 
@@ -23,8 +27,17 @@ interface DiagnosticsResponse {
   overallStatus: StatusLevel;
 }
 
-// Access control for diagnostics is enforced with the admin routes in the auth wave.
 export async function GET(req: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const allowed = await isEmailAllowlisted(session.user.email);
+  const hasAdminRole = await hasCurrentAdminRole(session.user.id, session.user.email);
+  if (!allowed || !hasAdminRole) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const env = {
     POSTGRES_URL: Boolean(process.env.POSTGRES_URL),
     BETTER_AUTH_SECRET: Boolean(process.env.BETTER_AUTH_SECRET),

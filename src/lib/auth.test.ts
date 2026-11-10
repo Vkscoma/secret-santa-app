@@ -1,0 +1,81 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const access = vi.hoisted(() => ({
+  isEmailEligibleForSignIn: vi.fn<(email: string, pendingInviteToken?: string | null) => Promise<boolean>>(),
+  getPendingInviteToken: vi.fn<() => Promise<string | null>>(),
+}));
+const limits = vi.hoisted(() => ({
+  consume: vi.fn<(scope: string) => Promise<boolean>>(),
+}));
+
+// Keep the auth module from touching a real database, cookies, or rate-limit tables.
+vi.mock("@/lib/db", () => ({ db: {} }));
+vi.mock("@/lib/invites", () => ({ redeemInviteForUser: vi.fn() }));
+vi.mock("@/lib/auth-rate-limit", () => ({
+  consumeAuthRateLimit: limits.consume,
+  magicLinkRateScopes: (email: string, ip: string) => [`email:${email}`, `ip:${ip}`],
+}));
+vi.mock("@/lib/auth-access", () => ({
+  ...access,
+  ensureAllowedUserRecord: vi.fn(),
+  isSuperAdminEmail: vi.fn(),
+  repairSuperAdmin: vi.fn(),
+}));
+
+const { auth, magicLinkOptions } = await import("./auth");
+
+type SendMagicLink = typeof magicLinkOptions.sendMagicLink;
+const send = (email: string) =>
+  magicLinkOptions.sendMagicLink(
+    { email, url: "https://example.test/verify", token: "t" },
+    { headers: new Headers({ "x-forwarded-for": "203.0.113.1" }) } as Parameters<SendMagicLink>[1]
+  );
+
+describe("magic-link configuration", () => {
+  const fetchSpy = vi.fn(async () => new Response(null, { status: 200 }));
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", fetchSpy);
+    vi.stubEnv("RESEND_API_KEY", "test-key");
+    vi.stubEnv("EMAIL_FROM", "santa@example.test");
+    access.isEmailEligibleForSignIn.mockResolvedValue(true);
+    access.getPendingInviteToken.mockResolvedValue(null);
+    limits.consume.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("allows signup only through the same eligibility gate, with hashed one-use links", () => {
+    expect(magicLinkOptions.disableSignUp).toBe(false);
+    expect(magicLinkOptions.expiresIn).toBe(900);
+    expect(magicLinkOptions.storeToken).toBe("hashed");
+    const plugin = auth.options.plugins.find((p) => p.id === "magic-link") as { options?: { disableSignUp?: boolean } } | undefined;
+    expect(plugin?.options?.disableSignUp).toBe(false);
+  });
+
+  it("emails an eligible first-time account and checks its pending invite", async () => {
+    access.getPendingInviteToken.mockResolvedValue("valid-invite-token");
+    access.isEmailEligibleForSignIn.mockResolvedValue(true);
+    await send(" Elf@Example.test ");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(access.isEmailEligibleForSignIn).toHaveBeenCalledWith("elf@example.test", "valid-invite-token");
+    expect(limits.consume).toHaveBeenCalledWith("email:elf@example.test");
+    expect(limits.consume).toHaveBeenCalledWith("ip:203.0.113.1");
+  });
+
+  it("silently sends nothing to an unknown, ineligible email", async () => {
+    access.isEmailEligibleForSignIn.mockResolvedValue(false);
+    await expect(send("new@example.test")).resolves.toBeUndefined();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it.each(["email:elf@example.test", "ip:203.0.113.1"])("silently sends nothing when the %s rate limit is exceeded", async (blockedScope) => {
+    limits.consume.mockImplementation(async (scope) => scope !== blockedScope);
+    await send("elf@example.test");
+    expect(limits.consume).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

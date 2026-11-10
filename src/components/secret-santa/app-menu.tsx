@@ -53,6 +53,9 @@ export function AppMenu() {
           {links.map(([label, href]) => (
             <DropdownMenuItem asChild key={href}><Link href={href}>{label}</Link></DropdownMenuItem>
           ))}
+          {session?.user?.role === "admin" && (
+            <DropdownMenuItem asChild><Link href="/admin">Admin</Link></DropdownMenuItem>
+          )}
           {session?.user ? (
             <>
               <DropdownMenuSeparator />
