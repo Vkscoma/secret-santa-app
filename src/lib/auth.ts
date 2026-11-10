@@ -31,10 +31,68 @@ async function sendMagicLink(email: string, url: string) {
     }
     throw new Error("Magic-link email is not configured.");
   }
+  const safeUrl = url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Your Secret Santa sign-in link</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#f3f7f4; color:#23372f; font-family:Arial,Helvetica,sans-serif;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">A secure, one-time link to your Secret Santa account.</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background-color:#f3f7f4;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:560px; background-color:#ffffff; border:1px solid #e1e9e3; border-radius:16px; overflow:hidden;">
+            <tr>
+              <td align="center" style="padding:22px 28px; background-color:#174d3b; border-bottom:3px solid #d7ad55;">
+                <p style="margin:0; color:#f4dfad; font-size:11px; line-height:16px; font-weight:bold; letter-spacing:2px;">A LITTLE HOLIDAY MAGIC</p>
+                <p style="margin:7px 0 0; color:#ffffff; font-size:21px; line-height:28px; font-weight:bold;">Secret Santa</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 36px 30px;">
+                <p style="margin:0 0 10px; color:#63766b; font-size:13px; line-height:20px;">You’re invited to unwrap a little holiday magic.</p>
+                <h1 style="margin:0 0 14px; color:#20382d; font-size:28px; line-height:36px; font-weight:700;">Sign in to Secret Santa</h1>
+                <p style="margin:0 0 26px; color:#53645a; font-size:16px; line-height:25px;">Use the secure link below to sign in or finish creating your account. Then you can get back to the fun part: making someone’s holiday special.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 24px;">
+                  <tr>
+                    <td align="center" bgcolor="#a9363b" style="border-radius:9px; background-color:#a9363b;">
+                      <a href="${safeUrl}" style="display:inline-block; padding:15px 28px; border:1px solid #a9363b; border-radius:9px; color:#ffffff; font-size:16px; line-height:20px; font-weight:bold; text-decoration:none;">Continue securely</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0; color:#59695f; font-size:14px; line-height:22px; text-align:center;">For your security, this one-time link expires in <strong style="color:#20382d;">15 minutes</strong>.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 36px 24px; border-top:1px solid #e7eee8; background-color:#f8faf8;">
+                <p style="margin:0; color:#6b786f; font-size:12px; line-height:19px; text-align:center;">If you didn’t request this link, you can safely ignore this email. Your account will remain secure.</p>
+                <p style="margin:12px 0 0; color:#87938b; font-size:11px; line-height:17px; text-align:center;">Made for the people you love, and the little surprises in between.</p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:18px 0 0; color:#8b978f; font-size:11px; line-height:17px; text-align:center;">Secret Santa · A thoughtful surprise is on its way.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  const text = [
+    "Secret Santa",
+    "",
+    "Sign in or finish creating your Secret Santa account with this secure, one-time link:",
+    url,
+    "",
+    "This link expires in 15 minutes.",
+    "If you didn’t request this link, you can safely ignore this email. Your account will remain secure.",
+  ].join("\n");
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [email], subject: "Your Secret Santa sign-in link", html: `<p>Sign in to Secret Santa:</p><p><a href="${url}">Continue signing in</a></p><p>This link expires in 15 minutes.</p>` }),
+    body: JSON.stringify({ from, to: [email], subject: "Your Secret Santa sign-in link", html, text }),
   });
   if (!response.ok) throw new Error(`Resend rejected the email request (HTTP ${response.status}).`);
 }

@@ -61,6 +61,15 @@ describe("magic-link configuration", () => {
     access.isEmailEligibleForSignIn.mockResolvedValue(true);
     await send(" Elf@Example.test ");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [, request] = fetchSpy.mock.calls[0] as unknown as [RequestInfo | URL, RequestInit];
+    const message = JSON.parse(String(request.body)) as { html: string; text: string };
+    const magicUrl = "https://example.test/verify";
+    expect(message.html).toContain(`href="${magicUrl}"`);
+    expect(message.html).toContain("Continue securely");
+    expect(message.html).toContain("15 minutes");
+    expect(message.text).toContain(magicUrl);
+    expect(message.text).toContain("expires in 15 minutes");
+    expect(message.text).toContain("If you didn’t request this link");
     expect(access.isEmailEligibleForSignIn).toHaveBeenCalledWith("elf@example.test", "valid-invite-token");
     expect(limits.consume).toHaveBeenCalledWith("email:elf@example.test");
     expect(limits.consume).toHaveBeenCalledWith("ip:203.0.113.1");
