@@ -26,8 +26,8 @@ function insertParts(columns: RateLimitColumns, keyHash: string, now: Date) {
     ? sql.raw(`"id", "key_hash", "window_started_at", "${columns.counter}", "updated_at"`)
     : sql.raw(`"id", "key_hash", "window_started_at", "${columns.counter}"`);
   const insertValues = columns.hasUpdatedAt
-    ? sql`(${randomUUID()}, ${keyHash}, ${now}, 1, ${now})`
-    : sql`(${randomUUID()}, ${keyHash}, ${now}, 1)`;
+    ? sql`(${randomUUID()}, ${keyHash}, ${now.toISOString()}, 1, ${now.toISOString()})`
+    : sql`(${randomUUID()}, ${keyHash}, ${now.toISOString()}, 1)`;
   return { counterColumn, insertColumns, insertValues };
 }
 
@@ -49,16 +49,16 @@ export async function consumeAuthRateLimit(scope: string, now = new Date()) {
   const windowStart = new Date(now.getTime() - 60_000);
   const columns = await getRateLimitColumns();
   const parts = insertParts(columns, keyHash, now);
-  const updatedAt = columns.hasUpdatedAt ? sql`, "updated_at" = ${now}` : sql.empty();
+  const updatedAt = columns.hasUpdatedAt ? sql`, "updated_at" = ${now.toISOString()}` : sql.empty();
   const result = await db.execute(sql`
     insert into public.auth_rate_limits (${parts.insertColumns}) values ${parts.insertValues}
     on conflict (key_hash) do update set
       window_started_at = case
-        when auth_rate_limits.window_started_at <= ${windowStart} then ${now}
+        when auth_rate_limits.window_started_at <= ${windowStart.toISOString()} then ${now.toISOString()}
         else auth_rate_limits.window_started_at
       end,
       ${parts.counterColumn} = case
-        when auth_rate_limits.window_started_at <= ${windowStart} then 1
+        when auth_rate_limits.window_started_at <= ${windowStart.toISOString()} then 1
         else auth_rate_limits.${parts.counterColumn} + 1
       end${updatedAt}
     returning ${parts.counterColumn} as attempts
