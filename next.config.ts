@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Chromium's compressed runtime assets must be traced into the unfurl route only.
+  outputFileTracingIncludes: {
+    "/api/unfurl": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
+
   // Image optimization configuration
   images: {
     remotePatterns: [
