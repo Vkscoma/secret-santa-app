@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { PENDING_INVITE_COOKIE, PENDING_INVITE_STATE_COOKIE } from "@/lib/auth-access";
 import { consumeInviteCallback } from "@/lib/invite-callback-store";
 import { canUseInvite, redeemInviteForUser } from "@/lib/invites";
+import { safeReturnTo } from "@/lib/safe-return-to";
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -31,6 +32,8 @@ export async function GET(request: Request) {
     cookieStore.delete(PENDING_INVITE_STATE_COOKIE);
     const destination = new URL("/join/result", request.url);
     destination.searchParams.set("outcome", result.outcome);
+    const returnTo = safeReturnTo(query.get("returnTo"));
+    if (returnTo !== "/dashboard") destination.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(destination);
   } catch {
     cookieStore.delete(PENDING_INVITE_COOKIE);

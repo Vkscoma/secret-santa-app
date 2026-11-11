@@ -8,6 +8,7 @@ import { getPendingInviteState, getPendingInviteToken, PENDING_INVITE_STATE_COOK
 import { signInviteCallback } from "@/lib/invite-callback";
 import { normalizeEmail } from "@/lib/invite-tokens";
 import { canUseInvite } from "@/lib/invites";
+import { safeReturnTo } from "@/lib/safe-return-to";
 
 const emailSchema = z.string().trim().email().max(320);
 const genericResponse = "If this email is approved, a secure link will be sent shortly.";
@@ -30,20 +31,24 @@ export async function requestMagicLink(formData: FormData): Promise<{ message: s
       ? signInviteCallback(pendingInviteToken, email)
       : null;
     const pendingInviteState = hasValidPendingInvite ? await getPendingInviteState() : null;
+    const requestedReturnTo = safeReturnTo(formData.get("returnTo"));
     const callbackURL = hasValidPendingInvite && pendingInviteToken
       ? inviteCallbackState
         ? `/join/complete?invite=${encodeURIComponent(pendingInviteToken)}&proof=${encodeURIComponent(inviteCallbackState)}`
         : pendingInviteState
           ? `/join/complete?state=${encodeURIComponent(pendingInviteState)}`
           : "/join/complete"
-      : "/dashboard";
+      : requestedReturnTo;
+    const finalCallbackURL = hasValidPendingInvite && pendingInviteToken
+      ? `${callbackURL}${callbackURL.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(requestedReturnTo)}`
+      : callbackURL;
     // Eligibility (allowlist/super-admin/valid invite, rate limits) is enforced
     // in the magic-link plugin's sendMagicLink callback, which silently skips sending.
     await auth.api.signInMagicLink({
       body: {
         email,
         name: suggestedName(email),
-        callbackURL,
+        callbackURL: finalCallbackURL,
       },
       headers: requestHeaders,
     });

@@ -52,7 +52,9 @@ describe("requestMagicLink", () => {
   it("uses the invite completion callback when a valid pending invite exists", async () => {
     state.pendingInvite = "pending-token";
     state.inviteIsValid = true;
-    await requestMagicLink(form("elf@example.test"));
+    const formData = form("elf@example.test");
+    formData.set("returnTo", "/wishlists/share?url=https%3A%2F%2Fstore.example%2Fp");
+    await requestMagicLink(formData);
     expect(state.signInMagicLink).toHaveBeenCalledWith(expect.objectContaining({
       body: expect.objectContaining({
         email: "elf@example.test",
@@ -64,6 +66,7 @@ describe("requestMagicLink", () => {
     expect(callbackURL.pathname).toBe("/join/complete");
     expect(callbackURL.searchParams.get("invite")).toBe("pending-token");
     expect(callbackURL.searchParams.get("proof")).toBeTruthy();
+    expect(callbackURL.searchParams.get("returnTo")).toBe("/wishlists/share?url=https%3A%2F%2Fstore.example%2Fp");
   });
 
   it("keeps the generic response when the email is invalid or the endpoint fails", async () => {

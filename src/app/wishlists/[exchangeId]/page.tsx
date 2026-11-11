@@ -27,7 +27,7 @@ import {
 } from "@/lib/schema";
 import { normalizeUnfurlUrl } from "@/lib/unfurl";
 
-type PageProps = { params: Promise<{ exchangeId: string }> };
+type PageProps = { params: Promise<{ exchangeId: string }>; searchParams: Promise<{ url?: string; sharedTitle?: string; sharedImage?: string; sharedPrice?: string; sharedBrand?: string }> };
 
 const priorityLabel: Record<string, string> = {
   most_wanted: "Most wanted",
@@ -56,8 +56,8 @@ function safeHost(value: string | null) {
   return safeUrl ? new URL(safeUrl).hostname : "Gift idea";
 }
 
-export default async function WishlistDetailPage({ params }: PageProps) {
-  const { exchangeId } = await params;
+export default async function WishlistDetailPage({ params, searchParams }: PageProps) {
+  const [{ exchangeId }, query] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/i.test(exchangeId)) notFound();
   const session = await requireExchangeMember(exchangeId);
   const [exchange] = await db.select().from(exchanges).where(eq(exchanges.id, exchangeId)).limit(1);
@@ -100,7 +100,7 @@ export default async function WishlistDetailPage({ params }: PageProps) {
         </form> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
       </Card>
 
-      {editable && <WishlistComposer exchangeId={exchangeId} />}
+      {editable && <WishlistComposer exchangeId={exchangeId} {...(query.url ? { initialUrl: query.url } : {})} {...(query.sharedTitle ? { initialTitle: query.sharedTitle } : {})} {...(query.sharedImage ? { initialImageUrl: query.sharedImage } : {})} {...(query.sharedPrice ? { initialPrice: query.sharedPrice } : {})} {...(query.sharedBrand ? { initialStoreName: query.sharedBrand } : {})} />}
 
       <section className="space-y-4" aria-labelledby="wish-items-heading">
         <div className="flex flex-wrap items-end justify-between gap-3">

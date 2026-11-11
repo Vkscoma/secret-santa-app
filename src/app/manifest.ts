@@ -6,6 +6,11 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Secret Santa",
     description: "A little holiday magic for the people you love.",
     start_url: "/",
+    share_target: {
+      action: "/wishlists/share",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
     display: "standalone",
     background_color: "oklch(0.985 0.004 200)",
     theme_color: "oklch(0.36 0.09 158)",

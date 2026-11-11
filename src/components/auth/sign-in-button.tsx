@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, useSession } from "@/lib/auth-client";
 
-export function SignInButton() {
+export function SignInButton({ returnTo = "/dashboard" }: { returnTo?: string }) {
   const { data: session, isPending } = useSession();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ export function SignInButton() {
 
   return (
     <div className="w-full max-w-sm space-y-5">
-      <Button className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: "/dashboard", errorCallbackURL: "/not-allowed" })}>
+      <Button className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: returnTo, errorCallbackURL: "/not-allowed" })}>
         Continue with Google
       </Button>
       <div className="relative text-center text-xs text-muted-foreground"><span className="bg-card px-2">or continue with email</span></div>
@@ -25,6 +25,7 @@ export function SignInButton() {
         const response = await requestMagicLink(data);
         setMessage(response.message);
       })} className="space-y-3">
+        <input type="hidden" name="returnTo" value={returnTo} />
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={busy} />

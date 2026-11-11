@@ -2,9 +2,11 @@ import Link from "next/link";
 import { CheckCircle2, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { safeReturnTo } from "@/lib/safe-return-to";
 
-export default async function InviteResultPage({ searchParams }: { searchParams: Promise<{ outcome?: string }> }) {
-  const { outcome } = await searchParams;
+export default async function InviteResultPage({ searchParams }: { searchParams: Promise<{ outcome?: string; returnTo?: string }> }) {
+  const { outcome, returnTo: requestedReturnTo } = await searchParams;
+  const returnTo = safeReturnTo(requestedReturnTo);
   const joinedThisYear = outcome === "joined";
   const Icon = joinedThisYear ? CheckCircle2 : LockKeyhole;
   return (
@@ -20,7 +22,7 @@ export default async function InviteResultPage({ searchParams }: { searchParams:
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button asChild><Link href="/dashboard">Continue</Link></Button>
+          <Button asChild><Link href={returnTo}>Continue</Link></Button>
         </CardContent>
       </Card>
     </main>
