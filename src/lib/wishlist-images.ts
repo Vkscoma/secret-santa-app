@@ -8,7 +8,6 @@ import { isPublicAddress, normalizeUnfurlUrl, UnfurlSafetyError } from "@/lib/un
 
 export const MAX_WISHLIST_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
-const MIN_REMOTE_IMAGE_BYTES = 5 * 1024;
 const IMAGE_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 5;
 const ALLOWED_FORMATS = new Set(["jpeg", "png", "webp", "gif", "avif", "tiff", "heif"]);
@@ -44,6 +43,7 @@ function getPinnedImage(url: URL, address: Address): Promise<ImageResponse> {
       method: "GET",
       agent: false,
       lookup,
+      family: address.family,
       signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS),
       headers: { Accept: "image/avif,image/webp,image/*;q=0.9,*/*;q=0.5", "User-Agent": "SecretSantaWishlistImage/1.0" },
     }, (response) => {
@@ -102,7 +102,7 @@ async function downloadRemoteImage(rawUrl: string): Promise<Buffer> {
     if (response.statusCode !== 200 || !response.contentType?.toLowerCase().startsWith("image/")) {
       throw new Error("The product image URL did not return an image.");
     }
-    if (response.body.byteLength <= MIN_REMOTE_IMAGE_BYTES) throw new Error("The product image is too small to save.");
+    if (!response.body.byteLength) throw new Error("The product image is too small to save.");
     return response.body;
   }
   throw new Error("The image URL redirects too many times.");
@@ -152,6 +152,8 @@ export async function storeProductImage(rawUrl: string): Promise<string> {
   const normalized = normalizeUnfurlUrl(rawUrl).toString();
   if (isWishlistBlobUrl(normalized)) return normalized;
   const image = await downloadRemoteImage(normalized);
+  const decoded = await sharp(image, { limitInputPixels: 40_000_000, failOn: "error" }).metadata();
+  if (!decoded.format || !ALLOWED_FORMATS.has(decoded.format)) throw new Error("The product URL did not return a supported image.");
   if (!hasWishlistBlobToken()) return normalized;
   try { return await saveWebp(image); }
   catch {
@@ -160,4 +162,4 @@ export async function storeProductImage(rawUrl: string): Promise<string> {
   }
 }
 
-export const wishlistImageInternals = { convertToWebp, downloadRemoteImage, publicAddress };
+export const wishlistImageInternals = { convertToWebp, downloadRemoteImage, publicAddress, getPinnedImage };

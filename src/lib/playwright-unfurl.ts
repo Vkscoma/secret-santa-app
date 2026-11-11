@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import serverlessChromium from "@sparticuz/chromium";
 import { chromium as playwrightChromium } from "playwright-core";
 import { createPinnedProxy } from "@/lib/pinned-proxy";
-import { isPublicAddress, normalizeUnfurlUrl, UnfurlSafetyError } from "@/lib/unfurl";
+import { isPublicAddress, normalizeUnfurlUrl, UNFURL_MAX_BYTES, UnfurlSafetyError } from "@/lib/unfurl";
 
 const MAX_RENDER_MS = 20_000;
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -20,6 +20,7 @@ function localChromiumPath(override?: string): string | null {
     override,
     process.env.CHROME_EXECUTABLE_PATH,
     process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    playwrightChromium.executablePath(),
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
@@ -58,8 +59,10 @@ export async function renderUnfurlPage(rawUrl: URL, dependencies: RenderPageDepe
     const launchOptions = useServerlessBinary
       ? { args: serverlessChromium.args, executablePath: await serverlessChromium.executablePath(), headless: true }
       : { executablePath: localExecutable!, headless: true };
+    if (expired) return null;
     proxy = await createPinnedProxy(lookup);
-    browser = await playwrightChromium.launch(launchOptions);
+    if (expired) { await proxy.close(); proxy = null; return null; }
+    browser = await playwrightChromium.launch({ ...launchOptions, timeout: MAX_RENDER_MS });
     if (expired) {
       await browser.close().catch(() => undefined);
       browser = null;
@@ -74,10 +77,23 @@ export async function renderUnfurlPage(rawUrl: URL, dependencies: RenderPageDepe
       proxy: { server: proxy.url, bypass: "" },
     });
     const page = await context.newPage();
+    // Chromium can render scripts, but it must not consume an unbounded page or asset graph.
+    const network = await context.newCDPSession(page);
+    let receivedBytes = 0;
+    await network.send("Network.enable");
+    network.on("Network.dataReceived", (event) => {
+      receivedBytes += Math.max(event.dataLength, event.encodedDataLength);
+      if (receivedBytes > UNFURL_MAX_BYTES) void page.close().catch(() => undefined);
+    });
+    page.on("response", (response) => {
+      if (Number(response.headers()["content-length"] ?? 0) > UNFURL_MAX_BYTES) void page.close().catch(() => undefined);
+    });
     await page.route("**/*", async (route) => {
       const request = route.request();
       const requestUrl = request.url();
-      if (/^(?:font|media)$/.test(request.resourceType()) || BLOCKED_HOSTS.test(requestUrl) || !(await isSafeRequest(requestUrl, lookup))) {
+      let redirectCount = 0;
+      for (let previous = request.redirectedFrom(); previous; previous = previous.redirectedFrom()) redirectCount += 1;
+      if (redirectCount > 5 || /^(?:font|media|image)$/.test(request.resourceType()) || BLOCKED_HOSTS.test(requestUrl) || !(await isSafeRequest(requestUrl, lookup))) {
         await route.abort("blockedbyclient").catch(() => undefined);
         return;
       }
@@ -98,23 +114,20 @@ export async function renderUnfurlPage(rawUrl: URL, dependencies: RenderPageDepe
     return html ? { html, finalUrl, statusCode } : null;
   };
 
-  const timeout = setTimeout(() => {
-    expired = true;
-    void (browser as Awaited<ReturnType<typeof playwrightChromium.launch>> | null)?.close().catch(() => undefined);
-  }, MAX_RENDER_MS);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       render(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), MAX_RENDER_MS)),
+      new Promise<null>((resolve) => { timeout = setTimeout(() => { expired = true; resolve(null); }, MAX_RENDER_MS); }),
     ]);
   } catch {
     return null;
   } finally {
-    clearTimeout(timeout);
+    expired = true;
+    if (timeout) clearTimeout(timeout);
     const activeBrowser = browser as Awaited<ReturnType<typeof playwrightChromium.launch>> | null;
     if (activeBrowser) await activeBrowser.close().catch(() => undefined);
     const activeProxy = proxy as Awaited<ReturnType<typeof createPinnedProxy>> | null;
     await activeProxy?.close().catch(() => undefined);
   }
 }
-

@@ -1,0 +1,1 @@
+ALTER TABLE "unfurl_cache" ADD COLUMN "metadata_version" integer DEFAULT 0 NOT NULL;

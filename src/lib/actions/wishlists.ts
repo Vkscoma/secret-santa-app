@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, asc, desc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { consumeAuthRateLimit } from "@/lib/auth-rate-limit";
 import { requireExchangeMember } from "@/lib/authz";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/schema";
 import { normalizeUnfurlUrl } from "@/lib/unfurl";
 import { unfurlUrl } from "@/lib/unfurl";
+import { getCachedLinkPreview } from "@/lib/unfurl-preview";
 import { storeProductImage } from "@/lib/wishlist-images";
 
 function field(formData: FormData, name: string): string {
@@ -43,8 +44,8 @@ const wishlistItemSchema = z.object({
 function optionalExternalUrl(value: string, label: string): string | null {
   if (!value) return null;
   try {
-    const url = normalizeUnfurlUrl(value);
-    return url.toString().slice(0, 2_000);
+    normalizeUnfurlUrl(value);
+    return value;
   } catch (error) {
     throw new Error(`${label}: ${error instanceof Error ? error.message : "Enter a valid web link."}`);
   }
@@ -101,6 +102,94 @@ async function ensureWishlist(exchangeId: string, userId: string) {
   return wishlist.id;
 }
 
+const pastedWishSchema = z.object({
+  exchangeId: uuid,
+  itemId: uuid,
+  url: z.string().trim().min(1).max(2_000),
+  details: z.object({
+    title: z.string().trim().max(200).optional(), notes: z.string().trim().max(1_000).optional(),
+    imageUrl: z.string().trim().max(2_000).optional(), storeName: z.string().trim().max(100).optional(),
+    priceMin: z.number().int().min(0).max(1_000_000).nullable().optional(),
+    priceMax: z.number().int().min(0).max(1_000_000).nullable().optional(),
+    priority: z.enum(["most_wanted", "would_like", "nice_to_have"]).optional(),
+  }).optional(),
+});
+export type PastedWishResult = { ok: boolean; itemId?: string; error?: string };
+
+/** The caller generates one UUID for a paste intent and reuses it for every retry. */
+export async function createPastedWishlistItem(input: z.input<typeof pastedWishSchema>): Promise<PastedWishResult> {
+  const parsed = pastedWishSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Check the link and gift details." };
+  const { exchangeId, itemId, url, details } = parsed.data;
+  try {
+    const validated = normalizeUnfurlUrl(url);
+    const session = await requireExchangeMember(exchangeId);
+    await requireEditableExchange(exchangeId, session.user.id);
+    const wishlistId = await ensureWishlist(exchangeId, session.user.id);
+    const [existing] = await db.select({ id: wishlistItems.id, wishlistId: wishlistItems.wishlistId, url: wishlistItems.url }).from(wishlistItems).where(eq(wishlistItems.id, itemId)).limit(1);
+    if (existing) return existing.wishlistId === wishlistId && existing.url === url
+      ? { ok: true, itemId } : { ok: false, error: "This save could not be retried. Paste the link again." };
+    if (!(await consumeAuthRateLimit(`wishlist-paste:${session.user.id}`))) return { ok: false, error: "Please wait a minute before adding more links." };
+    const form = new FormData();
+    for (const [key, value] of Object.entries({ title: details?.title || validated.hostname, url, imageUrl: details?.imageUrl || "", storeName: details?.storeName || validated.hostname, notes: details?.notes || "", priority: details?.priority || "would_like", priceMin: details?.priceMin ?? "", priceMax: details?.priceMax ?? "" })) form.set(key, String(value));
+    const item = parseItem(form);
+    const [last] = await db.select({ sortOrder: wishlistItems.sortOrder }).from(wishlistItems).where(eq(wishlistItems.wishlistId, wishlistId)).orderBy(desc(wishlistItems.sortOrder)).limit(1);
+    await db.insert(wishlistItems).values({ ...item, id: itemId, wishlistId, previewTitlePending: !details?.title, sortOrder: (last?.sortOrder ?? -1) + 1 }).onConflictDoNothing({ target: wishlistItems.id });
+    // A concurrent request with the same UUID must belong to this exact wish.
+    const [saved] = await db.select({ wishlistId: wishlistItems.wishlistId, url: wishlistItems.url }).from(wishlistItems).where(eq(wishlistItems.id, itemId)).limit(1);
+    if (!saved || saved.wishlistId !== wishlistId || saved.url !== url) return { ok: false, error: "This gift could not be saved. Paste the link again." };
+    revalidatePath(`/wishlists/${exchangeId}`);
+    return { ok: true, itemId };
+  } catch {
+    return { ok: false, error: "Could not save this link. Check it and try again." };
+  }
+}
+
+/** Metadata is optional: errors never remove the already saved wish. */
+export async function enrichWishlistItem(input: { exchangeId: string; itemId: string; preserveTitle?: boolean }): Promise<PastedWishResult> {
+  const parsed = z.object({ exchangeId: uuid, itemId: uuid, preserveTitle: z.boolean().optional() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "This gift could not be previewed." };
+  const { exchangeId, itemId, preserveTitle } = parsed.data;
+  try {
+    const session = await requireExchangeMember(exchangeId);
+    await requireEditableExchange(exchangeId, session.user.id);
+    const [item] = await db.select({ item: wishlistItems, revision: sql<string>`${wishlistItems}.xmin::text` }).from(wishlistItems).innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id)).where(and(eq(wishlistItems.id, itemId), eq(wishlists.userId, session.user.id), eq(wishlists.exchangeId, exchangeId))).limit(1);
+    if (!item?.item.url) return { ok: false, error: "Add a link to this gift first." };
+    if (!(await consumeAuthRateLimit(`wishlist-unfurl:${session.user.id}`))) return { ok: false, itemId, error: "The gift is saved. Try refreshing its link later." };
+    const snapshot = item.item;
+    const originalUrl = snapshot.url!;
+    const metadata = await getCachedLinkPreview(originalUrl);
+    let imageUrl: string | null = null;
+    if (!snapshot.imageUrl && metadata.imageUrl) {
+      try { imageUrl = await storeProductImage(metadata.imageUrl); } catch { /* Leave a usable placeholder. */ }
+    }
+    // Keep explicit source amount/currency separate from manually entered USD ranges.
+    const canSetPrice = snapshot.priceMin === null && snapshot.priceMax === null && !snapshot.previewPrice && metadata.price !== null && metadata.currency !== null;
+    const missingPrice = sql`${wishlistItems.priceMin} is null and ${wishlistItems.priceMax} is null and ${wishlistItems.previewPrice} is null`;
+    const values = {
+      ...(!preserveTitle && snapshot.previewTitlePending && metadata.title && metadata.fieldSources.title !== "url" ? {
+        title: sql`case when ${wishlistItems.previewTitlePending} and ${wishlistItems}.xmin::text = ${item.revision} then ${metadata.title.slice(0, 200)} else ${wishlistItems.title} end`,
+        previewTitlePending: false,
+      } : {}),
+      ...(imageUrl ? { imageUrl: sql`case when ${wishlistItems.imageUrl} is null then ${imageUrl} else ${wishlistItems.imageUrl} end` } : {}),
+      ...(canSetPrice ? {
+        previewPrice: sql`case when ${missingPrice} then ${metadata.price} else ${wishlistItems.previewPrice} end`,
+        previewCurrency: sql`case when ${missingPrice} then ${metadata.currency} else ${wishlistItems.previewCurrency} end`,
+        priceFetchedAt: sql`case when ${missingPrice} then ${metadata.fetchedAt}::timestamp else ${wishlistItems.priceFetchedAt} end`,
+      } : {}),
+      previewFinalUrl: metadata.debug.finalUrl,
+    };
+    // Apply each optional field atomically. Edits win while unrelated missing fields can still fill.
+    // Title uses the exact PostgreSQL row revision, avoiding timestamp precision loss or same-ms edits.
+    await db.update(wishlistItems).set(values).where(and(eq(wishlistItems.id, itemId), eq(wishlistItems.url, originalUrl)));
+    revalidatePath(`/wishlists/${exchangeId}`);
+    revalidatePath(`/wishlists/${exchangeId}/recipient`);
+    return metadata.reason ? { ok: false, itemId, error: "The gift is saved. You can name it or add an image manually." } : { ok: true, itemId };
+  } catch {
+    return { ok: false, itemId, error: "The gift is saved. You can edit its details manually." };
+  }
+}
+
 export async function createWishlistItem(formData: FormData) {
   const exchangeId = uuid.parse(field(formData, "exchangeId"));
   const session = await requireExchangeMember(exchangeId);
@@ -120,12 +209,18 @@ export async function updateWishlistItem(formData: FormData) {
   const session = await requireExchangeMember(exchangeId);
   await requireEditableExchange(exchangeId, session.user.id);
   const item = parseItem(formData);
-  const [owned] = await db.select({ id: wishlistItems.id }).from(wishlistItems)
+  const [owned] = await db.select({ id: wishlistItems.id, url: wishlistItems.url }).from(wishlistItems)
     .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
     .where(and(eq(wishlistItems.id, itemId), eq(wishlists.exchangeId, exchangeId), eq(wishlists.userId, session.user.id))).limit(1);
   if (!owned) throw new Error("Wishlist item not found.");
   if (item.imageUrl) item.imageUrl = await storeProductImage(item.imageUrl);
-  await db.update(wishlistItems).set(item).where(eq(wishlistItems.id, itemId));
+  const clearSourcePrice = owned.url !== item.url || item.priceMin !== null || item.priceMax !== null;
+  await db.update(wishlistItems).set({
+    ...item,
+    previewTitlePending: false,
+    ...(clearSourcePrice ? { priceFetchedAt: null, previewPrice: null, previewCurrency: null } : {}),
+    ...(owned.url !== item.url ? { previewFinalUrl: null } : {}),
+  }).where(eq(wishlistItems.id, itemId));
   revalidatePath(`/wishlists/${exchangeId}`);
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
 }

@@ -1,5 +1,6 @@
+import { Duplex, PassThrough } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
-import { resolvePinnedTarget } from "./pinned-proxy";
+import { guardTunnel, resolvePinnedTarget } from "./pinned-proxy";
 
 describe("pinned Chromium proxy target resolution", () => {
   it("returns the exact public DNS answer that the proxy connects to", async () => {
@@ -25,4 +26,21 @@ describe("pinned Chromium proxy target resolution", () => {
       await expect(resolvePinnedTarget(authority, async () => [{ address: "93.184.216.34", family: 4 }])).rejects.toThrow();
     },
   );
+});
+
+
+describe("proxy tunnel disconnect cleanup", () => {
+  it.each(["client", "upstream"])("handles EPIPE when the %s peer disconnects during a write", async (failingSide) => {
+    const broken = new Duplex({ read() {}, write(_chunk, _encoding, done) { done(Object.assign(new Error("write EPIPE"), { code: "EPIPE" })); } });
+    const healthy = new PassThrough();
+    const client = failingSide === "client" ? broken : healthy;
+    const upstream = failingSide === "upstream" ? broken : healthy;
+    guardTunnel(client, upstream);
+    const closed = Promise.all([new Promise<void>((resolve) => client.once("close", resolve)), new Promise<void>((resolve) => upstream.once("close", resolve))]);
+    client.pipe(upstream); upstream.pipe(client);
+    healthy.write(Buffer.from("TLS bytes after peer disconnect"));
+    await closed;
+    expect(client.destroyed).toBe(true);
+    expect(upstream.destroyed).toBe(true);
+  });
 });

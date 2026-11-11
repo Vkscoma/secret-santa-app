@@ -4,6 +4,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { ArrowLeft, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
+import { WishlistPrice } from "@/components/secret-santa/wishlist-price";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toggleWishlistClaim } from "@/lib/actions/wishlists";
@@ -22,7 +23,7 @@ function safeHost(value: string | null) {
 
 function safeProductUrl(value: string | null) {
   if (!value) return null;
-  try { return normalizeUnfurlUrl(value).toString(); } catch { return null; }
+  try { normalizeUnfurlUrl(value); return value; } catch { return null; }
 }
 
 function safeProductImageUrl(value: string | null) {
@@ -30,11 +31,6 @@ function safeProductImageUrl(value: string | null) {
   try { return normalizeUnfurlUrl(value).toString(); } catch { return null; }
 }
 
-function priceLabel(min: number | null, max: number | null) {
-  if (min === null && max === null) return null;
-  if (min !== null && max !== null) return min === max ? `$${min}` : `$${min}–$${max}`;
-  return min !== null ? `From $${min}` : `Up to $${max}`;
-}
 
 export default async function RecipientWishlistPage({ params }: PageProps) {
   const { exchangeId } = await params;
@@ -80,7 +76,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
             <ProductImage src={safeProductImageUrl(item.imageUrl)} alt={`${item.title} product image`} className="size-16" iconClassName="size-5" />
             <div className="min-w-0"><h2 className="font-bold">{item.title}</h2><p className="mt-1 text-sm text-muted-foreground">{item.storeName || safeHost(item.url)}</p>
               {item.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{item.notes}</p>}
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">{priceLabel(item.priceMin, item.priceMax) && <span className="rounded-full border border-border px-2.5 py-1">{priceLabel(item.priceMin, item.priceMax)}</span>}{productUrl && <a href={productUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-2.5 py-1 font-semibold hover:text-primary">Open product link</a>}</div>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground"><WishlistPrice minimum={item.priceMin} maximum={item.priceMax} previewPrice={item.previewPrice} previewCurrency={item.previewCurrency} fetchedAt={item.priceFetchedAt} />{productUrl && <a href={productUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-2.5 py-1 font-semibold hover:text-primary">Open product link</a>}</div>
             </div>
           </div>
           <form action={toggleWishlistClaim} className="shrink-0">

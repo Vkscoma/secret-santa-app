@@ -1,0 +1,18 @@
+### Overview
+
+Build paste-to-add with a server-side link preview. The part that can work across stores is saving the link. The title, photo, and price depend on what each page makes available.
+
+In the DrawNames sidebar, pasting the Reverb URL triggered several SearchGifts requests. DrawNames then saved the wish and loaded a 332 × 332 thumbnail through its image cache. The card used the full Reverb page title, including the | Reverb suffix, and showed reverb.com. Its selection request recorded price=null and category=null. That looks like a general web preview. The browser trace shows the requests and resulting card, but it doesn’t reveal which parser or provider DrawNames uses behind its API.
+
+You can reproduce that behavior by reading two common kinds of metadata. Open Graph gives you the title and image a publisher chose for link previews. On shopping pages, Product and Offer structured data can also identify a specific item, its price, currency, and availability. This gives you a single implementation that works across domains, with richer cards where the data exists. Open Graph protocol · Product and Offer examples
+
+### Implementation
+
+Implement paste-to-add gift links in our Secret Santa app’s existing wishlist. Inspect the current wishlist component, gift model, authorization, and backend conventions first, then build the feature through the existing add-gift flow.
+
+1. Make paste feel immediate. When the user pastes a single public HTTP or HTTPS URL into the add-gift field, save one wish and immediately show a card with the hostname. Fetch the preview in the background and update that same card when it arrives. Keep ordinary text wishes working. A retry or a second paste-handler event for the same action must not create a duplicate.
+2. Keep the exact gift link. Store the original URL as the card’s click target, including query parameters and fragments. These can select a size, color, or configuration. Track the final URL after redirects separately so relative image URLs resolve correctly.
+3. Extract each field independently. Fetch the public page on the backend and parse its HTML. Read og:title and og:image for the card. If either is missing, fill that field from a matching Schema.org Product in JSON-LD, then from twitter:title or twitter:image. For a missing title, fall back to the HTML <title>, then the hostname. Resolve relative image paths. If the image is missing or fails to load, keep the card usable with a placeholder.
+4. Treat shopping details as optional. Handle JSON-LD arrays and @graph. Use a price and currency only when an Offer belongs to the linked product and both values are explicit. If the page lists several variants or prices and the selected one is ambiguous, omit the price. Store the fetch time for any displayed price. Let the user edit the gift title or add a note, and preserve those edits if a preview finishes later.
+5. Constrain the fetcher. Reuse a maintained URL-preview service or a backend HTTP client configured for public destinations only. Enforce that restriction at connection time and on every redirect, including thumbnail fetches. Send no user cookies or authorization headers. Bound fetch time, redirects, and response size. Render extracted strings as text. Cache successful previews using a key that preserves variant-specific URL parameters. OWASP guidance for fetching user-supplied URLs
+6. Verify the user experience. Cover a Reverb-style listing with a title and image but no price, a product page with a matching offer and currency, an ordinary article, and a page that blocks the fetch or times out. In each case, one paste should produce one saved, clickable wish. A failed preview should still leave the user able to name the gift manually.

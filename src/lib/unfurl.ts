@@ -157,20 +157,12 @@ export function normalizeUnfurlUrl(raw: string): URL {
     throw new UnfurlSafetyError("Only standard web ports can be previewed.");
   }
   if (isIP(hostname) && !isPublicAddress(hostname)) throw new UnfurlSafetyError("Private or reserved network addresses are blocked.");
-  url.hash = "";
   url.hostname = hostname;
-  if ((url.protocol === "http:" && url.port === "80") || (url.protocol === "https:" && url.port === "443")) url.port = "";
-  for (const key of [...url.searchParams.keys()]) {
-    if (/^(utm_[^=]+|fbclid|gclid|mc_cid|mc_eid)$/i.test(key)) url.searchParams.delete(key);
-  }
-  url.searchParams.sort();
   return url;
 }
 
 export function normalizeCacheKey(url: URL): string {
-  const copy = new URL(url.toString());
-  if (copy.pathname.length > 1) copy.pathname = copy.pathname.replace(/\/+$/, "");
-  return copy.toString();
+  return url.toString();
 }
 
 function readHtml(url: URL, pinned: ResolvedAddress, timeoutMs: number, maxBytes: number, userAgent = BROWSER_UA, allowJson = false, extraHeaders: Record<string, string> = {}): Promise<HtmlResponse> {
@@ -188,6 +180,7 @@ function readHtml(url: URL, pinned: ResolvedAddress, timeoutMs: number, maxBytes
       method: "GET",
       agent: false,
       lookup,
+      family: pinned.family,
       headers: {
         Accept: allowJson ? "application/json,application/hal+json,text/html,application/xhtml+xml;q=0.9,*/*;q=0.8" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
@@ -274,27 +267,6 @@ function attrsOf(source: string): Map<string, string> {
   return values;
 }
 
-function titleCase(value: string): string {
-  return value.toLowerCase().replace(/(^|\s|[-'])\p{L}/gu, (match) => match.toUpperCase());
-}
-
-function storeFromHost(host: string): string {
-  const labels = host.toLowerCase().replace(/^www\./, "").split(".").filter(Boolean);
-  if (labels.length > 2 && labels.at(-1)?.length === 2 && ["co", "com", "org", "net", "gov", "ac"].includes(labels.at(-2) ?? "")) labels.splice(-2);
-  else labels.pop();
-  return titleCase(labels.join(" ").replace(/[-_]+/g, " ")) || titleCase(host.replace(/^www\./, ""));
-}
-
-export function titleFromSlug(url: URL): string | null {
-  const segments = url.pathname.split("/").filter(Boolean).map((segment) => {
-    let value = segment;
-    try { value = decodeURIComponent(segment); } catch { /* Keep the source segment. */ }
-    return value.replace(/\.[a-z0-9]{1,6}$/i, "").replace(/^\d{5,}(?:[-_]+|$)/, "").replace(/[-_]+/g, " ").trim();
-  }).filter(Boolean);
-  const longest = segments.sort((a, b) => b.length - a.length)[0];
-  return longest ? titleCase(longest) : null;
-}
-
 function metaTags(html: string): Map<string, string> {
   const values = new Map<string, string>();
   for (const match of html.matchAll(/<meta\b([^>]+)>/gi)) {
@@ -306,10 +278,6 @@ function metaTags(html: string): Map<string, string> {
   return values;
 }
 
-function imageUrl(value: unknown, base: URL): string | null {
-  return imageUrls(value, base)[0] ?? null;
-}
-
 function imageUrls(value: unknown, base: URL): string[] {
   const resolvedUrls: string[] = [];
   for (const candidate of Array.isArray(value) ? value : [value]) {
@@ -318,7 +286,6 @@ function imageUrls(value: unknown, base: URL): string[] {
     if (typeof raw !== "string") continue;
     try {
       const resolved = new URL(raw, base);
-      if (resolved.protocol === "http:") resolved.protocol = "https:";
       resolved.hash = "";
       const normalized = normalizeUnfurlUrl(resolved.toString()).toString().slice(0, 2_000);
       if (!resolvedUrls.includes(normalized)) resolvedUrls.push(normalized);
@@ -328,323 +295,117 @@ function imageUrls(value: unknown, base: URL): string[] {
   return resolvedUrls;
 }
 
-type ImageCandidate = { url: string; score: number; source: string };
-const imageNoise = /(?:logo|icon|sprite|badge|avatar|placeholder|pixel|tracking|spinner|loading)/i;
-const IMAGE_NOISE_PENALTY = 10_000_000;
-const MAX_IMAGE_CANDIDATES = 10;
+type ExtractedFields = Partial<Record<UnfurlField, string>> & { isProductPage?: boolean };
+type PreviewFields = { fields: ExtractedFields; sources: Partial<Record<UnfurlField, string>>; images: { url: string; source: string }[] };
 const IMAGE_VALIDATION_BUDGET_MS = 4_000;
-const IMAGE_STAGE_RANK = { structured: 6_000_000, meta: 5_000_000, amazon: 4_000_000, microdata: 3_000_000, heuristic: 2_000_000 };
-const MAX_IMAGE_SIZE_SCORE = 100_000;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-function imageCandidatesFromHtml(html: string, base: URL): ImageCandidate[] {
-  const candidates: ImageCandidate[] = [];
-  const push = (value: unknown, score: number, source: string, marker = "") => {
-    for (const url of imageUrls(value, base)) {
-      if (!candidates.some((candidate) => candidate.url === url) && candidates.length < 100) {
-        candidates.push({ url, score: score - (imageNoise.test(marker) || imageNoise.test(url) ? IMAGE_NOISE_PENALTY : 0), source });
-      }
-    }
-  };
-
-  for (const product of jsonLdChildren(html)) push(product.image, IMAGE_STAGE_RANK.structured, "structured-data", cleanText(product.name) ?? "");
-
-  const meta = metaTags(html);
-  push(meta.get("og:image:secure_url"), IMAGE_STAGE_RANK.meta, "meta", meta.get("og:image:secure_url") ?? "");
-  push(meta.get("og:image"), IMAGE_STAGE_RANK.meta, "meta", meta.get("og:image") ?? "");
-  push(meta.get("twitter:image"), IMAGE_STAGE_RANK.meta, "meta", meta.get("twitter:image") ?? "");
-  const imageLink = html.match(/<link\b([^>]*\brel\s*=\s*["'][^"']*image_src[^"']*["'][^>]*)>/i)?.[1];
-  if (imageLink) push(attrsOf(imageLink).get("href"), IMAGE_STAGE_RANK.meta, "meta", imageLink);
-
-  const images = [...html.matchAll(/<img\b([^>]*)>/gi)].map((match) => {
-    const attrs = attrsOf(match[1]!);
-    const marker = `${attrs.get("id") ?? ""} ${attrs.get("class") ?? ""} ${attrs.get("alt") ?? ""} ${attrs.get("src") ?? ""} ${attrs.get("data-src") ?? ""}`;
-    const isAmazonPrimary = /#landingImage|#imgBlkFront/i.test(marker);
-    const hasImageProp = /(?:^|\s)image(?:\s|$)/i.test(attrs.get("itemprop") ?? "");
-    const sizes = imageCandidatesFromAttrs(attrs);
-    return { attrs, marker, isAmazonPrimary, hasImageProp, sizes, index: match.index! };
-  });
-
-  const host = hostnameOf(base);
-  const amazonPrimary = images.find(({ attrs, marker }) =>
-    /(?:^|\s)(?:landingImage|imgBlkFront)(?:\s|$)/i.test(`${attrs.get("id") ?? ""} ${attrs.get("class") ?? ""} ${marker}`),
-  );
-  if (/amazon\./i.test(host) || amazonPrimary) {
-    const landing = images.find(({ attrs }) => /landingImage/i.test(attrs.get("id") ?? "")) ?? amazonPrimary;
-    const front = images.find(({ attrs }) => /imgBlkFront/i.test(attrs.get("id") ?? ""));
-    for (const { attrs, sizes } of [landing, front].filter((item): item is NonNullable<typeof item> => Boolean(item))) {
-      const oldHires = attrs.get("data-old-hires");
-      if (oldHires) push(oldHires, IMAGE_STAGE_RANK.amazon + MAX_IMAGE_SIZE_SCORE * 2, "amazon", oldHires);
-      const dynamic = sizes.filter(({ src }) => Boolean(attrs.get("data-a-dynamic-image")?.includes(src)));
-      for (const candidate of dynamic.sort((a, b) => b.size - a.size)) push(candidate.src, IMAGE_STAGE_RANK.amazon + Math.min(candidate.size, MAX_IMAGE_SIZE_SCORE), "amazon", candidate.src);
-    }
-  }
-
-  const productRanges: [number, number][] = [];
-  for (const match of html.matchAll(/<main\b[^>]*>[\s\S]*?<\/main\s*>/gi)) productRanges.push([match.index!, match.index! + match[0].length]);
-  const productContainerOpen = /<(div|section|article)\b([^>]*(?:\bid\s*=\s*["'][^"']*(?:product|pdp|listing|item-detail)[^"']*["']|\bclass\s*=\s*["'][^"']*(?:product|pdp|listing|item-detail)[^"']*["'])[^>]*)>/gi;
-  for (const match of html.matchAll(productContainerOpen)) {
-    const tag = match[1]!;
-    const close = new RegExp(`<\\/${tag}\\s*>`, "ig");
-    close.lastIndex = match.index! + match[0].length;
-    const end = close.exec(html);
-    if (end) productRanges.push([match.index!, end.index + end[0].length]);
-  }
-  const isInProductArea = (index: number) => productRanges.some(([start, end]) => index >= start && index < end);
-  const genericImages: ImageCandidate[] = [];
-  const hasProductAreaImages = images.some((image) => isInProductArea(image.index));
-  const preferredImages = hasProductAreaImages ? images.filter((image) => isInProductArea(image.index)) : images;
-  for (const { attrs, marker, hasImageProp, sizes } of preferredImages) {
-    if (hasImageProp) {
-      const propValue = attrs.get("content") ?? attrs.get("src") ?? attrs.get("data-src") ?? attrs.get("data-lazy-src") ?? attrs.get("href");
-      if (propValue) push(propValue, IMAGE_STAGE_RANK.microdata, "microdata", marker);
-    }
-    const declaredWidth = Number.parseInt(attrs.get("width") ?? "0", 10);
-    const declaredHeight = Number.parseInt(attrs.get("height") ?? "0", 10);
-    if ((declaredWidth && declaredWidth < 200) || (declaredHeight && declaredHeight < 200)) continue;
-    for (const candidate of sizes) {
-      const url = imageUrl(candidate.src, base);
-      if (url) genericImages.push({ url, score: IMAGE_STAGE_RANK.heuristic + Math.min(candidate.size, MAX_IMAGE_SIZE_SCORE) + (hasImageProp ? 50_000 : 0) - (imageNoise.test(marker || url) ? IMAGE_NOISE_PENALTY : 0), source: "heuristic" });
-    }
-  }
-  genericImages.sort((a, b) => b.score - a.score);
-  for (const candidate of genericImages) if (!candidates.some(({ url }) => url === candidate.url)) candidates.push(candidate);
-  return candidates.sort((a, b) => b.score - a.score).slice(0, MAX_IMAGE_CANDIDATES);
-}
-
-function imageCandidatesFromAttrs(attrs: Map<string, string>): { src: string; size: number }[] {
-  const candidates: { src: string; size: number }[] = [];
-  const oldHires = attrs.get("data-old-hires");
-  if (oldHires) candidates.push({ src: oldHires, size: Number.MAX_SAFE_INTEGER });
-
-  // Amazon exposes its actual product images in this JSON attribute, often
-  // while `src` points at a tiny placeholder or thumbnail.
-  const dynamicImages = attrs.get("data-a-dynamic-image");
-  if (dynamicImages) {
-    try {
-      const parsed: unknown = JSON.parse(dynamicImages);
-      const entries = record(parsed);
-      if (entries) {
-        for (const [src, dimensions] of Object.entries(entries)) {
-          const size = Array.isArray(dimensions) && dimensions.length >= 2
-            ? Number(dimensions[0]) * Number(dimensions[1])
-            : 0;
-          if (Number.isFinite(size) && size > 0) candidates.push({ src, size });
-        }
-      }
-    } catch { /* Ignore malformed image metadata and keep checking attributes. */ }
-  }
-
-  // Prefer the largest declared srcset candidate rather than its first entry.
-  for (const srcset of [attrs.get("data-srcset"), attrs.get("srcset")]) {
-    if (!srcset) continue;
-    for (const candidate of srcset.split(",")) {
-      const match = candidate.trim().match(/^(\S+)\s+(\d+(?:\.\d+)?)(w|x)$/i);
-      if (!match) continue;
-      const descriptor = Number(match[2]);
-      candidates.push({ src: match[1]!, size: match[3]!.toLowerCase() === "w" ? descriptor * descriptor : descriptor * 1_000_000 });
-    }
-  }
-
-  const regular = attrs.get("data-old-hires") ?? attrs.get("data-src") ?? attrs.get("data-lazy-src") ?? attrs.get("data-original") ?? attrs.get("src");
-  if (regular) {
-    const w = Number.parseInt(attrs.get("width") ?? "0", 10);
-    const h = Number.parseInt(attrs.get("height") ?? "0", 10);
-    candidates.push({ src: regular, size: (w || 300) * (h || 300) });
-  }
-  return candidates;
-}
-
-type ProductFields = Partial<Record<UnfurlField, string>>;
-type ExtractedFields = ProductFields & { isProductPage?: boolean; canonicalUrl?: string; imageCandidates?: ImageCandidate[] };
-
-function jsonLdChildren(html: string): Record<string, unknown>[] {
+function jsonLdProducts(html: string): Record<string, unknown>[] {
   const found: Record<string, unknown>[] = [];
   const visit = (value: unknown) => {
     if (Array.isArray(value)) { value.forEach(visit); return; }
     const object = record(value);
     if (!object) return;
-    const rawType = object["@type"];
-    const types = typeof rawType === "string" ? [rawType] : Array.isArray(rawType) ? rawType : [];
-    if (types.some((type) => typeof type === "string" && ["product", "productgroup"].includes(type.toLowerCase()))) found.push(object);
+    const types = Array.isArray(object["@type"]) ? object["@type"] : [object["@type"]];
+    if (types.some((type) => typeof type === "string" && /(?:^|[/#])Product(?:Group)?$/i.test(type))) found.push(object);
     for (const child of Object.values(object)) if (child && typeof child === "object") visit(child);
   };
   for (const script of html.matchAll(/<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script\s*>/gi)) {
-    try { visit(JSON.parse(script[1]!.replace(/^\s*<!--|-->\s*$/g, ""))); } catch { /* Ignore malformed JSON-LD. */ }
+    try { visit(JSON.parse(script[1]!.replace(/^\s*<!--|-->\s*$/g, ""))); } catch { /* Each block is independent. */ }
   }
   return found;
 }
 
-function offersOf(product: Record<string, unknown>) {
-  const offers = product.offers ?? product.aggregateOffer;
-  return (Array.isArray(offers) ? offers : [offers]).map(record).filter((value): value is Record<string, unknown> => Boolean(value));
+function identityUrls(object: Record<string, unknown>, base: URL): URL[] {
+  return [object.url, object["@id"]].flatMap((value) => {
+    const raw = typeof value === "string" ? value : record(value)?.["@id"];
+    if (typeof raw !== "string") return [];
+    try { return [new URL(raw, base)]; } catch { return []; }
+  });
 }
 
-function productFields(product: Record<string, unknown>, base: URL): ProductFields {
-  const offer = offersOf(product).find((item) => item.price !== undefined || item.lowPrice !== undefined) ?? offersOf(product)[0];
-  const brand = product.brand;
-  const image = imageUrl(product.image, base);
-  const name = cleanText(product.name ?? product.title);
-  const description = cleanText(product.description);
-  const price = offer?.price ?? offer?.lowPrice;
-  const currency = cleanText(offer?.priceCurrency);
-  const availability = cleanText(offer?.availability)?.split(/[\/#]/).at(-1);
-  return {
-    ...(name ? { title: name } : {}),
-    ...(image ? { imageUrl: image } : {}),
-    ...(cleanText(record(brand)?.name ?? brand) ? { siteName: cleanText(record(brand)?.name ?? brand)! } : {}),
-    ...(description ? { description } : {}),
-    ...(price !== undefined && price !== null ? { price: String(price) } : {}),
-    ...(currency ? { currency: currency.toUpperCase() } : {}),
-    ...(availability ? { availability } : {}),
+function matchesPage(candidate: URL, pages: URL[]): boolean {
+  return pages.some((page) => {
+    if (candidate.origin !== page.origin || candidate.pathname !== page.pathname || candidate.search !== page.search) return false;
+    // JSON-LD commonly identifies the page's product using a local #product ID.
+    return candidate.hash === page.hash || !page.hash && /^(?:#product|#\/schema\/product\/[^/]*)?$/i.test(candidate.hash);
+  });
+}
+
+function matchingProduct(products: Record<string, unknown>[], base: URL, requested: URL): Record<string, unknown> | null {
+  const pages = [base, requested];
+  const matches = products.filter((product) => identityUrls(product, base).some((url) => matchesPage(url, pages)));
+  if (matches.length === 1) return matches[0]!;
+  if (matches.length > 1) {
+    const leaves = matches.filter((product) => !product.hasVariant);
+    return leaves.length === 1 ? leaves[0]! : null;
+  }
+  // A lone product's canonical URL often omits incoming parameters. Its title
+  // and picture can describe this page, but its price needs stricter matching.
+  if (products.length === 1) {
+    const identities = identityUrls(products[0]!, base);
+    if (!identities.length || identities.some((url) => pages.some((page) => url.origin === page.origin && url.pathname === page.pathname))) return products[0]!;
+  }
+  return null;
+}
+
+function productOffer(product: Record<string, unknown>, base: URL, requested: URL): Record<string, unknown> | null {
+  if (product.hasVariant) return null;
+  const pricePages = requested.origin === base.origin && requested.pathname === base.pathname && requested.search !== base.search ? [requested] : [base, requested];
+  const offers = (Array.isArray(product.offers) ? product.offers : [product.offers]).map(record).filter((offer): offer is Record<string, unknown> => Boolean(offer));
+  const valid = offers.filter((offer) => {
+    const offeredItem = record(offer.itemOffered);
+    const offeredUrls = offeredItem ? identityUrls(offeredItem, base) : typeof offer.itemOffered === "string" ? identityUrls({ "@id": offer.itemOffered }, base) : [];
+    if (offeredUrls.length && !offeredUrls.some((url) => matchesPage(url, pricePages))) return false;
+    const type = offer["@type"];
+    if (type && !(Array.isArray(type) ? type : [type]).some((value) => typeof value === "string" && /(?:^|[/#])Offer$/i.test(value))) return false;
+    const amount = typeof offer.price === "number" ? offer.price : typeof offer.price === "string" && /^\d+(?:\.\d+)?$/.test(offer.price.trim()) ? Number(offer.price) : NaN;
+    return Number.isFinite(amount) && amount >= 0 && amount <= 1_000_000 && typeof offer.priceCurrency === "string" && /^[A-Z]{3}$/i.test(offer.priceCurrency.trim());
+  });
+  const matching = valid.filter((offer) => identityUrls(offer, base).some((url) => matchesPage(url, pricePages)));
+  if (matching.length === 1) return matching[0]!;
+  const productUrls = identityUrls(product, base);
+  if (productUrls.length && !productUrls.some((url) => matchesPage(url, pricePages))) return null;
+  if (offers.length !== 1 || valid.length !== 1) return null;
+  const urls = identityUrls(valid[0]!, base);
+  return !urls.length || urls.some((url) => matchesPage(url, pricePages)) ? valid[0]! : null;
+}
+
+function previewFields(html: string, base: URL, requested = base): PreviewFields {
+  const meta = metaTags(html);
+  const product = matchingProduct(jsonLdProducts(html), base, requested);
+  const fields: ExtractedFields = { siteName: hostnameOf(requested).replace(/^www\./, ""), isProductPage: Boolean(product) };
+  const sources: Partial<Record<UnfurlField, string>> = { siteName: "url" };
+  const set = (key: UnfurlField, value: unknown, source: string) => {
+    const text = cleanText(value);
+    if (!fields[key] && text) { fields[key] = text; sources[key] = source; }
   };
-}
-
-function variantFromJsonLd(products: Record<string, unknown>[], url: URL): Record<string, unknown> | null {
-  const variants = products.flatMap((product) => Array.isArray(product.hasVariant) ? product.hasVariant : product.hasVariant ? [product.hasVariant] : []).map(record).filter((v): v is Record<string, unknown> => Boolean(v));
-  const requested = ["variant", "variantId", "sku", "id", "productId"].flatMap((key) => url.searchParams.getAll(key)).filter(Boolean).map((value) => value!.toLowerCase());
-  return (requested.length ? variants.find((variant) => [variant.sku, variant.id, variant.productID, variant.productId, variant.url, variant["@id"]].some((value) => value !== undefined && requested.includes(String(value).toLowerCase()))) : null) ?? variants[0] ?? null;
-}
-
-function structuredFields(html: string, base: URL): ExtractedFields {
-  const products = jsonLdChildren(html);
-  if (!products.length) return {};
-  const selected = variantFromJsonLd(products, base);
-  const ordered = selected ? [selected, ...products] : products;
-  const result: ExtractedFields = { isProductPage: true };
-  for (const product of ordered) {
-    for (const [key, value] of Object.entries(productFields(product, base))) {
-      if (!result[key as UnfurlField] && value) result[key as UnfurlField] = value;
+  set("title", meta.get("og:title"), "open-graph");
+  if (product) set("title", product.name, "structured-data");
+  set("title", meta.get("twitter:title"), "twitter");
+  set("title", html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1], "html-title");
+  set("title", hostnameOf(requested).replace(/^www\./, ""), "url");
+  const images = [
+    ...imageUrls(meta.get("og:image:secure_url"), base).map((url) => ({ url, source: "open-graph" })),
+    ...imageUrls(meta.get("og:image"), base).map((url) => ({ url, source: "open-graph" })),
+    ...(product ? imageUrls(product.image, base).map((url) => ({ url, source: "structured-data" })) : []),
+    ...imageUrls(meta.get("twitter:image") ?? meta.get("twitter:image:src"), base).map((url) => ({ url, source: "twitter" })),
+  ].filter((candidate, index, all) => all.findIndex((other) => other.url === candidate.url) === index).slice(0, 10);
+  if (images[0]) { fields.imageUrl = images[0].url; sources.imageUrl = images[0].source; }
+  set("description", meta.get("og:description") ?? product?.description ?? meta.get("twitter:description"), "metadata");
+  if (product) {
+    const offer = productOffer(product, base, requested);
+    if (offer) {
+      fields.price = String(offer.price).trim(); fields.currency = String(offer.priceCurrency).trim().toUpperCase();
+      sources.price = sources.currency = "structured-data";
+      set("availability", offer.availability, "structured-data");
     }
   }
-  const variant = selected ? cleanText(selected.name ?? selected.sku ?? selected.productID) : null;
-  if (variant) result.variant = variant;
-  return result;
-}
-
-function microdataFields(html: string, base: URL): ExtractedFields {
-  if (!(/itemscope\b[^>]*itemtype\s*=\s*["'][^"']*product/i.test(html) || /typeof\s*=\s*["'][^"']*product/i.test(html))) return {};
-  const prop = (name: string) => {
-    const rx = new RegExp(`<([a-z0-9]+)\\b([^>]*(?:\\bitemprop|\\bproperty)\\s*=\\s*["'][^"']*\\b${name}\\b[^"']*["'][^>]*)>([\\s\\S]*?)(?:<\\/\\1\\s*>|(?=</))`, "i");
-    const match = html.match(rx);
-    if (!match) return null;
-    const attrs = attrsOf(match[2]!);
-    return attrs.get("content") ?? attrs.get("src") ?? attrs.get("href") ?? cleanText(match[3]);
-  };
-  const title = prop("name"), image = prop("image"), brand = prop("brand"), price = prop("price"), currency = prop("priceCurrency");
-  const safeImage = image ? imageUrl(image, base) : null;
-  return {
-    isProductPage: true,
-    ...(title ? { title } : {}),
-    ...(safeImage ? { imageUrl: safeImage } : {}),
-    ...(brand ? { siteName: brand } : {}),
-    ...(price ? { price } : {}),
-    ...(currency ? { currency: currency.toUpperCase() } : {}),
-  };
-}
-
-function metaFields(html: string, base: URL): ExtractedFields {
-  const meta = metaTags(html);
-  const canonicalTag = html.match(/<link\b([^>]*\brel\s*=\s*["'][^"']*canonical[^"']*["'][^>]*)>/i)?.[1];
-  const canonicalUrl = canonicalTag ? attrsOf(canonicalTag).get("href") : null;
-  const img = imageCandidatesFromHtml(html, base)[0]?.url ?? null;
-  const title = cleanText(meta.get("og:title") ?? meta.get("twitter:title"));
-  const brand = cleanText(meta.get("product:brand"));
-  const site = cleanText(meta.get("og:site_name"));
-  const price = cleanText(meta.get("product:price:amount") ?? meta.get("og:price:amount"));
-  const currency = cleanText(meta.get("product:price:currency") ?? meta.get("og:price:currency"));
-  const description = cleanText(meta.get("og:description") ?? meta.get("twitter:description") ?? meta.get("description"));
-  return {
-    ...(meta.get("og:type")?.toLowerCase().includes("product") ? { isProductPage: true } : {}),
-    ...(title ? { title } : {}), ...(img ? { imageUrl: img } : {}),
-    ...(brand || site ? { siteName: brand ?? site! } : {}),
-    ...(price ? { price } : {}), ...(currency ? { currency: currency.toUpperCase() } : {}),
-    ...(description ? { description } : {}), ...(canonicalUrl ? { canonicalUrl } : {}),
-  };
+  return { fields, sources, images };
 }
 
 export function extractProductMetadata(html: string, base: URL): ExtractedFields {
-  // Structured data gets first claim on each field; other metadata only fills gaps.
-  const output: ExtractedFields = {};
-  for (const [source, fields] of [["structured", structuredFields(html, base)], ["microdata", microdataFields(html, base)], ["meta", metaFields(html, base)]] as const) {
-    void source;
-    for (const [key, value] of Object.entries(fields)) {
-      if (key === "isProductPage") output.isProductPage ||= Boolean(value);
-      else if (!output[key as keyof ExtractedFields] && value) (output as Record<string, unknown>)[key] = value;
-    }
-  }
-  const heuristic = heuristicFields(html, base);
-  for (const [key, value] of Object.entries(heuristic)) {
-    if (!output[key as keyof ExtractedFields] && value) (output as Record<string, unknown>)[key] = value;
-  }
-  return output;
-}
-
-function embeddedFields(html: string, base: URL): ExtractedFields {
-  for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
-    const attrs = attrsOf(script[1]!);
-    const id = attrs.get("id") ?? "";
-    if (!/next_data|initial_state|product|__data|json/i.test(id) && !attrs.get("type")?.includes("json")) continue;
-    try {
-      const root = JSON.parse(script[2]!);
-      const queue: unknown[] = [root];
-      for (let count = 0; queue.length && count < 1_000; count += 1) {
-        const item = queue.shift();
-        if (Array.isArray(item)) { queue.push(...item); continue; }
-        const object = record(item);
-        if (!object) continue;
-        if ((typeof object.name === "string" || typeof object.title === "string") && (object.price !== undefined || object.image || object.imageUrl || object.brand)) {
-          const fields = productFields(object, base);
-          const fallbackTitle = cleanText(object.name ?? object.title);
-          const fallbackPrice = object.price !== undefined ? String(object.price) : null;
-          const fallbackImage = imageUrl(object.imageUrl, base);
-          if (!fields.title && fallbackTitle) fields.title = fallbackTitle;
-          if (!fields.price && fallbackPrice) fields.price = fallbackPrice;
-          if (!fields.imageUrl && fallbackImage) fields.imageUrl = fallbackImage;
-          return { ...fields, isProductPage: true };
-        }
-        queue.push(...Object.values(object).filter((value) => value && typeof value === "object"));
-      }
-    } catch { /* Ignore unrelated scripts. */ }
-  }
-  return {};
-}
-
-function parsePrice(text: string, lang: string, url: URL): { price: string; currency: string } | null {
-  const match = text.match(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/);
-  if (!match) return null;
-  const amount = Number(match[0].replace(/,/g, ""));
-  if (!Number.isFinite(amount) || amount < 0 || amount > 1_000_000) return null;
-  const host = hostnameOf(url);
-  let currency = "USD";
-  if (/€/.test(text)) currency = "EUR";
-  else if (/£/.test(text)) currency = "GBP";
-  else if (/[¥￥]/.test(text)) currency = "JPY";
-  else if (/\bCAD\b|CA\s?\$/.test(text) || host.endsWith(".ca") || /en-CA/i.test(lang)) currency = "CAD";
-  else if (/\bAUD\b|AU\s?\$/.test(text) || host.endsWith(".com.au") || /en-AU/i.test(lang)) currency = "AUD";
-  else if (/\b(EUR|GBP|JPY|CAD|AUD|USD)\b/i.test(text)) currency = text.match(/\b(EUR|GBP|JPY|CAD|AUD|USD)\b/i)![1]!.toUpperCase();
-  return { price: String(amount), currency };
-}
-
-function heuristicFields(html: string, base: URL): ExtractedFields {
-  const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main\s*>/i)?.[1] ?? html;
-  const h1 = cleanText(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/i)?.[1] ?? "");
-  const docTitle = cleanText(html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1] ?? "");
-  const pageMeta = metaTags(html);
-  const site = pageMeta.get("og:site_name") ?? pageMeta.get("product:brand") ?? storeFromHost(hostnameOf(base));
-  const suffix = new RegExp(`\\s*(?:[|–—-])\\s*${site.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\s*$`, "i");
-  const title = h1 || (docTitle ? cleanText(docTitle.replace(suffix, "")) : null);
-  const image = imageCandidatesFromHtml(html, base)[0]?.url ?? null;
-  let price: { price: string; currency: string } | null = null;
-  const lang = html.match(/<html\b[^>]*\blang\s*=\s*["']([^"']+)/i)?.[1] ?? "";
-  for (const tag of main.matchAll(/<(span|div|p|meta|ins|strong|b)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi)) {
-    const attrs = attrsOf(tag[2]!);
-    const marker = `${attrs.get("class") ?? ""} ${attrs.get("id") ?? ""} ${attrs.get("itemprop") ?? ""}`;
-    if (!/price|amount/i.test(marker) || /compare|strike|old|was-price/i.test(marker)) continue;
-    const priceText = tag[3]!.replace(/<(?:del|s|strike)\b[^>]*>[\s\S]*?<\/(?:del|s|strike)\s*>/gi, " ");
-    price = parsePrice(attrs.get("content") ?? cleanText(priceText) ?? "", attrs.get("lang") ?? lang, base);
-    if (price) break;
-  }
-  return { ...(title ? { title } : {}), ...(image ? { imageUrl: image } : {}), ...(price ? price : {}) };
+  return previewFields(html, base).fields;
 }
 
 export type UnfurlDependencies = {
@@ -670,7 +431,7 @@ function isChallengePage(html: string): boolean {
 }
 
 function isUnderfilledPage(html: string): boolean {
-  return plainText(html).length < 2_000;
+  return plainText(html).length < 2_000 && !/<meta\b[^>]*(?:og:title|og:image|twitter:title)|<title\b|application\/ld\+json/i.test(html);
 }
 
 type ProbeResult = { statusCode: number; contentType: string | null; contentLength: number; location: string | null; bytesRead: number };
@@ -687,6 +448,7 @@ function probeRequest(url: URL, address: ResolvedAddress, method: "HEAD" | "GET"
       method,
       agent: false,
       lookup,
+      family: address.family,
       signal: AbortSignal.timeout(timeoutMs),
       headers: { Accept: "image/avif,image/webp,image/*,*/*;q=0.8", ...(method === "GET" ? { Range: "bytes=0-8191" } : {}) },
     }, (res) => {
@@ -706,7 +468,7 @@ function probeRequest(url: URL, address: ResolvedAddress, method: "HEAD" | "GET"
       const finish = (error?: Error) => {
         if (settled) return;
         settled = true;
-        if (error && result.bytesRead <= 5_000) reject(error);
+        if (error && result.bytesRead === 0) reject(error);
         else resolve(result);
       };
       res.on("data", (chunk: Buffer | string) => {
@@ -745,12 +507,13 @@ async function probeProductImage(rawUrl: string, lookup: NonNullable<UnfurlDepen
       try { current = normalizeUnfurlUrl(new URL(response.location, current).toString()); } catch { break; }
       continue;
     }
-    const headValid = response.statusCode === 200 && Boolean(response.contentType?.toLowerCase().startsWith("image/")) && response.contentLength > 5_000;
+    if (response.contentLength > MAX_IMAGE_BYTES) return { valid: false, statusCode: response.statusCode, contentType: response.contentType, size: response.contentLength };
+    const headValid = response.statusCode === 200 && Boolean(response.contentType?.toLowerCase().startsWith("image/")) && response.contentLength > 0 && response.contentLength <= MAX_IMAGE_BYTES;
     if (headValid) return { valid: true, statusCode: response.statusCode, contentType: response.contentType, size: response.contentLength };
     if (Date.now() >= deadline) return { valid: false, statusCode: response.statusCode, contentType: response.contentType, size: response.contentLength };
     try { response = await probeRequest(current, selected, "GET", remaining()); }
     catch { return { valid: false, statusCode: response.statusCode, contentType: response.contentType, size: response.contentLength }; }
-    const getValid = [200, 206].includes(response.statusCode) && Boolean(response.contentType?.toLowerCase().startsWith("image/")) && response.bytesRead > 5_000;
+    const getValid = [200, 206].includes(response.statusCode) && Boolean(response.contentType?.toLowerCase().startsWith("image/")) && response.bytesRead > 0 && response.contentLength <= MAX_IMAGE_BYTES;
     return { valid: getValid, statusCode: response.statusCode, contentType: response.contentType, size: Math.max(response.contentLength, response.bytesRead) };
   }
   return { valid: false, statusCode: 0, contentType: null, size: 0 };
@@ -826,10 +589,10 @@ export async function fetchHtml(rawUrl: string | URL, dependencies: UnfurlDepend
   const needsRendered = page.blocked || !page.html || isUnderfilledPage(page.html);
   if (!needsRendered || !dependencies.render) return page;
   try {
-    const rendered = await dependencies.render(requestedUrl);
+    const rendered = await withinTimeout(dependencies.render(requestedUrl), 20_000);
     const renderedObject = typeof rendered === "string" ? null : rendered;
     const renderedHtml = typeof rendered === "string" ? rendered : renderedObject?.html;
-    if (!renderedHtml) return page;
+    if (!renderedHtml || Buffer.byteLength(renderedHtml, "utf8") > deps.maxBytes) return page;
     const challenge = isChallengePage(renderedHtml);
     if (challenge) return { ...page, html: null, blocked: true, challenge: true, statusCode: renderedObject?.statusCode ?? page.statusCode, fetchPath: "playwright" };
     return {
@@ -845,207 +608,51 @@ export async function fetchHtml(rawUrl: string | URL, dependencies: UnfurlDepend
   } catch { return page; }
 }
 
-function reverbListingId(url: URL): string | null {
-  if (!/(?:^|\.)reverb\.com$/i.test(hostnameOf(url))) return null;
-  return url.pathname.match(/^\/item\/(\d+)(?:-|\/|$)/i)?.[1] ?? null;
-}
-
-function reverbListingFields(payload: Record<string, unknown>, base: URL): ExtractedFields {
-  const price = record(payload.price);
-  const photos = Array.isArray(payload.photos) ? payload.photos.map(record).filter((photo): photo is Record<string, unknown> => Boolean(photo)) : [];
-  const images = photos.flatMap((photo) => {
-    const links = record(photo._links) ?? record(photo.links);
-    const ordered = ["fullsize", "large_crop", "large", "photo", "thumbnail"]
-      .map((key) => record(links?.[key])?.href ?? photo[key] ?? (key === "photo" ? photo.href ?? photo.url : null))
-      .filter((value): value is string => typeof value === "string");
-    return ordered.map((value) => imageUrl(value, base)).filter((value): value is string => Boolean(value));
-  });
-  const make = cleanText(payload.make ?? payload.brand);
-  const title = cleanText(payload.title ?? [make, cleanText(payload.model)].filter(Boolean).join(" "));
-  const description = cleanText(payload.description);
-  const shop = cleanText(payload.shop_name ?? record(payload.shop)?.name);
-  const amount = cleanText(price?.amount);
-  const currency = cleanText(price?.currency);
-  return {
-    isProductPage: true,
-    ...(title ? { title } : {}),
-    ...(make || shop ? { siteName: make ?? shop! } : {}),
-    ...(description ? { description } : {}),
-    ...(amount ? { price: amount } : {}),
-    ...(currency ? { currency: currency.toUpperCase() } : {}),
-    ...(images[0] ? { imageUrl: images[0] } : {}),
-    imageCandidates: images.map((url, index) => ({ url, score: 10_000_000 - index, source: "platform-reverb" })),
-  };
-}
-
-async function fetchReverbFields(url: URL, deps: Required<Pick<UnfurlDependencies, "lookup" | "request" | "timeoutMs" | "maxBytes">>): Promise<ExtractedFields> {
-  const id = reverbListingId(url);
-  if (!id) return {};
-  const apiUrl = new URL(`/api/listings/${id}`, "https://api.reverb.com");
-  const headers = {
-    Accept: "application/hal+json",
-    "Content-Type": "application/hal+json",
-    "Accept-Version": "3.0",
-    ...(process.env.REVERB_API_TOKEN ? { Authorization: `Bearer ${process.env.REVERB_API_TOKEN}` } : {}),
-  };
-  try {
-    const response = await guardedFetch(apiUrl, deps, true, headers);
-    if (!response.html) return {};
-    return reverbListingFields(record(JSON.parse(response.html)) ?? {}, url);
-  } catch { return {}; }
-}
-
-function addFields(result: UnfurlMetadata, fields: ExtractedFields, source: string) {
-  const keys: UnfurlField[] = ["title", "imageUrl", "siteName", "price", "currency", "description", "variant", "availability", "canonicalUrl"];
-  for (const key of keys) {
-    const value = fields[key];
-    if (typeof value !== "string" || !value.trim()) continue;
-    if (!result[key] || result.fieldSources[key] === "url") {
-      result[key] = value.trim().slice(0, key === "description" ? 1_000 : 2_000);
-      result.fieldSources[key] = source;
-    }
-  }
-  if (fields.isProductPage) result.isProductPage = true;
-}
-
-function applyHtmlStages(result: UnfurlMetadata, html: string, base: URL, prefix = "") {
-  const embedded = embeddedFields(html, base);
-  addFields(result, embedded, `${prefix}platform-json`);
-  const structured = structuredFields(html, base);
-  for (const [key, value] of Object.entries(structured)) if (key !== "isProductPage") addFields(result, { [key]: value } as ExtractedFields, `${prefix}structured-data`);
-  if (structured.isProductPage) result.isProductPage = true;
-  const microdata = microdataFields(html, base);
-  for (const [key, value] of Object.entries(microdata)) if (key !== "isProductPage") addFields(result, { [key]: value } as ExtractedFields, `${prefix}microdata`);
-  if (microdata.isProductPage) result.isProductPage = true;
-  const meta = metaFields(html, base);
-  for (const [key, value] of Object.entries(meta)) {
-    if (key === "isProductPage") continue;
-    if (key === "canonicalUrl" && typeof value === "string") {
-      try { addFields(result, { canonicalUrl: normalizeUnfurlUrl(new URL(value, base).toString()).toString() }, `${prefix}meta`); }
-      catch { /* Ignore invalid canonical URLs. */ }
-    } else addFields(result, { [key]: value } as ExtractedFields, `${prefix}meta`);
-  }
-  if (meta.isProductPage) result.isProductPage = true;
-  const pathIsProduct = /\/products\/[^/]+/i.test(base.pathname);
-  const shopify = /cdn\.shopify\.com|Shopify\.shop/i.test(html) || pathIsProduct;
-  if (shopify && pathIsProduct) result.isProductPage = true;
-  return shopify && pathIsProduct;
-}
-
-function confidenceOf(sources: Partial<Record<UnfurlField, string>>): UnfurlConfidence {
-  const entries = Object.values(sources);
-  if (entries.some((source) => source?.includes("structured-data") || source?.includes("microdata") || source?.startsWith("platform-") || source?.includes("shopify") || source?.includes("meta"))) return "high";
-  if (entries.some((source) => source === "heuristic" || source?.includes("ai") || source?.startsWith("rendered:"))) return "medium";
-  return "low";
-}
-
 export function urlFallbackMetadata(rawUrl: string): UnfurlMetadata {
   const url = normalizeUnfurlUrl(rawUrl);
-  const normalizedUrl = normalizeCacheKey(url);
-  const store = storeFromHost(hostnameOf(url));
+  const hostname = hostnameOf(url).replace(/^www\./, "");
   return {
-    normalizedUrl,
-    title: titleFromSlug(url) ?? store,
-    imageUrl: null,
-    siteName: store,
-    price: null,
-    currency: null,
-    description: null,
-    variant: null,
-    availability: null,
-    canonicalUrl: null,
-    fieldSources: { title: "url", siteName: "url" },
-    confidence: "low",
-    reason: "no_metadata",
-    isProductPage: false,
-    debug: { httpStatus: null, challenge: false, finalUrl: normalizedUrl, fetchPath: "none" },
+    normalizedUrl: normalizeCacheKey(url), title: hostname, imageUrl: null, siteName: hostname,
+    price: null, currency: null, description: null, variant: null, availability: null,
+    canonicalUrl: null, fieldSources: { title: "url", siteName: "url" }, confidence: "low",
+    reason: "no_metadata", isProductPage: false,
+    debug: { httpStatus: null, challenge: false, finalUrl: url.toString(), fetchPath: "none" },
   };
 }
 
 export async function unfurlUrl(rawUrl: string, dependencies: UnfurlDependencies = {}): Promise<UnfurlMetadata> {
-  const timeoutMs = dependencies.timeoutMs ?? UNFURL_TIMEOUT_MS;
-  const maxBytes = dependencies.maxBytes ?? UNFURL_MAX_BYTES;
-  const deps = {
-    lookup: dependencies.lookup ?? ((hostname: string) => dnsLookup(hostname, { all: true, verbatim: true })),
-    request: dependencies.request ?? readHtml,
-    timeoutMs, maxBytes,
-  };
   const result = urlFallbackMetadata(rawUrl);
   const requestedUrl = normalizeUnfurlUrl(rawUrl);
   const page = await fetchHtml(requestedUrl, dependencies);
   result.debug = { httpStatus: page.statusCode, challenge: page.challenge, finalUrl: page.finalUrl.toString(), fetchPath: page.fetchPath };
-
-  const platformImages: ImageCandidate[] = [];
-  const reverb = await fetchReverbFields(requestedUrl, deps);
-  if (reverb.imageCandidates) platformImages.push(...reverb.imageCandidates);
-  addFields(result, reverb, "platform-reverb-api");
-
   const html = page.challenge || [403, 429, 503].includes(page.statusCode ?? -1) ? null : page.html;
   if (html) {
-    const pathShopify = /\/products\/([^/?#]+)/i.test(page.finalUrl.pathname);
-    const shopifyFingerprint = /cdn\.shopify\.com|Shopify\.shop/i.test(html);
-    if (pathShopify || shopifyFingerprint) {
-      const handle = page.finalUrl.pathname.match(/\/products\/([^/?#]+)/i)?.[1];
-      if (handle) {
-        const productUrl = new URL(`/products/${encodeURIComponent(handle)}.js`, page.finalUrl.origin);
-        try {
-          const productResponse = await guardedFetch(productUrl, deps, true);
-          const product = productResponse.html ? record(JSON.parse(productResponse.html)) : null;
-          if (product) {
-            const variants = Array.isArray(product.variants) ? product.variants.map(record).filter((value): value is Record<string, unknown> => Boolean(value)) : [];
-            const requestedVariant = page.finalUrl.searchParams.get("variant") ?? page.finalUrl.searchParams.get("sku");
-            const selected = variants.find((variant) => [variant.id, variant.sku].some((id) => String(id ?? "") === requestedVariant)) ?? variants.find((variant) => variant.available === true) ?? variants[0];
-            const variantImage = selected?.featured_image ?? selected?.image;
-            const allImages = [variantImage, product.featured_image, ...(Array.isArray(product.images) ? product.images : [])]
-              .flatMap((value) => imageUrl(value, page.finalUrl) ?? []);
-            for (const [index, url] of allImages.entries()) platformImages.push({ url, score: 12_000_000 - index, source: "platform-shopify" });
-            const cents = selected?.price ?? product.price;
-            const fields: ExtractedFields = {
-              ...(cleanText(product.title) ? { title: cleanText(product.title)! } : {}),
-              ...(cleanText(product.vendor) ? { siteName: cleanText(product.vendor)! } : {}),
-              ...(cleanText(product.description) ? { description: cleanText(product.description)! } : {}),
-              ...(selected && cleanText(selected.title) && selected.title !== "Default Title" ? { variant: cleanText(selected.title)! } : {}),
-              ...(typeof cents === "number" ? { price: String(cents / 100), currency: cleanText(product.currency)?.toUpperCase() ?? "USD" } : {}),
-              ...(allImages[0] ? { imageUrl: allImages[0] } : {}),
-              isProductPage: true,
-            };
-            addFields(result, fields, "platform-shopify");
-          }
-        } catch { /* The optional Shopify endpoint may be unavailable. */ }
-      }
+    const preview = previewFields(html, page.finalUrl, requestedUrl);
+    Object.assign(result, preview.fields);
+    result.fieldSources = preview.sources;
+    result.imageUrl = null;
+    delete result.fieldSources.imageUrl;
+    const lookup = dependencies.lookup ?? ((hostname: string) => dnsLookup(hostname, { all: true, verbatim: true }));
+    const validate = dependencies.validateImage ?? ((url: string, budgetMs?: number) => probeProductImage(url, lookup, budgetMs ?? IMAGE_VALIDATION_BUDGET_MS));
+    const deadline = Date.now() + IMAGE_VALIDATION_BUDGET_MS;
+    for (const candidate of preview.images) {
+      const budget = deadline - Date.now();
+      if (budget <= 0) break;
+      try {
+        if (!(await withinTimeout(validate(candidate.url, budget), budget)).valid) continue;
+        result.imageUrl = candidate.url;
+        result.fieldSources.imageUrl = candidate.source;
+        break;
+      } catch { /* An unavailable image must never prevent saving the link. */ }
     }
-    applyHtmlStages(result, html, page.finalUrl, page.fetchPath === "playwright" ? "rendered:" : "");
   }
-
-  if (html) addFields(result, heuristicFields(html, page.finalUrl), page.fetchPath === "playwright" ? "rendered:heuristic" : "heuristic");
-
-  const candidates = [
-    ...platformImages,
-    ...(html ? imageCandidatesFromHtml(html, page.finalUrl) : []),
-    ...(result.imageUrl ? [{ url: result.imageUrl, score: 0, source: result.fieldSources.imageUrl ?? "metadata" }] : []),
-  ].filter((candidate, index, all) => all.findIndex((other) => other.url === candidate.url) === index).slice(0, MAX_IMAGE_CANDIDATES);
-  result.imageUrl = null;
-  delete result.fieldSources.imageUrl;
-  const validateImage = dependencies.validateImage ?? (dependencies.request
-    ? async (_url: string, _budgetMs?: number): Promise<ImageValidationResponse> => ({ valid: true, statusCode: 200, contentType: "image/jpeg", size: 6_000 })
-    : (url: string) => probeProductImage(url, deps.lookup, timeoutMs));
-  const validationDeadline = Date.now() + IMAGE_VALIDATION_BUDGET_MS;
-  for (const candidate of candidates) {
-    const budgetMs = validationDeadline - Date.now();
-    if (budgetMs <= 0) break;
-    try {
-      const checked = await withinTimeout(validateImage(candidate.url, budgetMs), budgetMs);
-      if (!checked.valid) continue;
-      result.imageUrl = candidate.url;
-      result.fieldSources.imageUrl = candidate.source;
-      break;
-    } catch { /* Reject unsafe or unavailable image candidates and try the next one. */ }
-  }
-
-  result.confidence = confidenceOf(result.fieldSources);
   const hasPageFields = Object.values(result.fieldSources).some((source) => source !== "url");
+  result.confidence = hasPageFields ? "high" : "low";
   result.reason = hasPageFields ? null : page.blocked || page.challenge ? "blocked" : page.notHtml ? "not_html" : page.statusCode === null ? "timeout" : "no_metadata";
   return result;
 }
 
 export const unfurlCacheTtlMs = CACHE_TTL_MS;
+
+/** Raw transports exposed only for deterministic native socket regression tests. */
+export const unfurlTransportInternals = { readHtml, probeRequest };

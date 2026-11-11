@@ -7,6 +7,8 @@ import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishlistComposer } from "@/components/secret-santa/wishlist-composer";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
+import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
+import { WishlistPrice } from "@/components/secret-santa/wishlist-price";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -35,15 +37,10 @@ const priorityLabel: Record<string, string> = {
   nice_to_have: "Nice to have",
 };
 
-function priceLabel(min: number | null, max: number | null) {
-  if (min === null && max === null) return null;
-  if (min !== null && max !== null) return min === max ? `$${min}` : `$${min}–$${max}`;
-  return min !== null ? `From $${min}` : `Up to $${max}`;
-}
 
 function safeProductUrl(value: string | null) {
   if (!value) return null;
-  try { return normalizeUnfurlUrl(value).toString(); } catch { return null; }
+  try { normalizeUnfurlUrl(value); return value; } catch { return null; }
 }
 
 function safeProductImageUrl(value: string | null) {
@@ -78,7 +75,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
   const editable = exchange.status !== "closed";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
+    <WishlistPasteProvider><div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
       <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> All wish lists</Link>
       <PageHeading eyebrow={`${exchange.year} exchange`} title={`${exchange.name}: my list`} description="Share the little details that make it easier for your Santa to find something you’ll love." />
       <ProgressNudge count={items.length} target={3} />
@@ -107,6 +104,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
           <div><h2 id="wish-items-heading" className="text-xl font-bold">My gift ideas</h2><p className="text-sm text-muted-foreground">Only you can edit this list.</p></div>
           {myAssignment && exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}>See my recipient’s list</Link></Button>}
         </div>
+        <PendingWishlistCards savedItemIds={items.map((item) => item.id)} />
         {items.length ? <div className="space-y-3">
           {items.map((item, index) => {
             const productUrl = safeProductUrl(item.url);
@@ -119,7 +117,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                   <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">{priorityLabel[item.priority] ?? "Would like"}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  {priceLabel(item.priceMin, item.priceMax) && <span className="rounded-full border border-border px-2.5 py-1">{priceLabel(item.priceMin, item.priceMax)}</span>}
+                  <WishlistPrice minimum={item.priceMin} maximum={item.priceMax} previewPrice={item.previewPrice} previewCurrency={item.previewCurrency} fetchedAt={item.priceFetchedAt} />
                   {item.notes && <span className="max-w-full rounded-full bg-muted px-2.5 py-1">{item.notes}</span>}
                   {productUrl && <a href={productUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-2.5 py-1 font-semibold hover:text-primary">Open product link</a>}
                 </div>
@@ -150,9 +148,9 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
             </details>}
             </Card>;
           })}
-        </div> : <Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
+        </div> : <WishlistEmptyState><Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
           <div><Gift className="mx-auto size-7 text-primary" /><p className="mt-2 font-semibold">Your list is ready for its first wish</p><p className="mt-1 text-sm text-muted-foreground">Add a favorite thing, a useful hint, or a link.</p></div>
-        </Card>}
+        </Card></WishlistEmptyState>}
       </section>
 
       {editable && previous && items.length === 0 && <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -160,6 +158,6 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
         <form action={copyPreviousWishlist}><input type="hidden" name="exchangeId" value={exchangeId} /><Button type="submit" variant="outline">Copy {previous.year} list</Button></form>
       </Card>}
       {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">This exchange is closed. Its wishlist is saved for history.</p>}
-    </div>
+    </div></WishlistPasteProvider>
   );
 }

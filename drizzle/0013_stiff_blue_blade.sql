@@ -1,0 +1,1 @@
+ALTER TABLE "wishlist_item" ADD COLUMN "preview_title_pending" boolean DEFAULT false NOT NULL;

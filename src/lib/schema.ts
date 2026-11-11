@@ -109,6 +109,7 @@ export const exchanges = pgTable(
     id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     year: integer("year").notNull(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "restrict" }),
     budgetMin: integer("budget_min"),
     budgetMax: integer("budget_max"),
     exchangeAt: timestamp("exchange_at", { withTimezone: true }).notNull(),
@@ -251,5 +252,88 @@ export const authRateLimits = pgTable(
     windowStartedAt: timestamp("window_started_at").notNull(),
     attempts: integer("attempts").default(0).notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  }
+);
+
+export const wishlists = pgTable(
+  "wishlist",
+  {
+    id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    exchangeId: uuid("exchange_id").notNull().references(() => exchanges.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    surpriseMe: boolean("surprise_me").default(false).notNull(),
+    likes: text("likes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  },
+  (table) => [
+    uniqueIndex("wishlist_exchange_user_unique").on(table.exchangeId, table.userId),
+    index("wishlist_user_idx").on(table.userId),
+  ]
+);
+
+export const wishlistItems = pgTable(
+  "wishlist_item",
+  {
+    id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    wishlistId: uuid("wishlist_id").notNull().references(() => wishlists.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    url: text("url"),
+    imageUrl: text("image_url"),
+    storeName: text("store_name"),
+    previewFinalUrl: text("preview_final_url"),
+    priceFetchedAt: timestamp("price_fetched_at"),
+    previewTitlePending: boolean("preview_title_pending").default(false).notNull(),
+    previewPrice: text("preview_price"),
+    previewCurrency: text("preview_currency"),
+    notes: text("notes"),
+    priority: text("priority").default("would_like").notNull(),
+    priceMin: integer("price_min"),
+    priceMax: integer("price_max"),
+    priceBucket: text("price_bucket"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  },
+  (table) => [
+    index("wishlist_item_wishlist_order_idx").on(table.wishlistId, table.sortOrder),
+    check("wishlist_item_price_range_check", sql`${table.priceMin} is null or ${table.priceMin} >= 0`),
+    check("wishlist_item_price_max_check", sql`${table.priceMax} is null or ${table.priceMax} >= 0`),
+    check("wishlist_item_price_order_check", sql`${table.priceMin} is null or ${table.priceMax} is null or ${table.priceMin} <= ${table.priceMax}`),
+    check("wishlist_item_priority_check", sql`${table.priority} in ('most_wanted', 'would_like', 'nice_to_have')`),
+  ]
+);
+
+export const itemClaims = pgTable(
+  "item_claim",
+  {
+    id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    itemId: uuid("item_id").notNull().references(() => wishlistItems.id, { onDelete: "cascade" }),
+    giverId: text("giver_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("item_claim_item_giver_unique").on(table.itemId, table.giverId),
+    index("item_claim_giver_idx").on(table.giverId),
+  ]
+);
+
+export const unfurlCache = pgTable(
+  "unfurl_cache",
+  {
+    id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    normalizedUrl: text("normalized_url").notNull().unique(),
+    title: text("title"),
+    imageUrl: text("image_url"),
+    siteName: text("site_name"),
+    price: text("price"),
+    currency: text("currency"),
+    description: text("description"),
+    variant: text("variant"),
+    availability: text("availability"),
+    diagnostics: jsonb("diagnostics").$type<Record<string, unknown>>(),
+    metadataVersion: integer("metadata_version").default(0).notNull(),
+    fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
   }
 );

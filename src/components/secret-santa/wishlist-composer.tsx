@@ -1,36 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardPaste } from "lucide-react";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
+import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provider";
+import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createWishlistItem } from "@/lib/actions/wishlists";
+import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
 
-type Props = {
-  exchangeId: string;
-  initialUrl?: string;
-  initialTitle?: string;
-  initialImageUrl?: string;
-  initialPrice?: string;
-  initialStoreName?: string;
-};
-type MetadataField = "title" | "imageUrl" | "storeName" | "priceMin" | "priceMax";
-
-function firstUrl(value: string): string | null {
-  const candidate = value.match(/https?:\/\/[^\s<>"']+/i)?.[0]?.replace(/[),.;!?]+$/, "");
-  if (!candidate) return null;
-  try {
-    const parsed = new URL(candidate);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
-  } catch {
-    return null;
-  }
-}
+type Props = { exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string };
 
 export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "", initialImageUrl = "", initialPrice = "", initialStoreName = "" }: Props) {
+  const router = useRouter();
+  const pasteContext = useWishlistPaste();
+  const session = useRef(createPasteSession(() => crypto.randomUUID()));
   const [draft, setDraft] = useState(initialUrl || initialTitle);
   const [url, setUrl] = useState(initialUrl);
   const [title, setTitle] = useState(initialTitle);
@@ -40,118 +27,82 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   const [priceMax, setPriceMax] = useState(initialPrice);
   const [notes, setNotes] = useState("");
   const [previewing, setPreviewing] = useState(false);
-  const [previewedWithoutImage, setPreviewedWithoutImage] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
   const [pasting, setPasting] = useState(false);
-  const currentUrl = useRef(initialUrl);
-  const previewRequest = useRef(0);
-  const currentNotes = useRef("");
-  const autoDescription = useRef("");
-  const touched = useRef<Record<MetadataField | "notes", boolean>>({
-    title: Boolean(initialTitle),
-    imageUrl: Boolean(initialImageUrl),
-    storeName: Boolean(initialStoreName),
-    priceMin: Boolean(initialPrice),
-    priceMax: Boolean(initialPrice),
-    notes: false,
-  });
+  const [savedUrl, setSavedUrl] = useState("");
+  const activeItemId = useRef<string | null>(null);
 
-  const previewLink = useCallback(async (requestedUrl: string) => {
-    if (!requestedUrl.trim()) return;
-    const requestId = ++previewRequest.current;
-    setPreviewMessage("");
-    setPreviewing(true);
-    try {
-      const response = await fetch("/api/unfurl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exchangeId, url: requestedUrl }),
-      });
-      const result = await response.json() as {
-        metadata?: { title: string | null; imageUrl: string | null; siteName: string | null; price: string | null; currency: string | null; description: string | null; variant: string | null; confidence: "high" | "medium" | "low"; reason: string | null };
-        error?: string;
-      };
-      if (!response.ok) {
-        if (currentUrl.current === requestedUrl) {
-          setPreviewMessage(response.status === 400 ? result.error || "Check that the URL is valid." : "Check these details manually; the link preview service could not read this page.");
-        }
-        return;
-      }
-      if (currentUrl.current !== requestedUrl) return;
-      const metadata = result.metadata;
-      setPreviewedWithoutImage(!metadata?.imageUrl);
-      if (metadata?.title && !touched.current.title) setTitle(metadata.title);
-      if (metadata?.imageUrl && !touched.current.imageUrl) setImageUrl(metadata.imageUrl);
-      if (metadata?.siteName && !touched.current.storeName) setStoreName(metadata.siteName);
-      if (metadata?.price && (!metadata.currency || metadata.currency === "USD")) {
-        const parsedPrice = Number.parseFloat(metadata.price.replace(/[^\d.]/g, ""));
-        if (Number.isFinite(parsedPrice) && parsedPrice >= 0 && parsedPrice <= 1_000_000) {
-          const wholePrice = String(Math.round(parsedPrice));
-          if (!touched.current.priceMin) setPriceMin(wholePrice);
-          if (!touched.current.priceMax) setPriceMax(wholePrice);
-        }
-      }
-      const details = [metadata?.variant, metadata?.description].filter(Boolean).join(" · ").slice(0, 1000);
-      if (details && !touched.current.notes && (!currentNotes.current.trim() || currentNotes.current.trim() === autoDescription.current)) {
-        autoDescription.current = details;
-        currentNotes.current = details;
-        setNotes(details);
-      }
-      const confidence = metadata?.confidence ?? "low";
-      setPreviewMessage(confidence === "high" ? "Product details added. You can edit anything before saving." : "Check these details. The store provided limited product information.");
-    } catch {
-      if (currentUrl.current === requestedUrl) setPreviewMessage("Check these details manually; the link preview service could not read this page.");
-    } finally {
-      if (previewRequest.current === requestId) setPreviewing(false);
-    }
-  }, [exchangeId]);
-
-  function updateDraft(value: string) {
-    setDraft(value);
-    const detectedUrl = firstUrl(value);
-    if (detectedUrl) {
-      if (currentUrl.current !== detectedUrl) {
-        currentUrl.current = detectedUrl;
-        setUrl(detectedUrl);
-        setPreviewedWithoutImage(false);
-        setPreviewMessage("");
-      }
-      return;
-    }
-    currentUrl.current = "";
-    previewRequest.current += 1;
-    setPreviewing(false);
-    setUrl("");
-    touched.current.title = true;
-    setTitle(value);
-    setPreviewMessage("");
-    setPreviewedWithoutImage(false);
+  function resetDraft() {
+    if (activeItemId.current && !savedUrl) pasteContext?.removePending(activeItemId.current);
+    activeItemId.current = null; session.current.reset(); setDraft(""); setUrl(""); setTitle(""); setImageUrl(""); setStoreName(""); setPriceMin(""); setPriceMax(""); setNotes(""); setSavedUrl(""); setPreviewMessage("");
   }
 
-  useEffect(() => {
-    if (!url) return;
-    const timer = window.setTimeout(() => void previewLink(url), 650);
-    return () => window.clearTimeout(timer);
-  }, [previewLink, url]);
+  async function savePasted(link: string, details?: FormData) {
+    try {
+      await session.current.run(link, async ({ itemId, url: originalUrl }) => {
+        activeItemId.current = itemId;
+        setPreviewing(true);
+        pasteContext?.setPending({ itemId, url: originalUrl });
+        setPreviewMessage("Saving your wish…");
+        try {
+          const result = await createPastedWishlistItem({ exchangeId, itemId, url: originalUrl, ...(details ? { details: {
+            title: String(details.get("title") ?? ""), notes: String(details.get("notes") ?? ""), imageUrl: String(details.get("imageUrl") ?? ""), storeName: String(details.get("storeName") ?? ""),
+            priceMin: details.get("priceMin") ? Number(details.get("priceMin")) : null, priceMax: details.get("priceMax") ? Number(details.get("priceMax")) : null,
+            priority: String(details.get("priority") ?? "would_like") as "most_wanted" | "would_like" | "nice_to_have",
+          } } : {}) });
+          if (!result.ok) throw new Error(result.error || "Could not save your wish. Try again.");
+          setSavedUrl(originalUrl);
+          router.refresh();
+          setPreviewMessage("Wish saved. Finding its picture and title… You can edit it in your list.");
+          void (async () => {
+            try {
+              const response = await fetch("/api/wishlist-items/enrich", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ exchangeId, itemId, preserveTitle: Boolean(details && String(details.get("title") ?? "").trim()) }) });
+              const result = await response.json() as { ok?: boolean; error?: string };
+              if (!response.ok || !result.ok) throw new Error(result.error || "Preview unavailable.");
+              if (activeItemId.current === itemId) setPreviewMessage("Wish saved. Review its details in your list; you can edit its title or add a picture there.");
+            } catch {
+              if (activeItemId.current === itemId) setPreviewMessage("Wish saved. This page could not be previewed; you can name the gift and add a picture in your list.");
+            } finally { router.refresh(); }
+          })();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Could not save your wish. Try again.";
+          pasteContext?.setPending({ itemId, url: originalUrl, error: message });
+          setPreviewMessage(message);
+          throw error;
+        } finally { setPreviewing(false); }
+      });
+    } catch { /* The same action identity is retained for a safe retry. */ }
+  }
+
+  function updateDraft(value: string) {
+    if (previewing) return;
+    if (activeItemId.current && !savedUrl) pasteContext?.removePending(activeItemId.current);
+    activeItemId.current = null;
+    session.current.reset(); setSavedUrl(""); setDraft(value); setPreviewMessage("");
+    const link = singlePastedUrl(value);
+    setUrl(link ?? "");
+    if (!link) setTitle(value);
+  }
+
+  async function submitWish(formData: FormData) {
+    const link = singlePastedUrl(draft);
+    if (link) { await savePasted(link, formData); return; }
+    setPreviewing(true);
+    try { await createWishlistItem(formData); resetDraft(); router.refresh(); }
+    catch (error) { setPreviewMessage(error instanceof Error ? error.message : "Could not save your wish."); }
+    finally { setPreviewing(false); }
+  }
 
   async function pasteFromClipboard() {
-    if (!navigator.clipboard?.readText) {
-      setPreviewMessage("Paste the link into the field, then it will be checked automatically.");
-      return;
-    }
+    if (!navigator.clipboard?.readText) { setPreviewMessage("Paste the link into the field to add it."); return; }
     setPasting(true);
     try {
-      const text = await navigator.clipboard.readText();
-      if (!text.trim()) {
-        setPreviewMessage("Your clipboard is empty.");
-        return;
-      }
-      updateDraft(text.trim());
-    } catch {
-      setPreviewMessage("Your browser could not read the clipboard. Paste the link into the field instead.");
-    } finally {
-      setPasting(false);
-    }
+      const text = (await navigator.clipboard.readText()).trim();
+      const link = singlePastedUrl(text);
+      if (link) { setDraft(link); setUrl(link); void savePasted(link); }
+      else updateDraft(text);
+    } catch { setPreviewMessage("Your browser could not read the clipboard. Paste into the field instead."); }
+    finally { setPasting(false); }
   }
 
   return (
@@ -160,7 +111,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         <h2 className="text-xl font-bold">Add a wish</h2>
         <p className="mt-1 text-sm text-muted-foreground">Paste a product link or type a gift idea. We’ll fill in product details when we can.</p>
       </div>
-      <form action={createWishlistItem} className="grid gap-4">
+      <form action={submitWish} className="grid gap-4">
         <input type="hidden" name="exchangeId" value={exchangeId} />
         <input type="hidden" name="url" value={url} />
         <label htmlFor="wishlist-wish-draft" className="sr-only">Paste a link or type a wish</label>
@@ -169,26 +120,27 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             id="wishlist-wish-draft"
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
+            onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted); } }}
             placeholder="Paste a link or type a wish"
             autoComplete="off"
+            readOnly={previewing || Boolean(savedUrl)}
             className="min-h-12 min-w-0 flex-1 text-base"
           />
           <Button type="button" variant="outline" onClick={pasteFromClipboard} disabled={pasting || previewing} className="min-h-12 shrink-0">
             <ClipboardPaste className="size-4" />{pasting ? "Pasting…" : "Paste"}
           </Button>
         </div>
-        {previewing && <p role="status" className="text-sm text-muted-foreground">Checking the product link…</p>}
-        {previewedWithoutImage && url && !imageUrl && <p className="text-sm text-muted-foreground">Couldn’t get a picture from this store. Add a screenshot?</p>}
-        <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { touched.current.imageUrl = true; setImageUrl(value); }} />
-        <details className="group rounded-lg border border-border px-4 py-3">
+        {previewing && <p role="status" className="text-sm text-muted-foreground">Saving your wish…</p>}
+        {!savedUrl && <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} />}
+        {!savedUrl && <details className="group rounded-lg border border-border px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold">Details</summary>
           <div className="mt-4 grid gap-4">
             <label className="grid gap-1.5 text-sm font-medium">Gift title
-              <Input name="title" required maxLength={200} value={title} onChange={(event) => { touched.current.title = true; setTitle(event.target.value); }} placeholder="A title your Santa will recognize" />
+              <Input name="title" required={!url} maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="A title your Santa will recognize" />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">Store or maker
-                <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { touched.current.storeName = true; setStoreName(event.target.value); }} placeholder="Optional" />
+                <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" />
               </label>
               <label className="grid gap-1.5 text-sm font-medium">Priority
                 <select name="priority" defaultValue="would_like" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
@@ -199,16 +151,16 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
               </label>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-medium">Price from ($)<Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { touched.current.priceMin = true; setPriceMin(event.target.value); }} placeholder="Optional" /></label>
-              <label className="grid gap-1.5 text-sm font-medium">Price up to ($)<Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { touched.current.priceMax = true; setPriceMax(event.target.value); }} placeholder="Optional" /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Price from ($)<Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Optional" /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Price up to ($)<Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Optional" /></label>
             </div>
             <label className="grid gap-1.5 text-sm font-medium">Notes
-              <Textarea name="notes" maxLength={1000} rows={3} value={notes} onChange={(event) => { touched.current.notes = true; currentNotes.current = event.target.value; setNotes(event.target.value); }} placeholder="Product details are filled from the link when available." />
+              <Textarea name="notes" maxLength={1000} rows={3} value={notes} onChange={(event) => { setNotes(event.target.value); }} placeholder="Product details are filled from the link when available." />
             </label>
           </div>
-        </details>
+        </details>}
         {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
-        <Button type="submit" className="min-h-11 w-full sm:w-fit">Add to my list</Button>
+        {savedUrl ? <Button type="button" variant="outline" onClick={resetDraft} disabled={previewing}>Add another wish</Button> : <Button type="submit" disabled={previewing} className="min-h-11 w-full sm:w-fit">{previewing ? "Saving…" : "Add to my list"}</Button>}
       </form>
     </Card>
   );
