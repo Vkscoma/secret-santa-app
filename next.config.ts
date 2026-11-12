@@ -1,9 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Chromium's compressed runtime assets must be traced into the unfurl route only.
+  // The wishlist server actions import the Playwright renderer for link previews.
+  // Trace the complete Playwright package (including browsers.json) and Chromium
+  // runtime assets into every route that loads those actions or the unfurl helper.
   outputFileTracingIncludes: {
-    "/api/unfurl": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/unfurl": [
+      "./node_modules/playwright-core/**",
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
+    "/api/wishlist-items/enrich": [
+      "./node_modules/playwright-core/**",
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
+    "/wishlists/*": [
+      "./node_modules/playwright-core/**",
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
+    "/wishlists/*/recipient": [
+      "./node_modules/playwright-core/**",
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
   },
 
   // Image optimization configuration
