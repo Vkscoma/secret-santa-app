@@ -427,7 +427,7 @@ export default async function Home() {
                               asChild
                               variant="link"
                               size="sm"
-                              className="max-w-full text-center leading-5 whitespace-normal"
+                              className="text-gold max-w-full text-center leading-5 whitespace-normal"
                             >
                               <Link href={`/wishlists/${exchange.id}/recipient`}>
                                 See all of {recipient ?? "their"}’s list
