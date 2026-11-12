@@ -2,14 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPaste, Gift } from "lucide-react";
+import { ClipboardPaste, Gift, Plus, ArrowUpRight } from "lucide-react";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provider";
 import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
 
 type Props = { exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string };
@@ -18,6 +17,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   const router = useRouter();
   const pasteContext = useWishlistPaste();
   const session = useRef(createPasteSession(() => crypto.randomUUID()));
+  const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState(initialUrl || initialTitle);
   const [url, setUrl] = useState(initialUrl);
   const [title, setTitle] = useState(initialTitle);
@@ -25,7 +25,6 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   const [storeName, setStoreName] = useState(initialStoreName);
   const [priceMin, setPriceMin] = useState(initialPrice);
   const [priceMax, setPriceMax] = useState(initialPrice);
-  const [notes, setNotes] = useState("");
   const [previewing, setPreviewing] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
   const [pasting, setPasting] = useState(false);
@@ -34,7 +33,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
 
   function resetDraft() {
     if (activeItemId.current && !savedUrl) pasteContext?.removePending(activeItemId.current);
-    activeItemId.current = null; session.current.reset(); setDraft(""); setUrl(""); setTitle(""); setImageUrl(""); setStoreName(""); setPriceMin(""); setPriceMax(""); setNotes(""); setSavedUrl(""); setPreviewMessage("");
+    activeItemId.current = null; session.current.reset(); setDraft(""); setUrl(""); setTitle(""); setImageUrl(""); setStoreName(""); setPriceMin(""); setPriceMax(""); setSavedUrl(""); setPreviewMessage("");
   }
 
   async function savePasted(link: string, details?: FormData) {
@@ -46,7 +45,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         setPreviewMessage("Saving your wish…");
         try {
           const result = await createPastedWishlistItem({ exchangeId, itemId, url: originalUrl, ...(details ? { details: {
-            title: String(details.get("title") ?? ""), notes: String(details.get("notes") ?? ""), imageUrl: String(details.get("imageUrl") ?? ""), storeName: String(details.get("storeName") ?? ""),
+            title: String(details.get("title") ?? ""), imageUrl: String(details.get("imageUrl") ?? ""), storeName: String(details.get("storeName") ?? ""),
             priceMin: details.get("priceMin") ? Number(details.get("priceMin")) : null, priceMax: details.get("priceMax") ? Number(details.get("priceMax")) : null,
             priority: String(details.get("priority") ?? "would_like") as "most_wanted" | "would_like" | "nice_to_have",
           } } : {}) });
@@ -99,22 +98,22 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
     try {
       const text = (await navigator.clipboard.readText()).trim();
       const link = singlePastedUrl(text);
-      if (link) { setDraft(link); setUrl(link); void savePasted(link); }
+      if (link) { setDraft(link); setUrl(link); void savePasted(link, formRef.current ? new FormData(formRef.current) : undefined); }
       else updateDraft(text);
     } catch { setPreviewMessage("Your browser could not read the clipboard. Paste into the field instead."); }
     finally { setPasting(false); }
   }
 
   return (
-    <Card className="space-y-4 border-border/80 p-5 shadow-sm sm:p-6">
-      <div className="flex items-start gap-3">
+    <Card className="overflow-hidden border-border/80 p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex items-start gap-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Gift className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold">Add a wish</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Paste a product link or type a gift idea. We’ll fill in product details when we can.</p>
+          <p className="mt-1 text-sm text-muted-foreground">A link, a little detail, or just an idea.</p>
         </div>
       </div>
-      <form action={submitWish} className="grid gap-4">
+      <form ref={formRef} action={submitWish} className="grid gap-4">
         <input type="hidden" name="exchangeId" value={exchangeId} />
         <input type="hidden" name="url" value={url} />
         <label htmlFor="wishlist-wish-draft" className="sr-only">Paste a link or type a wish</label>
@@ -123,47 +122,41 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             id="wishlist-wish-draft"
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
-            onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted); } }}
-            placeholder="Paste a link or type a wish"
+            onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted, formRef.current ? new FormData(formRef.current) : undefined); } }}
+            placeholder="Add a wish or paste a link"
             autoComplete="off"
             readOnly={previewing || Boolean(savedUrl)}
-            className="min-h-12 min-w-0 flex-1 text-base"
+            className="h-12 min-w-0 flex-1 rounded-xl px-4 text-base"
           />
-          <Button type="button" variant="outline" onClick={pasteFromClipboard} disabled={pasting || previewing} className="min-h-12 shrink-0">
-            <ClipboardPaste className="size-4" />{pasting ? "Pasting…" : "Paste"}
+          <Button type="button" onClick={pasteFromClipboard} disabled={pasting || previewing} className="h-12 shrink-0 rounded-xl px-5">
+            {pasting ? <ClipboardPaste className="size-4" /> : <Plus className="size-5" />}{pasting ? "Pasting…" : "Add"}
           </Button>
         </div>
         {previewing && <p role="status" className="text-sm text-muted-foreground">Saving your wish…</p>}
         {!savedUrl && <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} />}
-        {!savedUrl && <details open className="group rounded-lg border border-border px-4 py-3">
-          <summary className="cursor-pointer text-sm font-semibold">Details</summary>
-          <div className="mt-4 grid gap-4">
+        {!savedUrl && <details open className="group mt-5 border-t pt-4">
+          <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1.5 text-sm font-medium">Gift title
-              <Input name="title" required={!url} maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="A title your Santa will recognize" />
+              <Input name="title" required={!url} maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="A title your Santa will recognize" className="h-12 rounded-xl px-4 sm:col-span-2" />
             </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-medium">Store or maker
-                <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" />
+            <label className="grid gap-1.5 text-sm font-medium">Merchant
+                <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />
               </label>
-              <label className="grid gap-1.5 text-sm font-medium">Priority
-                <select name="priority" defaultValue="would_like" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="most_wanted">Most wanted</option>
-                  <option value="would_like">Would like</option>
-                  <option value="nice_to_have">Nice to have</option>
-                </select>
-              </label>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-medium">Price from ($)<Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Optional" /></label>
-              <label className="grid gap-1.5 text-sm font-medium">Price up to ($)<Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Optional" /></label>
-            </div>
-            <label className="grid gap-1.5 text-sm font-medium">Notes
-              <Textarea name="notes" maxLength={1000} rows={3} value={notes} onChange={(event) => { setNotes(event.target.value); }} placeholder="Product details are filled from the link when available." />
-            </label>
+            <fieldset className="space-y-2 text-sm font-medium"><legend>Priority</legend><div className="flex flex-wrap gap-2">
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="most_wanted" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Most wanted</span></label>
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="would_like" defaultChecked /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Would like</span></label>
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="nice_to_have" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Nice to have</span></label>
+              </div></fieldset>
+            <label className="grid gap-1.5 text-sm font-medium">Price range <div className="flex gap-2">
+                <Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Min" className="h-12 rounded-xl px-4" />
+                <Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Max" className="h-12 rounded-xl px-4" />
+              </div></label>
           </div>
+          <Button type="submit" disabled={previewing} size="lg" className="mt-5 w-full rounded-xl">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>
         </details>}
         {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
-        {savedUrl ? <Button type="button" variant="outline" onClick={resetDraft} disabled={previewing}>Add another wish</Button> : <Button type="submit" disabled={previewing} className="min-h-11 w-full sm:w-fit">{previewing ? "Saving…" : "Add to my list"}</Button>}
+        {savedUrl && <Button type="button" variant="outline" onClick={resetDraft} disabled={previewing}>Add another wish</Button>}
       </form>
     </Card>
   );
