@@ -16,6 +16,7 @@
     "env:check": "node -e \"require('./src/lib/env.ts').checkEnv()\" || echo 'Run with tsx: npx tsx -e \"import { checkEnv } from './src/lib/env'; checkEnv();\"'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:dev": "drizzle-kit push",

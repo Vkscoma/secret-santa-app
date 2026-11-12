@@ -10,6 +10,7 @@ import { exchangeParticipants, exchanges } from "@/lib/schema";
 
 export default async function WishlistsPage() {
   const session = await requireAllowlisted();
+  const currentYear = new Date().getFullYear();
   const rows = await db.select({ id: exchanges.id, name: exchanges.name, year: exchanges.year, date: exchanges.exchangeAt, status: exchanges.status })
     .from(exchangeParticipants)
     .innerJoin(exchanges, eq(exchangeParticipants.exchangeId, exchanges.id))
@@ -30,8 +31,8 @@ export default async function WishlistsPage() {
             <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold capitalize text-secondary-foreground">{exchange.status}</span>
           </div>
           <div className="mt-auto flex flex-wrap gap-2">
-            <Button asChild><Link href={`/wishlists/${exchange.id}`}>Open my list</Link></Button>
-            {exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchange.id}/recipient`}>My recipient’s list</Link></Button>}
+            <Button asChild><Link href={exchange.year < currentYear ? `/history/${exchange.id}` : `/wishlists/${exchange.id}`}>{exchange.year < currentYear ? "View saved list" : "Open my list"}</Link></Button>
+            {exchange.year >= currentYear && exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchange.id}/recipient`}>My recipient’s list</Link></Button>}
           </div>
         </Card>)}
       </div> : <Card className="space-y-3 p-6 text-center sm:p-8">

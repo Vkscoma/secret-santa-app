@@ -61,7 +61,7 @@ graph TD
 - [x] [task-07-email-and-cron](./tasks/task-07-email-and-cron.md) — Notification emails, preferences, idempotent delivery, and protected daily cron complete.
 
 ### Wave 7
-- [ ] [task-08-history-pwa-seed-and-docs](./tasks/task-08-history-pwa-seed-and-docs.md) — Add past exchange history, PWA support, sample data, documentation, and final polish.
+- [x] [task-08-history-pwa-seed-and-docs](./tasks/task-08-history-pwa-seed-and-docs.md) — Past exchange history, PWA support, safe synthetic seed data, setup documentation, and final polish complete.
 
 ## Approval Gate
 

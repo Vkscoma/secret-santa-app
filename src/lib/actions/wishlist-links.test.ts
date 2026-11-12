@@ -42,6 +42,14 @@ describe("pasted wish persistence", () => {
     expect(mocks.inserted).toHaveLength(1); // ensureWishlist only
     expect(mocks.updated).toHaveLength(0);
   });
+  it("blocks writes to a prior-calendar-year wishlist", async () => {
+    mocks.rows.push([{ status: "revealed", year: new Date().getFullYear() - 1 }]);
+    const form = new FormData();
+    form.set("exchangeId", exchangeId);
+    form.set("itemId", itemId);
+    await expect(updateWishlistItem(form)).rejects.toThrow(/read-only in history/);
+    expect(mocks.updated).toHaveLength(0);
+  });
   it("keeps edited title and notes and preserves decimal price/currency with provenance", async () => {
     mocks.rows.push(...accessRows(), [{ item: { url, title: "My chosen title", notes: "My note", imageUrl: null, priceMin: null, priceMax: null, previewPrice: null }, revision: "12345" }]);
     expect((await enrichWishlistItem({ exchangeId, itemId })).ok).toBe(true);

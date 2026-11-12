@@ -2,7 +2,7 @@
 
 ## Status
 
-pending
+complete
 
 ## Wave
 
@@ -17,7 +17,7 @@ Complete the app with past-year history, PWA add-to-home-screen behavior, determ
 **Depends on:** task-04-admin-exchanges-and-draw, task-05-wishlists-and-unfurl, task-06-home-and-nudge, task-07-email-and-cron
 **Blocks:** None
 
-**Context from dependencies:** All core account, exchange, wishlist, messaging, and notification features exist. This task uses those records to finish user-facing history and deployment onboarding; it should not replace prior year data or expose assignments that remain secret.
+**Context from dependencies:** Account, exchange, wishlist, conditional giver nudge, and daily notification features exist. This task uses those records to finish user-facing history and deployment onboarding; it should not replace prior year data or expose assignments that remain secret.
 
 ## Files to Create
 
@@ -51,13 +51,22 @@ Complete the app with past-year history, PWA add-to-home-screen behavior, determ
 
 ### Acceptance Criteria
 
-- [ ] History renders only data authorized for the viewer and preserves old wishlist snapshots.
-- [ ] Santa identity appears only after reveal.
-- [ ] PWA metadata/icons and platform-specific install tip work and can be dismissed persistently.
-- [ ] Seed data is synthetic, reproducible, and creates the required current/past scenario.
-- [ ] README and `.env.example` document every required integration and variable.
-- [ ] Full verification passes: lint, typecheck, Next build, and Vitest suite.
+- [x] History renders only data authorized for the viewer and preserves old wishlist snapshots.
+- [x] Santa identity appears only after reveal or an elapsed auto-reveal date.
+- [x] PWA metadata/icons and platform-specific install tip work and can be dismissed persistently.
+- [x] Seed data is synthetic, reproducible, and creates the required current/past scenario.
+- [x] README and `.env.example` document every required integration and variable.
+- [x] Full verification passes: lint, typecheck, Next build, and Vitest suite.
 
 ## Notes
 
 Keep the seed command separate from production deployment/build scripts. Any generated assets should be original and consistent with the approved Wave 1 design.
+
+## Completion Notes
+
+- Added member-scoped `/history` and `/history/[exchangeId]` views. They show only the viewer's own giver relationship and saved recipient list; the viewer's incoming Santa assignment is queried only after reveal, close, or the configured auto-reveal time. Prior-calendar-year wishlist writes are blocked in Server Actions and old wishlist cards link directly to the read-only history view.
+- Added standalone PWA metadata, 192/512/maskable PNG icons, an Apple touch icon, safe-area spacing, and a dismissible mobile install tip. iOS gets Safari instructions; Android uses `beforeinstallprompt` when supported.
+- Added an idempotent synthetic seed command. It requires `SEED_SYNTHETIC_DATA=true`, rejects production and Vercel environments, uses only reserved `.invalid` emails, and creates a revealed prior exchange and an upcoming open exchange. No seed command runs as part of builds or migrations.
+- Replaced starter setup docs with the Secret Santa local, OAuth, Resend, daily Vercel Cron, migration, seed, deployment, and environment guide; synchronized `.env.example` and `env.example`.
+- Reviewed current [Next.js manifest](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/manifest) and [icon metadata](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons), [MDN install prompt guidance](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable), [WebKit iOS web app guidance](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/), and [Drizzle seed docs](https://orm.drizzle.team/docs/seed-overview).
+- Verification: `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `pnpm test -- --run` pass (190 tests across 26 files). No schema migration was needed. Google OAuth, Resend sender verification, and production Vercel environment/Cron configuration remain manual setup items in `../action-required.md`.

@@ -1,5 +1,6 @@
 import localFont from "next/font/local";
 import "./globals.css";
+import { InstallAppPrompt } from "@/components/secret-santa/install-app-prompt";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -17,6 +18,13 @@ export const metadata: Metadata = {
   title: { default: "Secret Santa", template: "%s | Secret Santa" },
   description: "A little holiday magic for the people you love.",
   applicationName: "Secret Santa",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Secret Santa" },
   formatDetection: { telephone: false },
   openGraph: { type: "website", locale: "en_US", siteName: "Secret Santa", title: "Secret Santa", description: "A little holiday magic for the people you love." },
@@ -38,6 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteHeader />
           <main id="main-content" className="relative flex-1">{children}</main>
           <SiteFooter />
+          <InstallAppPrompt />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

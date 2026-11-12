@@ -72,7 +72,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
     .orderBy(desc(exchanges.year)).limit(1);
   const [myAssignment] = await db.select({ id: assignments.id }).from(assignments)
     .where(and(eq(assignments.exchangeId, exchangeId), eq(assignments.giverId, session.user.id))).limit(1);
-  const editable = exchange.status !== "closed";
+  const editable = exchange.year >= new Date().getFullYear() && exchange.status !== "closed";
 
   const budget = exchange.budgetMin === exchange.budgetMax
     ? `$${exchange.budgetMax}`
@@ -168,10 +168,10 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
           </div>
         </form> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
       </Card>
-                {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">This exchange is closed. Its wishlist is saved for history.</p>}
+                {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">{exchange.year < new Date().getFullYear() ? "This past exchange wishlist is read-only in history." : "This exchange is closed. Its wishlist is saved for history."}</p>}
               </div>
             </section>
-            {myAssignment && exchange.status !== "open" && <div className="flex justify-end"><Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}><Gift className="size-4" /> See my recipient’s list</Link></Button></div>}
+            {myAssignment && exchange.year >= new Date().getFullYear() && exchange.status !== "open" && <div className="flex justify-end"><Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}><Gift className="size-4" /> See my recipient’s list</Link></Button></div>}
           </div>
         </div>
         {editable && <a href="#add-a-wish" aria-label="Add a wish" className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:hidden"><Plus className="size-6" aria-hidden="true" /></a>}
