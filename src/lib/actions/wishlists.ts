@@ -405,4 +405,5 @@ export async function toggleWishlistClaim(formData: FormData) {
     else await tx.insert(itemClaims).values({ itemId, giverId: session.user.id }).onConflictDoNothing();
   });
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
+  revalidatePath("/");
 }

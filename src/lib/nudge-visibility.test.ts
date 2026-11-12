@@ -14,4 +14,11 @@ describe("recipient wishlist nudge visibility", () => {
   it("respects the recipient's email preference", () => {
     expect(shouldShowRecipientNudge(0, false)).toBe(false);
   });
+
+  it("only shows the nudge after a draw and before the exchange is closed", () => {
+    expect(shouldShowRecipientNudge(0, true, "open")).toBe(false);
+    expect(shouldShowRecipientNudge(0, true, "drawn")).toBe(true);
+    expect(shouldShowRecipientNudge(0, true, "revealed")).toBe(true);
+    expect(shouldShowRecipientNudge(0, true, "closed")).toBe(false);
+  });
 });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
@@ -19,7 +20,8 @@ export default async function WishlistsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
-      <PageHeading eyebrow="Your gift ideas" title="My wish lists" description="Keep a thoughtful list for each exchange and give your Secret Santa a few good clues." />
+      <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists" }]} />
+      <PageHeading eyebrow="Your gift ideas" title="My Wishlists" description="Keep a thoughtful list for each exchange and give your Secret Santa a few good clues." />
       {rows.length ? <div className="grid gap-4 sm:grid-cols-2">
         {rows.map((exchange) => <Card key={exchange.id} className="flex flex-col gap-4 p-5 sm:p-6">
           <div className="flex items-start gap-3">
@@ -32,7 +34,7 @@ export default async function WishlistsPage() {
           </div>
           <div className="mt-auto flex flex-wrap gap-2">
             <Button asChild><Link href={exchange.year < currentYear ? `/history/${exchange.id}` : `/wishlists/${exchange.id}`}>{exchange.year < currentYear ? "View saved list" : "Open my list"}</Link></Button>
-            {exchange.year >= currentYear && exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchange.id}/recipient`}>My recipient’s list</Link></Button>}
+            {exchange.year >= currentYear && exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchange.id}/recipient`}>Recipient’s List</Link></Button>}
           </div>
         </Card>)}
       </div> : <Card className="space-y-3 p-6 text-center sm:p-8">

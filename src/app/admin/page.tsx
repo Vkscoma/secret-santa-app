@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { desc, sql } from "drizzle-orm";
 import { CalendarDays, Gift, ShieldCheck, Users } from "lucide-react";
+import { ExchangeRowActions } from "@/app/admin/exchange-row-actions";
+import { RemoveAccountButton } from "@/app/admin/remove-account-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { addAllowlistEntry, createExchange, removeAllowlistEntry, saveUserSettings, setUserRole } from "@/lib/actions/admin";
+import { isSuperAdminEmail } from "@/lib/auth-access";
 import { requireAdmin } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { allowlist, emailLog, exchanges, user } from "@/lib/schema";
@@ -27,7 +29,8 @@ function inputText(value: unknown): string {
 }
 
 export default async function AdminPage() {
-  await requireAdmin();
+  const session = await requireAdmin();
+  const isSuperAdmin = isSuperAdminEmail(session.user.email);
   const [exchangeRows, allowlistRows, users, exchangeColumns, emailRows] = await Promise.all([
     db.select({ id: exchanges.id, name: exchanges.name, year: exchanges.year, status: exchanges.status, createdAt: exchanges.createdAt })
       .from(exchanges)
@@ -70,10 +73,13 @@ export default async function AdminPage() {
         <Card className="space-y-4 p-5 sm:p-6">
           <div><h2 className="text-xl font-bold">Exchanges</h2><p className="text-sm text-muted-foreground">Assignment mappings stay private until you explicitly reveal them.</p></div>
           {exchangeRows.length ? <div className="divide-y divide-border">
-            {exchangeRows.map((exchange) => <Link key={exchange.id} href={`/admin/exchanges/${exchange.id}`} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0 hover:text-primary">
+            {exchangeRows.map((exchange) => <div key={exchange.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
               <span><span className="block font-bold">{exchange.name}</span><span className="text-sm text-muted-foreground">{exchange.year} · {exchange.status} · created {formatDate(exchange.createdAt)}</span></span>
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold capitalize text-secondary-foreground">{exchange.status}</span>
-            </Link>)}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold capitalize text-secondary-foreground">{exchange.status}</span>
+                <ExchangeRowActions exchangeId={exchange.id} exchangeName={exchange.name} year={exchange.year} canDelete={isSuperAdmin} />
+              </div>
+            </div>)}
           </div> : <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">No exchanges yet. Create one to invite your group and prepare a draw.</p>}
         </Card>
 
@@ -130,6 +136,7 @@ export default async function AdminPage() {
               return <details key={person.id} className="rounded-xl border border-border p-3">
                 <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2"><span className="min-w-0"><strong className="block truncate">{person.displayName || person.name}</strong><span className="text-xs text-muted-foreground">{person.email}</span></span><span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">{person.role}</span></summary>
                 <div className="mt-4 space-y-4 border-t border-border pt-4">
+                  {isSuperAdmin && !isSuperAdminEmail(person.email) && <RemoveAccountButton userId={person.id} email={person.email} />}
                   <form action={setUserRole} className="flex items-center gap-2"><input type="hidden" name="userId" value={person.id} /><label className="sr-only" htmlFor={`role-${person.id}`}>Role for {person.email}</label><select id={`role-${person.id}`} name="role" defaultValue={person.role} className="h-9 flex-1 rounded-lg border border-input bg-background px-2 text-sm"><option value="user">User</option><option value="admin">Admin</option></select><Button size="sm" variant="outline">Save role</Button></form>
                   <form action={saveUserSettings} className="grid gap-3">
                     <input type="hidden" name="userId" value={person.id} />

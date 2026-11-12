@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import { ArrowLeft, Gift, Heart, Plus, Settings2, Sparkles } from "lucide-react";
+import { Gift, Heart, Plus, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
+import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { WishlistComposer } from "@/components/secret-santa/wishlist-composer";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
@@ -81,7 +82,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
   return (
     <WishlistPasteProvider>
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <Link href="/wishlists" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> All wish lists</Link>
+        <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists", href: "/wishlists" }, { label: `My List · ${exchange.name} (${exchange.year})` }]} />
         <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground"><Sparkles className="size-3.5" aria-hidden="true" />{exchange.year} exchange</p>
         <PageHeading title="A list full of little joys" description="Add a wish or browse the ideas you’ve already saved. Your Secret Santa will thank you." />
         <div className={editable ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.92fr)] xl:gap-8" : "mx-auto max-w-3xl"}>
@@ -93,7 +94,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
             <section aria-labelledby="wish-items-heading" className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
               <div className="panel-pattern relative overflow-hidden bg-pine px-5 py-5 text-pine-foreground sm:px-6">
                 <div className="relative z-10 flex items-start justify-between gap-3">
-                  <div className="min-w-0"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-pine-foreground/75">My wish list</p><h2 id="wish-items-heading" className="break-words text-xl font-bold leading-tight">{exchange.name}</h2><p className="mt-2 text-sm text-pine-foreground/80">{items.length} {items.length === 1 ? "gift" : "gifts"} · Budget {budget}</p></div>
+                  <div className="min-w-0"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-pine-foreground/75">My List</p><h2 id="wish-items-heading" className="break-words text-xl font-bold leading-tight">{exchange.name}</h2><p className="mt-2 text-sm text-pine-foreground/80">{items.length} {items.length === 1 ? "gift" : "gifts"} · Budget {budget}</p></div>
                   <a href="#wishlist-preferences" aria-label="Wishlist preferences" className="shrink-0 rounded-lg bg-pine-foreground/10 p-2.5 transition hover:bg-pine-foreground/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine-foreground"><Settings2 className="size-4" aria-hidden="true" /></a>
                 </div>
                 <StringLights />

@@ -9,7 +9,7 @@ export default async function AddFromPhoneHelpPage() {
   await requireAllowlisted();
   const shortcutUrl = process.env.NEXT_PUBLIC_IOS_SHORTCUT_URL;
   return <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
-    <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> My wish lists</Link>
+    <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> My Wishlists</Link>
     <PageHeading eyebrow="Mobile wish lists" title="Add from your phone" description="Send a product page straight to the right wish list while you shop." />
     <div className="grid gap-4 sm:grid-cols-2">
       <Card className="space-y-4 p-5 sm:p-6"><span className="grid size-11 place-items-center rounded-xl bg-secondary text-pine"><Share2 className="size-5" /></span><div><h2 className="font-bold">Android and other browsers</h2><p className="mt-1 text-sm text-muted-foreground">Open a product page, tap Share, then choose Secret Santa. Pick an exchange if you belong to more than one.</p></div></Card>

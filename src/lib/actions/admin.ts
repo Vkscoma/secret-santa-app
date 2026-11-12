@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, like, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getEligibleUserIdsForExchange } from "@/lib/admin-data";
 import { isSuperAdminEmail } from "@/lib/auth-access";
@@ -21,12 +21,14 @@ import {
   exchangeParticipants,
   exchanges,
   exclusions,
+  emailLog,
   inviteLinks,
   itemClaims,
   messages,
   wishlistItems,
   wishlists,
   user,
+  verification,
 } from "@/lib/schema";
 
 const idSchema = z.string().uuid();
@@ -112,6 +114,37 @@ export async function updateExchange(formData: FormData) {
   });
   revalidatePath(`/admin/exchanges/${id}`);
   revalidatePath("/admin");
+}
+
+export async function deleteExchange(formData: FormData) {
+  const session = await requireAdmin();
+  if (!isSuperAdminEmail(session.user.email)) throw new Error("Forbidden");
+  const exchangeId = idSchema.parse(field(formData, "exchangeId"));
+
+  await db.transaction(async (tx) => {
+    const [exchange] = await tx.select({ name: exchanges.name, year: exchanges.year })
+      .from(exchanges)
+      .where(eq(exchanges.id, exchangeId))
+      .for("update");
+    if (!exchange) throw new Error("Exchange not found.");
+
+    await tx.insert(auditLog).values(auditValues({
+      actorId: session.user.id,
+      action: "exchange.deleted",
+      targetType: "exchange",
+      targetId: exchangeId,
+      metadata: { name: exchange.name, year: exchange.year },
+    }));
+    await tx.delete(exchanges).where(eq(exchanges.id, exchangeId));
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/exchanges/${exchangeId}`);
+  revalidatePath("/wishlists");
+  revalidatePath(`/wishlists/${exchangeId}`);
+  revalidatePath(`/wishlists/${exchangeId}/recipient`);
+  revalidatePath("/history");
+  revalidatePath(`/history/${exchangeId}`);
 }
 
 export async function setExchangeParticipants(formData: FormData) {
@@ -345,6 +378,61 @@ export async function setUserRole(formData: FormData) {
     await tx.update(user).set({ role }).where(eq(user.id, targetId));
     await tx.insert(auditLog).values({ actorId: session.user.id, action: "user.role_changed", targetType: "user", metadata: { userId: targetId, previousRole: target.role, role } });
   });
+  revalidatePath("/admin");
+}
+
+export async function deleteUserAccount(formData: FormData) {
+  const session = await requireAdmin();
+  if (!isSuperAdminEmail(session.user.email)) throw new Error("Forbidden");
+  const targetId = z.string().min(1).max(160).parse(field(formData, "userId"));
+
+  await db.transaction(async (tx) => {
+    const [target] = await tx.select({ email: user.email })
+      .from(user)
+      .where(eq(user.id, targetId))
+      .for("update");
+    if (!target) throw new Error("Account not found.");
+    if (isSuperAdminEmail(target.email)) throw new Error("The configured Super Admin account cannot be removed.");
+
+    const [createdExchanges, memberships, giverAssignments, receiverAssignments, giverExclusions, receiverExclusions, ownedWishlists, itemClaimsByUser] = await Promise.all([
+      tx.select({ id: exchanges.id }).from(exchanges).where(eq(exchanges.createdBy, targetId)).limit(1),
+      tx.select({ id: exchangeParticipants.id }).from(exchangeParticipants).where(eq(exchangeParticipants.userId, targetId)).limit(1),
+      tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.giverId, targetId)).limit(1),
+      tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.receiverId, targetId)).limit(1),
+      tx.select({ id: exclusions.id }).from(exclusions).where(eq(exclusions.giverId, targetId)).limit(1),
+      tx.select({ id: exclusions.id }).from(exclusions).where(eq(exclusions.receiverId, targetId)).limit(1),
+      tx.select({ id: wishlists.id }).from(wishlists).where(eq(wishlists.userId, targetId)).limit(1),
+      tx.select({ id: itemClaims.id }).from(itemClaims).where(eq(itemClaims.giverId, targetId)).limit(1),
+    ]);
+    if ([createdExchanges, memberships, giverAssignments, receiverAssignments, giverExclusions, receiverExclusions, ownedWishlists, itemClaimsByUser].some((rows) => rows.length > 0)) {
+      throw new Error("This account is still linked to exchange history. Delete the test exchanges that reference it first, or keep the account to preserve history.");
+    }
+
+    await tx.delete(emailLog).where(eq(emailLog.recipientUserId, targetId));
+    const verificationRows = await tx.select({ id: verification.id, value: verification.value })
+      .from(verification)
+      .where(like(verification.identifier, "magic-link:%"));
+    const matchingVerificationIds = verificationRows.flatMap((row) => {
+      let value: unknown;
+      try { value = JSON.parse(row.value); } catch { return []; }
+      if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+      const record = value as Record<string, unknown>;
+      return record.type === "magic-link" && typeof record.email === "string" && normalizeEmail(record.email) === normalizeEmail(target.email)
+        ? [row.id]
+        : [];
+    });
+    if (matchingVerificationIds.length) {
+      await tx.delete(verification).where(inArray(verification.id, matchingVerificationIds));
+    }
+    await tx.delete(allowlist).where(sql`lower(${allowlist.email}) = ${normalizeEmail(target.email)}`);
+    await tx.insert(auditLog).values(auditValues({
+      actorId: session.user.id,
+      action: "user.deleted",
+      targetType: "user",
+    }));
+    await tx.delete(user).where(eq(user.id, targetId));
+  });
+
   revalidatePath("/admin");
 }
 

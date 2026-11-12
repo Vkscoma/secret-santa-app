@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { ArrowLeft, Gift } from "lucide-react";
+import { Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
+import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { WishlistPrice } from "@/components/secret-santa/wishlist-price";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -44,7 +44,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
     .where(and(eq(assignments.exchangeId, exchangeId), eq(assignments.giverId, session.user.id))).limit(1);
   if (!assignment) {
     return <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
-      <Link href={`/wishlists/${exchangeId}`} className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> My wish list</Link>
+      <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists", href: "/wishlists" }, { label: `My List · ${exchange.name} (${exchange.year})`, href: `/wishlists/${exchangeId}` }, { label: "Recipient’s List" }]} />
       <PageHeading eyebrow={exchange.name} title="Your recipient’s list" description="Once the names are drawn, their gift ideas will be waiting here." />
       <Card className="p-6 text-center"><Gift className="mx-auto size-8 text-primary" /><p className="mt-2 font-semibold">Names haven’t been drawn yet</p></Card>
     </div>;
@@ -64,7 +64,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
-      <Link href={`/wishlists/${exchangeId}`} className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> My wish list</Link>
+      <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists", href: "/wishlists" }, { label: `My List · ${exchange.name} (${exchange.year})`, href: `/wishlists/${exchangeId}` }, { label: "Recipient’s List" }]} />
       <PageHeading eyebrow={`${exchange.year} exchange`} title={`${recipientName}’s wish list`} description="Only you can see this assigned recipient’s gift list and your claim status." />
       {recipientList?.likes && <Card className="p-5"><h2 className="font-bold">Things they like</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{recipientList.likes}</p></Card>}
       {(assignment.sizes || assignment.shippingAddress) && <Card className="space-y-2 p-5"><h2 className="font-bold">Helpful details</h2>{assignment.sizes && <p className="text-sm text-muted-foreground"><strong className="text-foreground">Sizes:</strong> {assignment.sizes}</p>}{assignment.shippingAddress && <p className="whitespace-pre-wrap text-sm text-muted-foreground"><strong className="text-foreground">Shipping address:</strong> {assignment.shippingAddress}</p>}</Card>}
