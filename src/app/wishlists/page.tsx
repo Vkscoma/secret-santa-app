@@ -1,13 +1,22 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
-import { CalendarDays, Gift } from "lucide-react";
+import { desc, eq, sql } from "drizzle-orm";
+import { ArrowRight, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
 import { db } from "@/lib/db";
-import { exchangeParticipants, exchanges } from "@/lib/schema";
+import { exchangeParticipants, exchanges, wishlistItems, wishlists } from "@/lib/schema";
+
+const giftTileColors = [
+  "bg-primary/80 text-primary-foreground",
+  "bg-pine/70 text-pine-foreground",
+  "bg-gold text-gold-foreground",
+  "bg-secondary text-secondary-foreground",
+  "bg-accent text-accent-foreground",
+  "bg-primary/40 text-primary-foreground",
+] as const;
 
 export default async function WishlistsPage() {
   const session = await requireAllowlisted();
@@ -17,8 +26,14 @@ export default async function WishlistsPage() {
       id: exchanges.id,
       name: exchanges.name,
       year: exchanges.year,
-      date: exchanges.exchangeAt,
       status: exchanges.status,
+      itemCount: sql<number>`(
+        select count(*)::int
+        from ${wishlists}
+        inner join ${wishlistItems} on ${wishlistItems.wishlistId} = ${wishlists.id}
+        where ${wishlists.exchangeId} = ${exchanges.id}
+          and ${wishlists.userId} = ${session.user.id}
+      )`,
     })
     .from(exchangeParticipants)
     .innerJoin(exchanges, eq(exchangeParticipants.exchangeId, exchanges.id))
@@ -34,44 +49,68 @@ export default async function WishlistsPage() {
         description="Keep a thoughtful list for each exchange and give your Secret Santa a few good clues."
       />
       {rows.length ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           {rows.map((exchange) => (
-            <Card key={exchange.id} className="flex flex-col gap-4 p-5 sm:p-6">
-              <div className="flex items-start gap-3">
-                <span className="bg-primary text-primary-foreground grid size-11 shrink-0 place-items-center rounded-xl">
-                  <Gift className="size-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-lg font-bold">{exchange.name}</h2>
-                  <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
-                    <CalendarDays className="size-4" />
-                    {exchange.year} ·{" "}
-                    {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
-                      exchange.date
-                    )}
-                  </p>
-                </div>
-                <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-1 text-xs font-semibold capitalize">
-                  {exchange.status}
-                </span>
-              </div>
-              <div className="mt-auto flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link
-                    href={
-                      exchange.year < currentYear
-                        ? `/history/${exchange.id}`
-                        : `/wishlists/${exchange.id}`
-                    }
-                  >
-                    {exchange.year < currentYear ? "View saved list" : "Open my list"}
-                  </Link>
-                </Button>
+            <Card key={exchange.id} className="border-border/80 overflow-hidden shadow-sm">
+              <div className="p-5 sm:p-6">
+                <p className="text-pine dark:text-pine-foreground mb-1 text-xs font-bold tracking-wider uppercase">
+                  {exchange.year < currentYear
+                    ? "Past exchange"
+                    : exchange.year > currentYear
+                      ? "Upcoming exchange"
+                      : "This year"}
+                </p>
+                <Link
+                  href={
+                    exchange.year < currentYear
+                      ? `/history/${exchange.id}`
+                      : `/wishlists/${exchange.id}`
+                  }
+                  className="group hover:text-primary flex w-fit items-center gap-2 text-lg font-bold"
+                >
+                  {exchange.name}
+                  <ArrowRight
+                    className="size-4 opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100"
+                    aria-hidden="true"
+                  />
+                </Link>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {exchange.itemCount} {exchange.itemCount === 1 ? "gift" : "gifts"}{" "}
+                  <span className="px-1">·</span>{" "}
+                  <span className="capitalize">{exchange.status}</span>
+                </p>
                 {exchange.year >= currentYear && exchange.status !== "open" && (
-                  <Button asChild variant="outline">
-                    <Link href={`/wishlists/${exchange.id}/recipient`}>Recipient’s List</Link>
-                  </Button>
+                  <Link
+                    href={`/wishlists/${exchange.id}/recipient`}
+                    className="text-gold mt-2 inline-flex items-center text-sm font-semibold underline-offset-4 hover:underline"
+                  >
+                    Recipient’s list
+                  </Link>
                 )}
+              </div>
+              <div className="bg-muted/75 flex min-h-16 flex-wrap items-center gap-2 border-t px-5 py-3 sm:px-6">
+                {Array.from(
+                  { length: Math.min(exchange.itemCount, giftTileColors.length) },
+                  (_, index) => (
+                    <span
+                      key={`${exchange.id}-gift-${index}`}
+                      className={`grid size-10 place-items-center rounded-lg ${giftTileColors[index]}`}
+                      aria-hidden="true"
+                    >
+                      <Gift className="size-4" />
+                    </span>
+                  )
+                )}
+                {exchange.itemCount === 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                    No gifts on your list yet. Add a few ideas to help your Secret Santa.
+                  </p>
+                ) : exchange.itemCount > giftTileColors.length ? (
+                  <p className="text-muted-foreground ml-1 self-center text-xs">
+                    and {exchange.itemCount - giftTileColors.length} more{" "}
+                    {exchange.itemCount - giftTileColors.length === 1 ? "gift" : "gifts"}…
+                  </p>
+                ) : null}
               </div>
             </Card>
           ))}

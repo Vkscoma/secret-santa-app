@@ -75,14 +75,14 @@ export function StringLights() {
   return (
     <div className="string-lights absolute inset-x-0 bottom-0 z-10 flex h-1 justify-around" aria-hidden="true">
       <span className="size-1 rounded-full bg-primary text-primary" />
+      <span className="size-1 rounded-full bg-secondary text-secondary" />
       <span className="size-1 rounded-full bg-gold text-gold" />
-      <span className="size-1 rounded-full bg-snow text-snow" />
       <span className="size-1 rounded-full bg-primary text-primary" />
+      <span className="size-1 rounded-full bg-secondary text-secondary" />
       <span className="size-1 rounded-full bg-gold text-gold" />
-      <span className="size-1 rounded-full bg-snow text-snow" />
       <span className="size-1 rounded-full bg-primary text-primary" />
+      <span className="size-1 rounded-full bg-secondary text-secondary" />
       <span className="size-1 rounded-full bg-gold text-gold" />
-      <span className="size-1 rounded-full bg-snow text-snow" />
       <span className="size-1 rounded-full bg-primary text-primary" />
     </div>
   );
@@ -176,7 +176,7 @@ export function WishComposer() {
   return (
     <Card className="overflow-hidden border-border/80 p-5 shadow-sm sm:p-6">
       <div className="mb-5 flex items-start gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Gift className="size-5" aria-hidden="true" /></div>
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></div>
         <div><h2 className="text-xl font-bold">Add a wish</h2><p className="mt-1 text-sm text-muted-foreground">A link, a little detail, or just an idea.</p></div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">

@@ -107,7 +107,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   return (
     <Card className="overflow-hidden border-border/80 p-5 shadow-sm sm:p-6">
       <div className="mb-5 flex items-start gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Gift className="size-5" aria-hidden="true" /></div>
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold">Add a wish</h2>
           <p className="mt-1 text-sm text-muted-foreground">A link, a little detail, or just an idea.</p>
