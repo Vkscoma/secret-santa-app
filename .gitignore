@@ -57,3 +57,5 @@ artifacts
 # Secret Santa Specs
 /specs/secret-santa/
 secret-santa-app/specs/secret-santa-spec.md
+/specs/secret-santa-spec.md
+/specs/unfurl-feature
