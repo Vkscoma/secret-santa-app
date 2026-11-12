@@ -2,7 +2,7 @@
 
 ## Status
 
-pending
+complete
 
 ## Wave
 
@@ -46,13 +46,21 @@ Connect the signed-in Home experience to real exchange data: countdown/budget, g
 
 ### Acceptance Criteria
 
-- [ ] Home content is ordered per requirements and respects exchange timezone.
-- [ ] Recipient list, sizes, address, priorities, over-budget labels and claims follow permissions.
-- [ ] Both assignment participants can converse; unrelated users and admins cannot read the thread.
-- [ ] Recipient-facing payloads never contain giver identity before reveal; test passes.
-- [ ] Message length, text-only rendering, rate limits, unread counts, polling, and focus refresh work.
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `pnpm test -- --run` pass.
+- [x] Home content is ordered per requirements and respects exchange timezone.
+- [x] Recipient list, sizes, address, priorities, over-budget labels and claims follow permissions.
+- [x] Both assignment participants can converse; unrelated users and admins cannot read the thread.
+- [x] Recipient-facing payloads never contain giver identity before reveal; test passes.
+- [x] Message length, text-only rendering, rate limits, unread counts, polling, and focus refresh work.
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `pnpm test -- --run` pass.
 
 ## Notes
 
 Keep data projections explicit and minimal. Do not fetch a full user/assignment object and then rely on client-side hiding.
+
+## Completion Notes
+
+- Replaced the signed-in landing page with participant Home cards for exchange countdown/budget, assignment, recipient wishlist, messages, and own wishlist progress.
+- Added assignment-backed anonymous threads with participant and non-admin authorization, recipient-safe projections, text validation, per-sender throttling, unread/read tracking, polling, and focus refresh.
+- Recipient lists now sort by priority and show profile sizes/address, over-budget items, and giver-only claims.
+- Added route privacy/access, payload-shape, and DST-safe countdown tests. Generated and applied `drizzle/0014_simple_magdalene.sql`.
+- Verification: 179 tests pass; lint passes with seven import-order warnings; typecheck, `build:ci`, and `git diff --check` pass.

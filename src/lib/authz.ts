@@ -46,3 +46,9 @@ export async function requireExchangeMember(exchangeId: string) {
   if (!membership) throw new Error("Forbidden");
   return session;
 }
+
+export async function requireNonAdminExchangeMember(exchangeId: string) {
+  const session = await requireExchangeMember(exchangeId);
+  if (await hasCurrentAdminRole(session.user.id, session.user.email)) throw new Error("Forbidden");
+  return session;
+}

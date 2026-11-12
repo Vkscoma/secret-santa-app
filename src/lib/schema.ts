@@ -206,6 +206,19 @@ export const assignments = pgTable(
   ]
 );
 
+export const messages = pgTable("message", {
+  id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  assignmentId: uuid("assignment_id").notNull().references(() => assignments.id, { onDelete: "cascade" }),
+  senderRole: text("sender_role").notNull(),
+  body: text("body").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"),
+}, (table) => [
+  index("message_assignment_sent_idx").on(table.assignmentId, table.sentAt),
+  check("message_sender_role_check", sql`${table.senderRole} in ('giver', 'recipient')`),
+  check("message_body_length_check", sql`char_length(${table.body}) between 1 and 1000`),
+]);
+
 export const auditLog = pgTable(
   "audit_log",
   {

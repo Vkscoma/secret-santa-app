@@ -55,7 +55,7 @@ graph TD
 - [x] [task-05-wishlists-and-unfurl](./tasks/task-05-wishlists-and-unfurl.md) — Wishlist management, claims, URL unfurl, SSRF tests, and live database migration complete.
 
 ### Wave 5
-- [ ] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Implement participant Home and anonymous message threads with privacy tests.
+- [x] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Participant Home and anonymous message threads with privacy tests complete.
 
 ### Wave 6
 - [ ] [task-07-email-and-cron](./tasks/task-07-email-and-cron.md) — Implement notification emails and idempotent protected daily cron.
