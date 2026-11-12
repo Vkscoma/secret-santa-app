@@ -248,7 +248,7 @@ export async function refreshWishlistItemImage(_previous: RefreshWishlistImageSt
 
   const session = await requireExchangeMember(exchangeId.data);
   await requireEditableExchange(exchangeId.data, session.user.id);
-  const [item] = await db.select({ id: wishlistItems.id, url: wishlistItems.url, imageUrl: wishlistItems.imageUrl })
+  const [item] = await db.select({ id: wishlistItems.id, url: wishlistItems.url, imageUrl: wishlistItems.imageUrl, previewTitlePending: wishlistItems.previewTitlePending, revision: sql<string>`${wishlistItems}.xmin::text` })
     .from(wishlistItems)
     .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
     .where(and(eq(wishlistItems.id, itemId.data), eq(wishlists.exchangeId, exchangeId.data), eq(wishlists.userId, session.user.id)))
@@ -261,9 +261,24 @@ export async function refreshWishlistItemImage(_previous: RefreshWishlistImageSt
 
   try {
     const metadata = await unfurlUrl(normalizeUnfurlUrl(item.url).toString(), { render: (url) => renderUnfurlPage(url) });
-    if (!metadata.imageUrl) return { message: "The store did not provide a product image. Try again later or edit the link.", error: true };
+    const titlePatch = item.previewTitlePending && metadata.title && metadata.fieldSources.title !== "url" ? {
+      title: sql`case when ${wishlistItems.previewTitlePending} and ${wishlistItems}.xmin::text = ${item.revision} then ${metadata.title.slice(0, 200)} else ${wishlistItems.title} end`,
+      previewTitlePending: false,
+    } : {};
+    if (!metadata.imageUrl) {
+      if (titlePatch.title) {
+        await db.update(wishlistItems).set(titlePatch).where(and(eq(wishlistItems.id, item.id), eq(wishlistItems.url, item.url)));
+        revalidatePath(`/wishlists/${exchangeId.data}`);
+        revalidatePath(`/wishlists/${exchangeId.data}/recipient`);
+      }
+      const message = metadata.reason === "blocked" ? "The store blocked the preview request. Your link is saved; add an image manually."
+        : metadata.reason === "timeout" ? "The store took too long to respond. Your link is saved; try again or add an image manually."
+        : metadata.reason === "not_html" ? "This link did not return a web page. Your link is saved; add an image manually."
+        : "No usable product image was found on this page. Your link is saved; add an image manually.";
+      return { message, error: true };
+    }
     const imageUrl = await storeProductImage(metadata.imageUrl);
-    await db.update(wishlistItems).set({ imageUrl }).where(eq(wishlistItems.id, item.id));
+    await db.update(wishlistItems).set({ imageUrl, ...titlePatch }).where(and(eq(wishlistItems.id, item.id), eq(wishlistItems.url, item.url), item.imageUrl === null ? sql`${wishlistItems.imageUrl} is null` : eq(wishlistItems.imageUrl, item.imageUrl)));
     revalidatePath(`/wishlists/${exchangeId.data}`);
     revalidatePath(`/wishlists/${exchangeId.data}/recipient`);
     return { message: imageUrl === metadata.imageUrl ? "Image link refreshed." : "Product image refreshed and saved.", error: false };

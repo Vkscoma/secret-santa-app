@@ -2,7 +2,7 @@
 
 ## Status
 
-pending
+complete
 
 ## Wave
 
@@ -62,3 +62,10 @@ Replace password authentication with Google and allowlist/invite-eligible magic-
 ## Notes
 
 Manual OAuth client and environment setup is in `../action-required.md`. Review current Better Auth documentation before coding because plugin APIs evolve.
+
+## Completion Notes
+
+- Google and eligible magic-link authentication, allowlist/invite eligibility, rate limits, super-admin bootstrap, authorization guards, and invite redemption are implemented.
+- Added `.env.example` with placeholder values and tests that exercise the actual Better Auth account-creation eligibility hook.
+- Verification: `pnpm test -- --run` (56 tests), `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `git diff --check` pass.
+- `pnpm db:migrate` applied pending migrations successfully to the configured live database.

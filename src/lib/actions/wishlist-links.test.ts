@@ -1,11 +1,12 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createPastedWishlistItem, enrichWishlistItem, updateWishlistItem } from "./wishlists";
+import { createPastedWishlistItem, enrichWishlistItem, refreshWishlistItemImage, updateWishlistItem } from "./wishlists";
 
-const mocks = vi.hoisted(() => ({ rows: [] as unknown[][], inserted: [] as unknown[], updated: [] as unknown[], conditions: [] as unknown[], preview: vi.fn(), storeImage: vi.fn(), rate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rows: [] as unknown[][], inserted: [] as unknown[], updated: [] as unknown[], conditions: [] as unknown[], preview: vi.fn(), previewUrl: vi.fn(), storeImage: vi.fn(), rate: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/authz", () => ({ requireExchangeMember: vi.fn(async () => ({ user: { id: "owner" } })) }));
 vi.mock("@/lib/auth-rate-limit", () => ({ consumeAuthRateLimit: mocks.rate }));
+vi.mock("@/lib/unfurl", async (original) => ({ ...await original<typeof import("@/lib/unfurl")>(), unfurlUrl: mocks.previewUrl }));
 vi.mock("@/lib/unfurl-preview", () => ({ getCachedLinkPreview: mocks.preview }));
 vi.mock("@/lib/wishlist-images", () => ({ storeProductImage: mocks.storeImage }));
 vi.mock("@/lib/db", () => ({ db: {
@@ -80,6 +81,32 @@ describe("pasted wish persistence", () => {
     expect(mocks.updated[0]).not.toHaveProperty("previewPrice");
     expect(mocks.updated[0]).not.toHaveProperty("priceFetchedAt");
     expect(mocks.updated[0]).not.toHaveProperty("previewFinalUrl");
+  });
+  it.each([true, false])("refresh fills a pending hostname title only when eligible=%s", async (pending) => {
+    mocks.rows.push(...accessRows(), [{ id: itemId, url, imageUrl: null, previewTitlePending: pending, revision: "123" }]);
+    mocks.previewUrl.mockResolvedValueOnce({ title: "Correct product title", imageUrl: "https://images.example/product.jpg", reason: null, fieldSources: { title: "html-title" } });
+    const form = new FormData(); form.set("exchangeId", exchangeId); form.set("itemId", itemId);
+    expect((await refreshWishlistItemImage({ message: "", error: false }, form)).error).toBe(false);
+    const patch = mocks.updated[0] as Record<string, Parameters<PgDialect["sqlToQuery"]>[0]>;
+    if (pending) {
+      const query = new PgDialect().sqlToQuery(patch.title!);
+      expect(query.sql).toContain('"wishlist_item".xmin::text');
+      expect(query.sql).toContain('"wishlist_item"."preview_title_pending"');
+      expect(query.params).toContain("Correct product title");
+      expect(query.params).toContain("123");
+    } else expect(patch).not.toHaveProperty("title");
+    expect(patch).toHaveProperty("imageUrl");
+    const condition = new PgDialect().sqlToQuery(mocks.conditions[0] as Parameters<PgDialect["sqlToQuery"]>[0]);
+    expect(condition.params).toContain(url);
+    expect(condition.sql).toContain('"wishlist_item"."image_url" is null');
+  });
+  it.each([["blocked", "blocked the preview request"], ["timeout", "too long to respond"], ["not_html", "did not return a web page"], ["no_metadata", "No usable product image"]])("reports the real %s refresh outcome", async (reason, expected) => {
+    mocks.rows.push(...accessRows(), [{ id: itemId, url, imageUrl: null }]);
+    mocks.previewUrl.mockResolvedValueOnce({ imageUrl: null, reason });
+    const form = new FormData(); form.set("exchangeId", exchangeId); form.set("itemId", itemId);
+    const result = await refreshWishlistItemImage({ message: "", error: false }, form);
+    expect(result.error).toBe(true); expect(result.message).toContain(expected);
+    expect(mocks.updated).toHaveLength(0);
   });
   it("leaves a manually named usable wish when fetching fails", async () => {
     mocks.rows.push(...accessRows(), [{ item: { url, title: "store.example", imageUrl: null }, revision: "12" }]);

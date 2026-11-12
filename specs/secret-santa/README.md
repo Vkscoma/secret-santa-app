@@ -46,13 +46,13 @@ graph TD
 - [x] [task-02-design-system-and-previews](./tasks/task-02-design-system-and-previews.md) — Build festive tokens, shared shell/components, and visual previews; pause for review.
 
 ### Wave 2
-- [ ] [task-03-auth-access-and-invites](./tasks/task-03-auth-access-and-invites.md) — Implement Google/magic-link auth, invitation eligibility, roles, and route access.
+- [x] [task-03-auth-access-and-invites](./tasks/task-03-auth-access-and-invites.md) — Google/magic-link auth, invitation eligibility, roles, route access, and migrations complete.
 
 ### Wave 3
-- [ ] [task-04-admin-exchanges-and-draw](./tasks/task-04-admin-exchanges-and-draw.md) — Implement admin workflows, exchanges, draw, audit, and draw tests.
+- [x] [task-04-admin-exchanges-and-draw](./tasks/task-04-admin-exchanges-and-draw.md) — Admin workflows, exchanges, secure draw, audit, tests, and migrations complete.
 
 ### Wave 4
-- [ ] [task-05-wishlists-and-unfurl](./tasks/task-05-wishlists-and-unfurl.md) — Implement wishlist management, claims, URL unfurl, and SSRF tests.
+- [x] [task-05-wishlists-and-unfurl](./tasks/task-05-wishlists-and-unfurl.md) — Wishlist management, claims, URL unfurl, SSRF tests, and live database migration complete.
 
 ### Wave 5
 - [ ] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Implement participant Home and anonymous message threads with privacy tests.

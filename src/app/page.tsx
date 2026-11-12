@@ -13,7 +13,7 @@ export default function Home() {
         </div>
         <div className="space-y-4">
           <h1 className="max-w-xl text-4xl leading-[1.08] font-extrabold tracking-tight sm:text-6xl">
-            Family<span className="text-primary">Secret Santa</span> Application.
+            Family <span className="text-primary">Secret Santa</span> Application.
           </h1>
           <p className="text-muted-foreground max-w-xl text-base leading-7 sm:text-lg">
             Bring your favorite people together, share the little things you love, and keep every
@@ -28,6 +28,9 @@ export default function Home() {
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 rounded-xl px-6">
             <Link href="/preview/wishlists">Explore wish lists</Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary" className="h-12 rounded-xl px-6">
+            <Link href="/login">Log In</Link>
           </Button>
         </div>
         <div className="grid gap-3 pt-2 sm:grid-cols-3">

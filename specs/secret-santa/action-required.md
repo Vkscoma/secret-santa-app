@@ -4,7 +4,7 @@ Manual setup needed for full integration and deployment.
 
 ## Before Implementation
 
-- [ ] **Confirm access to the configured Neon database** — required to apply generated migrations with `pnpm db:migrate`; never use `db:push`.
+- [x] **Confirm access to the configured Neon database** — migrations applied successfully with `pnpm db:migrate`; never use `db:push`.
 
 ## During Implementation
 

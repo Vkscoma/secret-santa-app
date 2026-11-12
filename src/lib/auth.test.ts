@@ -23,6 +23,16 @@ vi.mock("@/lib/auth-access", () => ({
 }));
 
 const { auth, magicLinkOptions } = await import("./auth");
+type ValidateUserInfo = NonNullable<typeof auth.options.user.validateUserInfo>;
+
+async function validateUserInfo(email: string, query: Record<string, string> = {}) {
+  const validate = auth.options.user.validateUserInfo;
+  if (!validate) throw new Error("Expected Better Auth user validation hook to be configured.");
+  await validate(
+    { user: { email } } as Parameters<ValidateUserInfo>[0],
+    { query } as Parameters<ValidateUserInfo>[1],
+  );
+}
 
 type SendMagicLink = typeof magicLinkOptions.sendMagicLink;
 const send = (email: string) =>
@@ -79,6 +89,22 @@ describe("magic-link configuration", () => {
     access.isEmailEligibleForSignIn.mockResolvedValue(false);
     await expect(send("new@example.test")).resolves.toBeUndefined();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("allows an eligible address through the account creation guard", async () => {
+    access.isEmailEligibleForSignIn.mockResolvedValue(true);
+
+    await expect(validateUserInfo(" Elf@Example.test ")).resolves.toBeUndefined();
+    expect(access.isEmailEligibleForSignIn).toHaveBeenCalledWith("elf@example.test", null);
+  });
+
+  it("rejects an ineligible address at the account creation guard", async () => {
+    access.isEmailEligibleForSignIn.mockResolvedValue(false);
+
+    await expect(validateUserInfo("new@example.test")).rejects.toThrow(
+      "This account is not allowed to join this Secret Santa.",
+    );
+    expect(access.isEmailEligibleForSignIn).toHaveBeenCalledWith("new@example.test", null);
   });
 
   it.each(["email:elf@example.test", "ip:203.0.113.1"])("silently sends nothing when the %s rate limit is exceeded", async (blockedScope) => {

@@ -20,6 +20,7 @@ export type UnfurlDebug = {
   challenge: boolean;
   finalUrl: string;
   fetchPath: "direct" | "facebook-crawler" | "playwright" | "none";
+  truncated?: boolean;
 };
 
 export type UnfurlMetadata = {
@@ -47,6 +48,7 @@ type HtmlResponse = {
   location: string | null;
   contentType: string | null;
   body: string;
+  truncated?: boolean;
 };
 
 export type ImageValidationResponse = { valid: boolean; statusCode: number; contentType: string | null; size: number };
@@ -195,7 +197,6 @@ function readHtml(url: URL, pinned: ResolvedAddress, timeoutMs: number, maxBytes
       const statusCode = res.statusCode ?? 0;
       const location = typeof res.headers.location === "string" ? res.headers.location : null;
       const contentType = typeof res.headers["content-type"] === "string" ? res.headers["content-type"] : null;
-      const contentLength = Number(res.headers["content-length"] ?? 0);
       if (statusCode >= 300 && statusCode < 400) {
         destroyRedirectResponse(res);
         resolve({ statusCode, location, contentType, body: "" });
@@ -212,23 +213,24 @@ function readHtml(url: URL, pinned: ResolvedAddress, timeoutMs: number, maxBytes
         resolve({ statusCode, location, contentType, body: "" });
         return;
       }
-      if (Number.isFinite(contentLength) && contentLength > maxBytes) {
-        res.destroy();
-        reject(new Error("Response is too large."));
-        return;
-      }
       const chunks: Buffer[] = [];
       let total = 0;
+      const finish = (truncated = false) => {
+        const body = new TextDecoder().decode(Buffer.concat(chunks), { stream: truncated });
+        resolve({ statusCode, location, contentType, body: truncated ? dropPartialTrailingTag(body) : body, truncated });
+      };
       res.on("data", (chunk: Buffer | string) => {
         const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-        total += bytes.length;
-        if (total > maxBytes) {
-          res.destroy(new Error("Response is too large."));
-          return;
+        const remaining = maxBytes - total;
+        chunks.push(bytes.subarray(0, Math.max(0, remaining)));
+        total += Math.min(bytes.length, Math.max(0, remaining));
+        if (total >= maxBytes) {
+          // Keep useful metadata in the bounded prefix instead of discarding a large page.
+          finish(true);
+          res.destroy();
         }
-        chunks.push(bytes);
       });
-      res.on("end", () => resolve({ statusCode, location, contentType, body: Buffer.concat(chunks).toString("utf8") }));
+      res.on("end", () => finish());
       res.on("error", reject);
     });
     req.on("error", reject);
@@ -371,6 +373,38 @@ function productOffer(product: Record<string, unknown>, base: URL, requested: UR
   return !urls.length || urls.some((url) => matchesPage(url, pricePages)) ? valid[0]! : null;
 }
 
+/** Generic semantic fallback for pages that publish no social/structured picture. */
+function htmlImageCandidates(html: string, base: URL, title: string | undefined): { url: string; source: string }[] {
+  const content = html.replace(/<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, " ").replace(/<(?:script|style)\b[^>]*>[\s\S]*$/gi, " ");
+  const main = content.match(/<main\b[^>]*>([\s\S]*?)(?:<\/main\s*>|$)/i);
+  const mainStart = main?.index ?? -1, mainEnd = mainStart + (main?.[0].length ?? 0);
+  const tokens = (value: string) => new Set((plainText(value).toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []).filter((word) => !["the", "and", "for", "with", "from", "image", "photo", "picture", "product"].includes(word)));
+  const titleWords = tokens(title ?? "");
+  const candidates: { url: string; score: number; source: string }[] = [];
+  let inspected = 0;
+  for (const tag of content.matchAll(/<(?:img|meta|link)\b([^>]+)>/gi)) {
+    if (++inspected > 2_000) break;
+    const attrs = attrsOf(tag[1]!);
+    const semantic = /(?:^|\s)image(?:\s|$)/i.test(attrs.get("itemprop") ?? "") || attrs.get("rel")?.toLowerCase() === "image_src";
+    const alt = tokens(attrs.get("alt") ?? "");
+    const overlap = [...alt].filter((word) => titleWords.has(word)).length;
+    const width = Number.parseFloat(attrs.get("width") ?? "0"), height = Number.parseFloat(attrs.get("height") ?? "0");
+    const relevant = overlap / Math.max(alt.size, 1) >= 0.7 && (overlap >= 4 || overlap >= 2 && width >= 200 && height >= 200);
+    const inMain = mainStart >= 0 && tag.index >= mainStart && tag.index < mainEnd;
+    if (!semantic && !relevant && !inMain) continue;
+    if (!semantic && ((width > 0 && width < 200) || (height > 0 && height < 200))) continue;
+    const sources = [attrs.get("content"), attrs.get("href"), attrs.get("data-src"), attrs.get("data-lazy-src"), attrs.get("src")].filter((value): value is string => Boolean(value));
+    for (const entry of (attrs.get("srcset") ?? attrs.get("data-srcset") ?? "").split(",")) {
+      const src = entry.trim().split(/\s+/)[0]; if (src) sources.push(src);
+    }
+    for (const raw of sources) {
+      if (/logo|icon|sprite|badge|avatar|placeholder|(?:grey[-_]?pixel|transparent|spacer)\./i.test(`${raw} ${attrs.get("alt") ?? ""}`)) continue;
+      for (const url of imageUrls(raw, base)) candidates.push({ url, source: semantic ? "microdata" : "html-image", score: (semantic ? 10_000 : relevant ? 5_000 + overlap : 1_000) + Math.min(width * height / 1_000_000, 100) });
+    }
+  }
+  return candidates.sort((a, b) => b.score - a.score).filter((candidate, index, all) => all.findIndex((other) => other.url === candidate.url) === index).slice(0, 6);
+}
+
 function previewFields(html: string, base: URL, requested = base): PreviewFields {
   const meta = metaTags(html);
   const product = matchingProduct(jsonLdProducts(html), base, requested);
@@ -390,6 +424,7 @@ function previewFields(html: string, base: URL, requested = base): PreviewFields
     ...imageUrls(meta.get("og:image"), base).map((url) => ({ url, source: "open-graph" })),
     ...(product ? imageUrls(product.image, base).map((url) => ({ url, source: "structured-data" })) : []),
     ...imageUrls(meta.get("twitter:image") ?? meta.get("twitter:image:src"), base).map((url) => ({ url, source: "twitter" })),
+    ...htmlImageCandidates(html, base, fields.title),
   ].filter((candidate, index, all) => all.findIndex((other) => other.url === candidate.url) === index).slice(0, 10);
   if (images[0]) { fields.imageUrl = images[0].url; sources.imageUrl = images[0].source; }
   set("description", meta.get("og:description") ?? product?.description ?? meta.get("twitter:description"), "metadata");
@@ -413,11 +448,11 @@ export type UnfurlDependencies = {
   request?: (url: URL, address: ResolvedAddress, timeoutMs: number, maxBytes: number, userAgent?: string, allowJson?: boolean, headers?: Record<string, string>) => Promise<HtmlResponse>;
   timeoutMs?: number;
   maxBytes?: number;
-  render?: (url: URL) => Promise<string | null | { html: string; finalUrl: string; statusCode: number | null }>;
+  render?: (url: URL) => Promise<string | null | { html: string; finalUrl: string; statusCode: number | null; truncated?: boolean }>;
   validateImage?: (url: string, timeoutMs?: number) => Promise<ImageValidationResponse>;
 };
 
-type PageFetch = { html: string | null; finalUrl: URL; blocked: boolean; challenge: boolean; statusCode: number | null; fetchPath: UnfurlDebug["fetchPath"]; notHtml: boolean };
+type PageFetch = { html: string | null; finalUrl: URL; blocked: boolean; challenge: boolean; statusCode: number | null; fetchPath: UnfurlDebug["fetchPath"]; notHtml: boolean; truncated?: boolean };
 
 async function withinTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -426,12 +461,44 @@ async function withinTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise
   } finally { if (timer) clearTimeout(timer); }
 }
 
+const CHALLENGE_MARKERS = /checking your browser|verify you are human|captcha|attention required|cloudflare ray id|unusual traffic|robot check|access denied/i;
+// Bot interstitials do not carry a page's own social or structured metadata.
+const PREVIEW_METADATA = /<meta\b[^>]*(?:og:title|og:image|twitter:title|twitter:image)|application\/ld\+json/i;
+// Inline script/style bodies are code, not page copy: storefronts routinely
+// mention form fields such as "h-captcha-response" there. Opening tags and
+// their attributes (e.g. id="px-captcha", a captcha script src) are kept.
+const INLINE_CODE_BODIES = /(<(script|style)\b[^>]*>)[\s\S]*?(?:<\/\2\s*>|$)/gi;
+
+/**
+ * A challenge marker only counts when the page lacks its own preview metadata:
+ * real product pages routinely load reCAPTCHA scripts or mention captcha form
+ * fields, while interstitials (Cloudflare, Akamai, PerimeterX) carry none.
+ */
 function isChallengePage(html: string): boolean {
-  return /checking your browser|verify you are human|captcha|attention required|cloudflare ray id|unusual traffic|robot check|access denied/i.test(html.slice(0, 30_000));
+  return CHALLENGE_MARKERS.test(html.slice(0, 30_000).replace(INLINE_CODE_BODIES, "$1")) && !PREVIEW_METADATA.test(html);
 }
 
+/** Drop a tag left open by a byte cut so downstream regex parsers never see a half attribute. */
+function dropPartialTrailingTag(html: string): string {
+  const open = html.lastIndexOf("<");
+  return open > html.lastIndexOf(">") ? html.slice(0, open) : html;
+}
+
+/**
+ * Bound HTML to `maxBytes` of UTF-8. The cut never splits a multi-byte
+ * character (the streaming decoder holds back an incomplete sequence) and never
+ * leaves a partial trailing tag.
+ */
+export function truncateHtmlToBytes(html: string, maxBytes: number): { html: string; truncated: boolean } {
+  const bytes = Buffer.from(html, "utf8");
+  if (bytes.byteLength <= maxBytes) return { html, truncated: false };
+  const prefix = new TextDecoder().decode(bytes.subarray(0, maxBytes), { stream: true });
+  return { html: dropPartialTrailingTag(prefix), truncated: true };
+}
+
+// Only a title with text counts: script-only interstitials ship an empty <title></title>.
 function isUnderfilledPage(html: string): boolean {
-  return plainText(html).length < 2_000 && !/<meta\b[^>]*(?:og:title|og:image|twitter:title)|<title\b|application\/ld\+json/i.test(html);
+  return plainText(html).length < 2_000 && !/<meta\b[^>]*(?:og:title|og:image|twitter:title)|<title\b[^>]*>\s*[^<\s]|application\/ld\+json/i.test(html);
 }
 
 type ProbeResult = { statusCode: number; contentType: string | null; contentLength: number; location: string | null; bytesRead: number };
@@ -550,13 +617,13 @@ async function guardedFetch(rawUrl: URL, deps: Required<Pick<UnfurlDependencies,
       fetchPath = "facebook-crawler";
       response = await requestOnce(FACEBOOK_CRAWLER_UA);
     }
-    if (!response) return { html: null, finalUrl: current, blocked: blockedStatus || challengeDetected || underfilled, challenge: challengeDetected, statusCode: null, fetchPath, notHtml: false };
+    if (!response) return { html: null, finalUrl: current, blocked: blockedStatus || challengeDetected, challenge: challengeDetected, statusCode: null, fetchPath, notHtml: false };
     const stillChallenge = isChallengePage(response.body);
     const stillBlocked = [403, 429, 503].includes(response.statusCode);
     const stillUnderfilled = !allowJson && Boolean(response.contentType?.toLowerCase().includes("text/html")) && response.statusCode >= 200 && response.statusCode < 300 && isUnderfilledPage(response.body);
-    if (stillBlocked || stillChallenge || stillUnderfilled) return { html: response.body || null, finalUrl: current, blocked: true, challenge: stillChallenge, statusCode: response.statusCode, fetchPath, notHtml: false };
+    if (stillBlocked || stillChallenge || stillUnderfilled) return { html: response.body || null, finalUrl: current, blocked: stillBlocked || stillChallenge, challenge: stillChallenge, statusCode: response.statusCode, fetchPath, notHtml: false, truncated: response.truncated ?? false };
     if (response.statusCode >= 300 && response.statusCode < 400) {
-      if (!response.location) return { html: null, finalUrl: current, blocked: false, challenge: false, statusCode: response.statusCode, fetchPath, notHtml: false };
+      if (!response.location) return { html: null, finalUrl: current, blocked: false, challenge: false, statusCode: response.statusCode, fetchPath, notHtml: false, truncated: response.truncated ?? false };
       if (redirects === MAX_REDIRECTS) throw new UnfurlSafetyError("This link redirects too many times.");
       try { current = normalizeUnfurlUrl(new URL(response.location, current).toString()); }
       catch (error) { if (error instanceof UnfurlSafetyError) throw error; throw new UnfurlSafetyError("The redirect URL is invalid."); }
@@ -566,7 +633,7 @@ async function guardedFetch(rawUrl: URL, deps: Required<Pick<UnfurlDependencies,
     if (response.statusCode < 200 || response.statusCode >= 300 || (!type.includes("text/html") && !(allowJson && /(?:application\/(?:hal\+)?json|\+json)/i.test(type))) || Buffer.byteLength(response.body, "utf8") > deps.maxBytes) {
       return { html: null, finalUrl: current, blocked: false, challenge: false, statusCode: response.statusCode, fetchPath, notHtml: response.statusCode >= 200 && response.statusCode < 300 };
     }
-    return { html: response.body, finalUrl: current, blocked: false, challenge: false, statusCode: response.statusCode, fetchPath, notHtml: false };
+    return { html: response.body, finalUrl: current, blocked: false, challenge: false, statusCode: response.statusCode, fetchPath, notHtml: false, truncated: response.truncated ?? false };
   }
   return { html: null, finalUrl: current, blocked: false, challenge: false, statusCode: null, fetchPath, notHtml: false };
 }
@@ -592,18 +659,24 @@ export async function fetchHtml(rawUrl: string | URL, dependencies: UnfurlDepend
     const rendered = await withinTimeout(dependencies.render(requestedUrl), 20_000);
     const renderedObject = typeof rendered === "string" ? null : rendered;
     const renderedHtml = typeof rendered === "string" ? rendered : renderedObject?.html;
-    if (!renderedHtml || Buffer.byteLength(renderedHtml, "utf8") > deps.maxBytes) return page;
-    const challenge = isChallengePage(renderedHtml);
-    if (challenge) return { ...page, html: null, blocked: true, challenge: true, statusCode: renderedObject?.statusCode ?? page.statusCode, fetchPath: "playwright" };
+    if (!renderedHtml) return page;
+    // Oversized renders keep their bounded prefix: metadata lives in <head>.
+    const bounded = truncateHtmlToBytes(renderedHtml, deps.maxBytes);
+    const challenge = isChallengePage(bounded.html);
+    const statusCode = renderedObject?.statusCode ?? page.statusCode;
+    if (challenge) return { ...page, html: null, blocked: true, challenge: true, statusCode, fetchPath: "playwright" };
     return {
       ...page,
-      html: renderedHtml,
+      html: bounded.html,
       finalUrl: renderedObject ? normalizeUnfurlUrl(renderedObject.finalUrl) : page.finalUrl,
-      blocked: false,
+      // unfurlUrl discards HTML served with these statuses, so report the block rather than "no metadata".
+      blocked: [403, 429, 503].includes(statusCode ?? -1),
       challenge: false,
-      statusCode: renderedObject?.statusCode ?? page.statusCode,
+      statusCode,
       fetchPath: "playwright",
       notHtml: false,
+      // Price uniqueness cannot be trusted when markup was omitted (see unfurlUrl).
+      truncated: bounded.truncated || (renderedObject?.truncated ?? false),
     };
   } catch { return page; }
 }
@@ -624,12 +697,17 @@ export async function unfurlUrl(rawUrl: string, dependencies: UnfurlDependencies
   const result = urlFallbackMetadata(rawUrl);
   const requestedUrl = normalizeUnfurlUrl(rawUrl);
   const page = await fetchHtml(requestedUrl, dependencies);
-  result.debug = { httpStatus: page.statusCode, challenge: page.challenge, finalUrl: page.finalUrl.toString(), fetchPath: page.fetchPath };
+  result.debug = { httpStatus: page.statusCode, challenge: page.challenge, finalUrl: page.finalUrl.toString(), fetchPath: page.fetchPath, truncated: page.truncated ?? false };
   const html = page.challenge || [403, 429, 503].includes(page.statusCode ?? -1) ? null : page.html;
   if (html) {
     const preview = previewFields(html, page.finalUrl, requestedUrl);
     Object.assign(result, preview.fields);
     result.fieldSources = preview.sources;
+    if (page.truncated) {
+      // Omitted markup might contain other variants/offers; do not infer price uniqueness.
+      result.price = null; result.currency = null;
+      delete result.fieldSources.price; delete result.fieldSources.currency;
+    }
     result.imageUrl = null;
     delete result.fieldSources.imageUrl;
     const lookup = dependencies.lookup ?? ((hostname: string) => dnsLookup(hostname, { all: true, verbatim: true }));

@@ -132,7 +132,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         </div>
         {previewing && <p role="status" className="text-sm text-muted-foreground">Saving your wish…</p>}
         {!savedUrl && <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} />}
-        {!savedUrl && <details className="group rounded-lg border border-border px-4 py-3">
+        {!savedUrl && <details open className="group rounded-lg border border-border px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold">Details</summary>
           <div className="mt-4 grid gap-4">
             <label className="grid gap-1.5 text-sm font-medium">Gift title

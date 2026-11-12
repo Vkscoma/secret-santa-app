@@ -4,7 +4,7 @@ import { renderUnfurlPage } from "@/lib/playwright-unfurl";
 import { unfurlCache } from "@/lib/schema";
 import { normalizeCacheKey, normalizeUnfurlUrl, unfurlCacheTtlMs, unfurlUrl, type UnfurlMetadata } from "@/lib/unfurl";
 
-export const LINK_PREVIEW_VERSION = 5;
+export const LINK_PREVIEW_VERSION = 6;
 export type CachedLinkPreview = UnfurlMetadata & { fetchedAt: string };
 
 /** Only cache successful page metadata; a blocked request can be retried immediately. */

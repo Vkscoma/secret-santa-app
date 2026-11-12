@@ -34,6 +34,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -52,3 +53,7 @@ artifacts
 
 # local env files
 .env.local
+
+# Secret Santa Specs
+/specs/secret-santa/
+secret-santa-app/specs/secret-santa-spec.md

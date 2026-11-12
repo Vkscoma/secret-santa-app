@@ -17,6 +17,7 @@ async function main() {
         finalUrl: metadata.debug.finalUrl,
         fetchPath: metadata.debug.fetchPath,
         challenge: metadata.debug.challenge,
+        truncated: metadata.debug.truncated ?? false,
         fieldSources: metadata.fieldSources,
         imageUrl: metadata.imageUrl,
         reason: metadata.reason,

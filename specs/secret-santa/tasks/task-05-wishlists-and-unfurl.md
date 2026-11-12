@@ -2,7 +2,7 @@
 
 ## Status
 
-pending
+complete
 
 ## Wave
 
@@ -56,3 +56,11 @@ Build one editable wishlist per user per exchange, with priority, notes, price i
 ## Notes
 
 Never fetch an arbitrary URL from the browser. SSRF defense must be enforced server-side and rechecked across redirects.
+
+## Completion Notes
+
+- Added participant wishlists with validated create/edit/delete/reorder actions, previous-year copy-forward, preferences, assigned-recipient views, and giver-only claim state.
+- Added server-side URL unfurling with normalized caching, per-user rate limiting, DNS resolution pinning, private/reserved address and redirect checks, time/size/type limits, and manual-title fallback. Legacy empty wishlist/cache tables were reconciled in place with a guarded migration that preserves legacy columns.
+- Redraw now clears wishlist claims in the same transaction and uses the same exchange lock as claim toggles.
+- Verification: `pnpm test -- --run` (96 tests), `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `git diff --check` pass. The build required elevated permissions because Turbopack could not bind a port in the sandbox.
+- `drizzle/0006_wild_texas_twister.sql` was applied successfully to the live database with `pnpm db:migrate`.

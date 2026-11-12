@@ -20,6 +20,9 @@ import {
   exchanges,
   exclusions,
   inviteLinks,
+  itemClaims,
+  wishlistItems,
+  wishlists,
   user,
 } from "@/lib/schema";
 
@@ -86,7 +89,7 @@ function parseExchange(formData: FormData) {
 export async function createExchange(formData: FormData) {
   const session = await requireAdmin();
   const values = parseExchange(formData);
-  const [exchange] = await db.insert(exchanges).values(values).returning({ id: exchanges.id });
+  const [exchange] = await db.insert(exchanges).values({ ...values, createdBy: session.user.id }).returning({ id: exchanges.id });
   if (!exchange) throw new Error("Could not create the exchange.");
   await writeAudit({ actorId: session.user.id, action: "exchange.created", targetType: "exchange", targetId: exchange.id });
   revalidatePath("/admin");
@@ -179,9 +182,15 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean) 
       .where(and(sql`${exchanges.year} between ${exchange.year - 2} and ${exchange.year - 1}`, inArray(assignments.giverId, participantIds), inArray(assignments.receiverId, participantIds)));
     const result = drawSecretSanta({ participantIds, exclusions: excluded, previousPairs: prior });
 
-    // Wave 5 message rows will be owned by assignments with ON DELETE CASCADE;
-    // deleting these rows here clears their anonymous threads in the same transaction.
-    if (redraw) await tx.delete(assignments).where(eq(assignments.exchangeId, exchangeId));
+    if (redraw) {
+      const exchangeWishlistItems = tx.select({ id: wishlistItems.id })
+        .from(wishlistItems)
+        .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
+        .where(eq(wishlists.exchangeId, exchangeId));
+      await tx.delete(itemClaims).where(inArray(itemClaims.itemId, exchangeWishlistItems));
+      // Wave 5 message rows will be owned by assignments with ON DELETE CASCADE.
+      await tx.delete(assignments).where(eq(assignments.exchangeId, exchangeId));
+    }
     await tx.insert(assignments).values(result.map((pair) => ({ exchangeId, ...pair })));
     await tx.update(exchanges).set({ status: "drawn" }).where(eq(exchanges.id, exchangeId));
     await tx.insert(auditLog).values(auditValues({
@@ -205,7 +214,7 @@ export async function drawExchange(formData: FormData) {
 export async function redrawExchange(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
-  requireChecked(formData, "confirmRedraw", "Confirm the redraw and message reset before continuing.");
+  requireChecked(formData, "confirmRedraw", "Confirm the redraw and item claim/message reset before continuing.");
   await createDraw(exchangeId, session.user.id, true);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
   revalidatePath("/admin");

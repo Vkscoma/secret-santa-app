@@ -2,7 +2,7 @@
 
 ## Status
 
-pending
+complete
 
 ## Wave
 
@@ -56,3 +56,10 @@ Build the administrator experience for allowlist/invite management, user setting
 ## Notes
 
 Task scope owns the shared `schema.ts` for exchanges and draw-related tables. Later schema tasks extend it in later waves to avoid concurrent edits.
+
+## Completion Notes
+
+- The admin and exchange workflows, lifecycle locks, exclusion management, secure draw, transactional assignments, confirmed redraw/reveal, audit events, and admin-only diagnostics are implemented.
+- Draw coverage includes impossible inputs, constraints, previous-pair avoidance, and 2,000 randomized feasible draws. Verification: `pnpm test -- --run` (56 tests), `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `git diff --check` pass.
+- `pnpm db:migrate` applied pending migrations successfully to the configured live database.
+- Follow-up compatibility fix: exchange creation now writes the authenticated creator ID required by the deployed `exchange.created_by` column. Migration `0007_aspiring_doctor_octopus.sql` is recorded; it preserved the existing column/FK on the live database.
