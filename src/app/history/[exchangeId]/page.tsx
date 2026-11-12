@@ -9,7 +9,7 @@ import { requireAllowlisted } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { isPastHistoryExchange, mayShowSantaIdentity } from "@/lib/history-policy";
 import { assignments, exchangeParticipants, exchanges, user, wishlistItems, wishlists } from "@/lib/schema";
-import { normalizeUnfurlUrl } from "@/lib/unfurl";
+import { normalizeUnfurlUrl } from "@/lib/url-safety";
 
 type PageProps = { params: Promise<{ exchangeId: string }> };
 
