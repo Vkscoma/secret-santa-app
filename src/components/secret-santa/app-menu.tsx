@@ -46,7 +46,7 @@ export function AppMenu() {
             className="focus-visible:ring-ring h-10 w-20 shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2"
             aria-label="Open menu"
           >
-            <span className="border-border bg-secondary text-pine dark:text-pine-foreground grid size-9 shrink-0 place-items-center rounded-full border text-sm font-bold">
+            <span className="border-border bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full border text-sm font-bold">
               {initial}
             </span>
             <Menu className="text-muted-foreground size-7 shrink-0 md:size-6" aria-hidden="true" />
