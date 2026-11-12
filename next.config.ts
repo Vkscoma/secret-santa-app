@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+const wishlistImageRuntimeFiles = [
+  "./node_modules/sharp/**",
+  "./node_modules/.pnpm/sharp@*/node_modules/sharp/**",
+  "./node_modules/@img/sharp-linux-x64/**",
+  "./node_modules/.pnpm/@img+sharp-linux-x64@*/node_modules/@img/sharp-linux-x64/**",
+  "./node_modules/@img/sharp-libvips-linux-x64/**",
+  "./node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/**",
+];
+
 const nextConfig: NextConfig = {
   // The wishlist server actions import the Playwright renderer for link previews.
   // Trace the complete Playwright package (including browsers.json) and Chromium
@@ -12,14 +21,20 @@ const nextConfig: NextConfig = {
     "/api/wishlist-items/enrich": [
       "./node_modules/playwright-core/**",
       "./node_modules/@sparticuz/chromium/bin/**",
+      ...wishlistImageRuntimeFiles,
+    ],
+    "/api/wishlist-images/upload": [
+      ...wishlistImageRuntimeFiles,
     ],
     "/wishlists/*": [
       "./node_modules/playwright-core/**",
       "./node_modules/@sparticuz/chromium/bin/**",
+      ...wishlistImageRuntimeFiles,
     ],
     "/wishlists/*/recipient": [
       "./node_modules/playwright-core/**",
       "./node_modules/@sparticuz/chromium/bin/**",
+      ...wishlistImageRuntimeFiles,
     ],
   },
 

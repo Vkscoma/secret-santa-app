@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, LogOut, UserRound } from "lucide-react";
+import { LogOut, Menu, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ const links = [
 export function AppMenu() {
   const { data: session } = useSession();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
   const name = session?.user?.name ?? "Santa’s helper";
   const initial = name.trim().charAt(0).toUpperCase() || "S";
 
@@ -39,17 +41,20 @@ export function AppMenu() {
       <div className="hidden sm:block">
         <ModeToggle />
       </div>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="focus-visible:ring-ring h-10 w-20 shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2"
-            aria-label="Open menu"
+            className="group/menu focus-visible:ring-ring h-10 w-20 shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             <span className="border-border bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full border text-sm font-bold">
               {initial}
             </span>
-            <Menu className="text-muted-foreground size-7 shrink-0 md:size-6" aria-hidden="true" />
+            <span className="relative grid size-7 shrink-0 place-items-center md:size-6" aria-hidden="true">
+              <Menu className="text-muted-foreground absolute size-7 transition-[transform,opacity] duration-200 ease-out group-data-[state=open]/menu:rotate-45 group-data-[state=open]/menu:scale-75 group-data-[state=open]/menu:opacity-0 md:size-6" />
+              <X className="text-muted-foreground absolute size-7 -rotate-45 scale-75 opacity-0 transition-[transform,opacity] duration-200 ease-out group-data-[state=open]/menu:rotate-0 group-data-[state=open]/menu:scale-100 group-data-[state=open]/menu:opacity-100 md:size-6" />
+            </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
