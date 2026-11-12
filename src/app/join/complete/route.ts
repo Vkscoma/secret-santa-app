@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const destination = new URL("/join/result", request.url);
     destination.searchParams.set("outcome", result.outcome);
     const returnTo = safeReturnTo(query.get("returnTo"));
-    if (returnTo !== "/dashboard") destination.searchParams.set("returnTo", returnTo);
+    if (returnTo !== "/wishlists") destination.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(destination);
   } catch {
     cookieStore.delete(PENDING_INVITE_COOKIE);

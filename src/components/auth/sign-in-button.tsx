@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, useSession } from "@/lib/auth-client";
 
-export function SignInButton({ returnTo = "/dashboard" }: { returnTo?: string }) {
+export function SignInButton({ returnTo = "/wishlists" }: { returnTo?: string }) {
   const { data: session, isPending } = useSession();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPaste } from "lucide-react";
+import { ClipboardPaste, Gift } from "lucide-react";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provider";
 import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
@@ -107,9 +107,12 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
 
   return (
     <Card className="space-y-4 border-border/80 p-5 shadow-sm sm:p-6">
-      <div>
-        <h2 className="text-xl font-bold">Add a wish</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Paste a product link or type a gift idea. We’ll fill in product details when we can.</p>
+      <div className="flex items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Gift className="size-5" aria-hidden="true" /></div>
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold">Add a wish</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Paste a product link or type a gift idea. We’ll fill in product details when we can.</p>
+        </div>
       </div>
       <form action={submitWish} className="grid gap-4">
         <input type="hidden" name="exchangeId" value={exchangeId} />

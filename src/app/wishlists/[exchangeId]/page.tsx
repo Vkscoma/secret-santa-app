@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import { ArrowLeft, Gift, Heart, Sparkles } from "lucide-react";
-import { PageHeading, ProgressNudge } from "@/components/secret-santa/components";
+import { ArrowLeft, Gift, Heart, Plus, Settings2, Sparkles } from "lucide-react";
+import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishlistComposer } from "@/components/secret-santa/wishlist-composer";
@@ -74,46 +74,43 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
     .where(and(eq(assignments.exchangeId, exchangeId), eq(assignments.giverId, session.user.id))).limit(1);
   const editable = exchange.status !== "closed";
 
+  const budget = exchange.budgetMin === exchange.budgetMax
+    ? `$${exchange.budgetMax}`
+    : `$${exchange.budgetMin}–$${exchange.budgetMax}`;
+
   return (
-    <WishlistPasteProvider><div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
-      <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"><ArrowLeft className="size-4" /> All wish lists</Link>
-      <PageHeading eyebrow={`${exchange.year} exchange`} title={`${exchange.name}: my list`} description="Share the little details that make it easier for your Santa to find something you’ll love." />
-      <ProgressNudge count={items.length} target={3} />
-
-      <Card className="space-y-4 border-gold/40 bg-gold/5 p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold/20 text-gold-foreground"><Sparkles className="size-5" /></span>
-          <div className="min-w-0 flex-1"><h2 className="font-bold">A few more clues</h2><p className="mt-1 text-sm text-muted-foreground">Add the things you like, or let your Santa surprise you.</p></div>
-        </div>
-        {editable ? <form action={saveWishlistPreferences} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <input type="hidden" name="exchangeId" value={exchangeId} />
-          <label className="grid gap-1.5 text-sm font-medium">Things I like
-            <textarea name="likes" maxLength={1000} rows={2} defaultValue={wishlist?.likes ?? ""} placeholder="Cozy evenings, hiking, favorite flavors…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-          </label>
-          <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surpriseMe" defaultChecked={wishlist?.surpriseMe ?? false} className="size-4 accent-primary" /><Heart className="size-4 text-primary" /> Surprise me</label>
-            <Button type="submit" variant="outline">Save preferences</Button>
-          </div>
-        </form> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
-      </Card>
-
-      {editable && <WishlistComposer exchangeId={exchangeId} {...(query.url ? { initialUrl: query.url } : {})} {...(query.sharedTitle ? { initialTitle: query.sharedTitle } : {})} {...(query.sharedImage ? { initialImageUrl: query.sharedImage } : {})} {...(query.sharedPrice ? { initialPrice: query.sharedPrice } : {})} {...(query.sharedBrand ? { initialStoreName: query.sharedBrand } : {})} />}
-
-      <section className="space-y-4" aria-labelledby="wish-items-heading">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div><h2 id="wish-items-heading" className="text-xl font-bold">My gift ideas</h2><p className="text-sm text-muted-foreground">Only you can edit this list.</p></div>
-          {myAssignment && exchange.status !== "open" && <Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}>See my recipient’s list</Link></Button>}
-        </div>
+    <WishlistPasteProvider>
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        <Link href="/wishlists" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> All wish lists</Link>
+        <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground"><Sparkles className="size-3.5" aria-hidden="true" />{exchange.year} exchange</p>
+        <PageHeading title="A list full of little joys" description="Add a wish or browse the ideas you’ve already saved. Your Secret Santa will thank you." />
+        <div className={editable ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.92fr)] xl:gap-8" : "mx-auto max-w-3xl"}>
+          {editable && <div id="add-a-wish" className="order-2 min-w-0 scroll-mt-24 space-y-4 lg:order-1">
+            <WishlistComposer exchangeId={exchangeId} {...(query.url ? { initialUrl: query.url } : {})} {...(query.sharedTitle ? { initialTitle: query.sharedTitle } : {})} {...(query.sharedImage ? { initialImageUrl: query.sharedImage } : {})} {...(query.sharedPrice ? { initialPrice: query.sharedPrice } : {})} {...(query.sharedBrand ? { initialStoreName: query.sharedBrand } : {})} />
+            <p className="px-1 text-xs leading-5 text-muted-foreground">Have a size, color, or model in mind? Add those little details so your Santa can choose with confidence.</p>
+          </div>}
+          <div className="order-1 min-w-0 space-y-4 lg:order-2">
+            <section aria-labelledby="wish-items-heading" className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+              <div className="panel-pattern relative overflow-hidden bg-pine px-5 py-5 text-pine-foreground sm:px-6">
+                <div className="relative z-10 flex items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-pine-foreground/75">My wish list</p><h2 id="wish-items-heading" className="break-words text-xl font-bold leading-tight">{exchange.name}</h2><p className="mt-2 text-sm text-pine-foreground/80">{items.length} {items.length === 1 ? "gift" : "gifts"} · Budget {budget}</p></div>
+                  <a href="#wishlist-preferences" aria-label="Wishlist preferences" className="shrink-0 rounded-lg bg-pine-foreground/10 p-2.5 transition hover:bg-pine-foreground/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine-foreground"><Settings2 className="size-4" aria-hidden="true" /></a>
+                </div>
+                <StringLights />
+              </div>
+              <div className="space-y-5 p-4 sm:p-5">
+                <div className="[&_.text-gold-foreground]:text-foreground"><ProgressNudge count={items.length} target={3} /></div>
+                <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-bold">My gift ideas</h3><span className="text-xs text-muted-foreground">Only you can edit this list</span></div>
         <PendingWishlistCards savedItemIds={items.map((item) => item.id)} />
         {items.length ? <div className="space-y-3">
           {items.map((item, index) => {
             const productUrl = safeProductUrl(item.url);
-            return <Card key={item.id} className="space-y-3 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <ProductImage src={safeProductImageUrl(item.imageUrl)} alt={`${item.title} product image`} className="size-20 sm:size-24" />
+            return <Card key={item.id} className="space-y-3 border-border/80 p-3 shadow-none sm:p-4">
+            <div className="flex items-start gap-3">
+              <ProductImage src={safeProductImageUrl(item.imageUrl)} alt={`${item.title} product image`} className="size-16 sm:size-20" iconClassName="size-6 text-secondary-foreground" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0"><h3 className="font-bold">{item.title}</h3><p className="mt-1 text-sm text-muted-foreground">{item.storeName || safeHost(item.url)}</p></div>
+                  <div className="min-w-0"><h4 className="break-words font-bold leading-snug">{item.title}</h4><p className="mt-1 text-sm text-muted-foreground">{item.storeName || safeHost(item.url)}</p></div>
                   <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">{priorityLabel[item.priority] ?? "Would like"}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -151,13 +148,34 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
         </div> : <WishlistEmptyState><Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
           <div><Gift className="mx-auto size-7 text-primary" /><p className="mt-2 font-semibold">Your list is ready for its first wish</p><p className="mt-1 text-sm text-muted-foreground">Add a favorite thing, a useful hint, or a link.</p></div>
         </Card></WishlistEmptyState>}
-      </section>
-
-      {editable && previous && items.length === 0 && <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+      {editable && previous && items.length === 0 && <Card className="flex flex-col gap-3 border-dashed p-4 shadow-none">
         <div><h2 className="font-bold">Start with last year’s list</h2><p className="text-sm text-muted-foreground">Copy items and preferences from {previous.name}. The original list stays unchanged.</p></div>
         <form action={copyPreviousWishlist}><input type="hidden" name="exchangeId" value={exchangeId} /><Button type="submit" variant="outline">Copy {previous.year} list</Button></form>
       </Card>}
-      {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">This exchange is closed. Its wishlist is saved for history.</p>}
-    </div></WishlistPasteProvider>
+      <Card id="wishlist-preferences" className="scroll-mt-24 space-y-4 border-border/80 bg-muted/30 p-4 shadow-none sm:p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold/20 text-foreground"><Sparkles className="size-5" /></span>
+          <div className="min-w-0 flex-1"><h2 className="font-bold">A few more clues</h2><p className="mt-1 text-sm text-muted-foreground">Add the things you like, or let your Santa surprise you.</p></div>
+        </div>
+        {editable ? <form action={saveWishlistPreferences} className="grid gap-3 ">
+          <input type="hidden" name="exchangeId" value={exchangeId} />
+          <label className="grid gap-1.5 text-sm font-medium">Things I like
+            <textarea name="likes" maxLength={1000} rows={2} defaultValue={wishlist?.likes ?? ""} placeholder="Cozy evenings, hiking, favorite flavors…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          </label>
+          <div className="flex flex-wrap items-center justify-between gap-3 ">
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surpriseMe" defaultChecked={wishlist?.surpriseMe ?? false} className="size-4 accent-primary" /><Heart className="size-4 text-primary" /> Surprise me</label>
+            <Button type="submit" variant="outline">Save preferences</Button>
+          </div>
+        </form> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
+      </Card>
+                {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">This exchange is closed. Its wishlist is saved for history.</p>}
+              </div>
+            </section>
+            {myAssignment && exchange.status !== "open" && <div className="flex justify-end"><Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}><Gift className="size-4" /> See my recipient’s list</Link></Button></div>}
+          </div>
+        </div>
+        {editable && <a href="#add-a-wish" aria-label="Add a wish" className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:hidden"><Plus className="size-6" aria-hidden="true" /></a>}
+      </div>
+    </WishlistPasteProvider>
   );
 }

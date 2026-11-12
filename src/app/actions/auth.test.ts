@@ -37,13 +37,13 @@ describe("requestMagicLink", () => {
 
   afterEach(() => vi.unstubAllEnvs());
 
-  it("passes a non-empty signup name and dashboard callback for normal sign-in", async () => {
+  it("passes a non-empty signup name and wishlist callback for normal sign-in", async () => {
     const result = await requestMagicLink(form("  Santa.Helper@example.test "));
     expect(state.signInMagicLink).toHaveBeenCalledWith(expect.objectContaining({
       body: {
         email: "santa.helper@example.test",
         name: "Santa Helper",
-        callbackURL: "/dashboard",
+        callbackURL: "/wishlists",
       },
     }));
     expect(result.message).toMatch(/If this email is approved/);

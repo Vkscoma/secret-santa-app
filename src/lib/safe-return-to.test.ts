@@ -2,6 +2,16 @@ import { describe, expect, it } from "vitest";
 import { safeReturnTo } from "./safe-return-to";
 
 describe("safeReturnTo", () => {
+  it("defaults missing destinations to wish lists", () => {
+    expect(safeReturnTo(undefined)).toBe("/wishlists");
+    expect(safeReturnTo(null)).toBe("/wishlists");
+  });
+
+  it("preserves explicit protected destinations", () => {
+    expect(safeReturnTo("/dashboard")).toBe("/dashboard");
+    expect(safeReturnTo("/admin/exchanges/example?tab=members#invites")).toBe("/admin/exchanges/example?tab=members#invites");
+  });
+
   it("preserves local paths and query parameters", () => {
     expect(safeReturnTo("/wishlists/share?url=https%3A%2F%2Fshop.example%2Fp"))
       .toBe("/wishlists/share?url=https%3A%2F%2Fshop.example%2Fp");
@@ -9,6 +19,6 @@ describe("safeReturnTo", () => {
 
   it.each(["https://evil.example", "//evil.example", "/\\evil.example", "dashboard", "\n//evil.example"])(
     "rejects unsafe callback %s",
-    (value) => expect(safeReturnTo(value)).toBe("/dashboard"),
+    (value) => expect(safeReturnTo(value)).toBe("/wishlists"),
   );
 });
