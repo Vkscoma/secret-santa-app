@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Calendar, User, Shield, ArrowLeft, Lock, Smartphone } from "lucide-react";
 import { toast } from "sonner";
+import { saveNotificationPreferences } from "@/app/actions/notification-settings";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,18 +27,32 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useSession } from "@/lib/auth-client";
 
-export default function ProfilePage() {
+type NotificationPreferences = { reminders: boolean; nudges: boolean; digests: boolean };
+
+export default function ProfilePage({ initialNotificationPrefs }: { initialNotificationPrefs: Record<string, boolean> }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [emailPrefsOpen, setEmailPrefsOpen] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
+    reminders: initialNotificationPrefs.reminders !== false,
+    nudges: initialNotificationPrefs.nudges !== false,
+    digests: initialNotificationPrefs.digests !== false,
+  });
 
   useEffect(() => {
     if (!isPending && !session) {
       router.push("/");
     }
   }, [isPending, session, router]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (new URLSearchParams(window.location.search).get("preferences") === "1") setEmailPrefsOpen(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   if (isPending || !session) {
     return (
@@ -61,6 +76,19 @@ export default function ProfilePage() {
     // In a real app, this would call an API to update the user profile
     toast.info("Profile updates require backend implementation");
     setEditProfileOpen(false);
+  };
+
+  const handleNotificationPreferences = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    try {
+      await saveNotificationPreferences(formData);
+      setNotificationPrefs({ reminders: formData.get("reminders") === "on", nudges: formData.get("nudges") === "on", digests: formData.get("digests") === "on" });
+      toast.success("Email preferences saved.");
+      setEmailPrefsOpen(false);
+    } catch {
+      toast.error("Could not save email preferences.");
+    }
   };
 
   return (
@@ -384,31 +412,23 @@ export default function ProfilePage() {
               Configure your email notification settings.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Marketing Emails</p>
-                <p className="text-sm text-muted-foreground">
-                  Product updates and announcements
-                </p>
-              </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+          <form id="email-preferences" onSubmit={handleNotificationPreferences} className="space-y-4">
+            {([
+              ["reminders", "Exchange reminders", "Reminders 14, 7, and 1 day before the exchange."],
+              ["nudges", "Wishlist nudges", "A weekly reminder while your wish list is empty."],
+              ["digests", "Wishlist updates", "A daily digest of your recipient’s list changes."],
+            ] as const).map(([key, label, description]) => (
+              <label key={key} className="flex items-start gap-3 rounded-lg border p-4">
+                <input name={key} type="checkbox" checked={notificationPrefs[key]} onChange={(event) => setNotificationPrefs((current) => ({ ...current, [key]: event.target.checked }))} className="mt-1 size-4 accent-primary" />
+                <span><span className="block font-medium">{label}</span><span className="text-sm text-muted-foreground">{description}</span></span>
+              </label>
+            ))}
+            <p className="text-xs text-muted-foreground">Assignment notifications and secure sign-in links are always sent.</p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEmailPrefsOpen(false)}>Close</Button>
+              <Button type="submit">Save preferences</Button>
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Security Alerts</p>
-                <p className="text-sm text-muted-foreground">
-                  Important security notifications
-                </p>
-              </div>
-              <Badge variant="default">Always On</Badge>
-            </div>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={() => setEmailPrefsOpen(false)}>
-              Close
-            </Button>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

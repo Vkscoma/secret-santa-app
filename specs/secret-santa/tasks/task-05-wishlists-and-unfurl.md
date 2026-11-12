@@ -15,7 +15,7 @@ Build one editable wishlist per user per exchange, with priority, notes, price i
 ## Dependencies
 
 **Depends on:** task-04-admin-exchanges-and-draw
-**Blocks:** task-06-home-and-anonymous-messages, task-08-history-pwa-seed-and-docs
+**Blocks:** task-06-home-and-nudge, task-08-history-pwa-seed-and-docs
 
 **Context from dependencies:** Exchanges and participants exist, and server guards can verify ownership/membership. The exchange table supplies budget/date and prior exchange relationships. Downstream Home and history show these saved list records.
 

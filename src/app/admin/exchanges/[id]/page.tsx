@@ -213,7 +213,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
           {isOpen && <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" disabled={participantRows.length < 2}><Gift className="size-4" /> Draw names</Button></form>}
           {canRedraw && <form action={redrawExchange} className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <input type="hidden" name="exchangeId" value={id} />
-            <div><h3 className="font-bold text-destructive">Redraw this exchange</h3><p className="mt-1 text-sm text-muted-foreground">This replaces every assignment and clears item claims for this exchange. Participants will need to start over.</p></div>
+            <div><h3 className="font-bold text-destructive">Redraw this exchange</h3><p className="mt-1 text-sm text-muted-foreground">This replaces every assignment and clears item claims. If retained historical message records are linked to these assignments, redraw is blocked to preserve them.</p></div>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirmRedraw" required className="mt-1 size-4 accent-primary" /><span>I understand this replaces the draw and clears item claims.</span></label>
             <Button type="submit" variant="destructive">Confirm redraw</Button>
           </form>}
@@ -241,11 +241,11 @@ export default async function AdminExchangePage({ params }: PageProps) {
       </section>
 
       <section className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
-        <div><h2 className="font-bold">Reminders</h2><p className="text-sm text-muted-foreground">Send exchange reminders now through Resend. People who turned reminders off are skipped. Delivery history will be available in Wave 6.</p></div>
+        <div><h2 className="font-bold">Reminders</h2><p className="text-sm text-muted-foreground">Send exchange reminders now through Resend. People who turned reminders off are skipped. Sent emails appear in recent email activity.</p></div>
         {exchange.status !== "closed" && <form action={requestExchangeReminders}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" variant="outline">Send reminders now</Button></form>}
       </section>
 
-      <p className="text-center text-xs text-muted-foreground">Email delivery history will appear here when notification logging is added.</p>
+      <p className="text-center text-xs text-muted-foreground">Email delivery history is available in recent email activity on the admin page.</p>
     </div>
   );
 }

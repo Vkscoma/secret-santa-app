@@ -268,6 +268,29 @@ export const authRateLimits = pgTable(
   }
 );
 
+export const emailLog = pgTable(
+  "email_log",
+  {
+    id: uuid("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    recipientUserId: text("recipient_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    exchangeId: uuid("exchange_id").references(() => exchanges.id, { onDelete: "set null" }),
+    type: text("type").notNull(),
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    status: text("status").notNull().default("pending"),
+    sentAt: timestamp("sent_at"),
+    errorAt: timestamp("error_at"),
+    error: text("error"),
+    providerId: text("provider_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  },
+  (table) => [
+    index("email_log_recipient_created_idx").on(table.recipientUserId, table.createdAt),
+    index("email_log_exchange_type_idx").on(table.exchangeId, table.type),
+    check("email_log_status_check", sql`${table.status} in ('pending', 'sent', 'failed')`),
+  ]
+);
+
 export const wishlists = pgTable(
   "wishlist",
   {

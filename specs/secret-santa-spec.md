@@ -51,7 +51,7 @@ I like how **Drawnames** (drawnames.com) looks and feels: clean, airy, friendly 
 
 **What to match:**
 
-- **Simple sticky header:** white (or card color in dark mode), a subtle bottom shadow, the app logo and name on the left, and the user's initial avatar plus a hamburger menu on the right. The menu holds Home, My wish lists, Messages, History, Settings, Admin (for admins only), the theme toggle and Sign out.
+- **Simple sticky header:** white (or card color in dark mode), a subtle bottom shadow, the app logo and name on the left, and the user's initial avatar plus a hamburger menu on the right. The menu holds Home, My wish lists, History, Settings, Admin (for admins only), the theme toggle and Sign out.
 - **One centered content column**, about 960px wide on desktop and full width with 16px padding on phones. Lots of white space.
 - **Large, bold page titles** (e.g. "My wish lists"), left-aligned above the content.
 - **Soft cards:** white cards, rounded corners (~12px), very light shadows, thin borders, generous padding. Icon buttons (settings ⚙, share) sit in the card's top-right corner as small square tinted buttons.
@@ -77,9 +77,9 @@ I like how **Drawnames** (drawnames.com) looks and feels: clean, airy, friendly 
      - Below the composer, show an empty-state tip card when the list is empty ("Add links from any store, or just describe what you'd like").
    - **Right (sticky on desktop): the list panel** with a pine header ("Christmas 2026", "N gifts", settings and share buttons). Inside: the progress nudge card (target: at least 3 items), the item cards (drag to reorder, tap to edit in a sheet/dialog, ✕ to remove with an undo toast), the round "+" button, and then "Hobbies and interests" with the "Surprise me" toggle.
    - **On phones:** the list panel comes first, and the "+" button opens the "Add a wish" composer in a bottom sheet.
-3. **Home** (`/`): the same header and column. Show, in order: a countdown + budget card, the gift-tag assignment card (with the recipient's list underneath, using the same item cards in read-only form plus an "I'm getting this" toggle), the messages card, and your wishlist status using the progress nudge card style.
+3. **Home** (`/`): the same header and column. Show, in order: a countdown + budget card, the gift-tag assignment card (with the recipient's list underneath, using the same item cards in read-only form plus an "I'm getting this" toggle), and your wishlist status using the progress nudge card style. Show the email nudge only to the assigned giver while the recipient has no wishlist items.
 4. **Recipient's list view:** the same item card layout, read-only, sorted by priority, with "Over budget" and "Most wanted" badges and the "I'm getting this" toggle.
-5. **Messages, History, Settings, Admin:** the same card system. For simple pages, use tabs or a stacked list of cards.
+5. **History, Settings, Admin:** the same card system. For simple pages, use tabs or a stacked list of cards.
 
 ## Christmas themes: modern and festive in light AND dark
 
@@ -196,7 +196,7 @@ After building the themes, layout shell and components, render static preview ve
   - Exchanges: create, set participants, budget and date, run the draw, send reminders now.
   - Exclusion rules (e.g. spouses can't draw each other).
   - An email log showing what was sent to whom, and when.
-- **Keep the secret:** Admins are usually participants too, so the dashboard must NOT show who drew whom by default. Seeing assignments takes a separate "Reveal assignments" action behind a confirmation dialog, and every reveal is logged. **Admins can never read anonymous messages.**
+- **Keep the secret:** Admins are usually participants too, so the dashboard must NOT show who drew whom by default. Seeing assignments takes a separate "Reveal assignments" action behind a confirmation dialog, and every reveal is logged.
 - Log admin actions (role changes, settings edits, draws, reveals, invite changes) to `audit_log`.
 
 ## Yearly exchange & the draw
@@ -209,7 +209,7 @@ After building the themes, layout shell and components, render static preview ve
   - Avoid repeating the giver's pairing from the last 2 years when possible.
   - Use `crypto.randomInt` / `crypto.getRandomValues` (never `Math.random`) with backtracking or retries. If no valid draw exists, explain why instead of producing a bad one.
   - Save all assignments in one transaction. Add unique constraints on `(exchange_id, giver_id)` and `(exchange_id, receiver_id)`.
-- After the draw, the exchange is locked. A redraw needs explicit confirmation, replaces the assignments, and clears all anonymous message threads for that exchange (warn about this in the confirmation dialog).
+- After the draw, the exchange is locked. A redraw needs explicit confirmation and replaces the assignments (warn about this in the confirmation dialog). If an assignment has retained legacy message rows, block the redraw rather than cascading deletion of that data.
 - **Reveal:** When the admin marks the exchange `revealed` (or the exchange date passes, if the admin turns on auto-reveal), each person can see who their Secret Santa was.
 - Write thorough Vitest tests for the draw: no self-assignment, a perfect one-to-one mapping, exclusions honored, past-year avoidance preferred, impossible inputs rejected, and thousands of random runs with 2–30 participants.
 
@@ -219,18 +219,11 @@ Once signed in, the home page shows, in this order:
 
 1. **Countdown** to the exchange date (days/hours, in the exchange's time zone), plus the **budget**.
 2. **Your assignment:** "You're getting a gift for **[Name]**", with their wishlist, sizes and shipping address. Before the draw, show "Names haven't been drawn yet."
-3. **Messages:** unread counts for "Your recipient" and "Your Secret Santa" threads.
-4. **Your wishlist status:** item count and a prompt if it's empty.
+3. **Your wishlist status:** item count and a prompt if it's empty.
 
-## Anonymous messages
+## Communication scope
 
-- Each assignment has one two-way thread. The giver sees it as "Chat with [Recipient name]," where they are anonymous. The recipient sees it as "Chat with your Secret Santa." So everyone has up to two threads: one with the person they're buying for, and one with their own Santa.
-- **Anonymity is enforced on the server.** The recipient's client must never receive the giver's user ID, name, email, avatar or any field that could identify them. Store messages against the `assignment_id` with a `sender_role` of `giver` or `recipient`. Never return the giver's ID in API responses, logs shown to users, or email headers.
-- Keep messages to 1,000 characters, plain text only (render safely), and rate-limit sending.
-- Show unread badges. Refresh with polling (about every 15 seconds while the thread is open, plus on window focus). No websockets needed.
-- Email the other person about a new message, at most once every 30 minutes per thread. The email never names the Secret Santa.
-- Nobody can read a thread except its two participants, including admins.
-- After the reveal, the thread can show the Santa's name.
+The app has no private messaging or chat feature. Its built-in participant communication is the assigned giver's email nudge, shown only while the recipient's wishlist has no items. The legacy `message` table remains in the database to preserve schema/data, but no participant messaging UI, routes, content queries, or notifications are part of this product. Redraw performs only a row-count guard to avoid cascading deletion of retained data.
 
 ## Wishlists
 
@@ -262,9 +255,8 @@ All emails come from Resend with React Email templates. Every email includes a l
 - **"You've been assigned!"** goes to every participant when the draw runs. Don't put the recipient's name in the email (people share inboxes and notifications show previews). Say "Open the app to see who you're shopping for."
 - **Exchange reminders** go out 14, 7 and 1 day(s) before the exchange date.
 - **Empty wishlist nudge:** after the draw, if someone has no items and "Surprise me" is off, nudge them. At most once a week, stopping once they add an item.
-- **"Your recipient updated their wishlist"** goes to the giver as a daily digest, at most one per day.
-- **New anonymous message** (see above).
-- **Scheduling:** run one daily Vercel Cron Job at `/api/cron/notifications`, protected by `CRON_SECRET`, that sends whatever is due. Make sends **idempotent**: record each send in `email_log` with a unique key (e.g. `exchange:user:type:date`) so retries or re-runs never send duplicates.
+- **"Your recipient updated their wishlist"** goes to the giver as a daily digest of changes from the prior 24 hours, at most once per exchange-local date.
+- **Scheduling:** run one daily Vercel Cron Job at `/api/cron/notifications`, protected by `CRON_SECRET`, that sends whatever is due. Run it at 15:00 UTC. Reminder milestones have independent six-day windows: 8–14 days before the exchange for the 14-day reminder, 1–7 days before for the 7-day reminder, and exchange day through five days after for the 1-day reminder. Daily checks process eligible milestones at the next run; a milestone is skipped if no cron run falls within its window. Keep empty-wishlist nudges to at most once every seven days. Make sends **idempotent**: record each send in `email_log` with a unique key (e.g. `exchange:user:type:date`) so retries or re-runs never send duplicates.
 - Each user can turn off reminders, nudges and digests in Settings. Assignment emails and magic links always send.
 
 ## Add to home screen (PWA)
@@ -278,7 +270,6 @@ All emails come from Resend with React Email templates. Every email includes a l
 
 - A `/history` page lists your past exchanges, newest first. For each one, show who you gave to, their wishlist as it was that year, and the budget and date.
 - After an exchange is revealed, also show who your Secret Santa was.
-- Message threads from past years can be read but not replied to.
 
 ## Data model (starting point — refine as needed)
 
@@ -288,13 +279,14 @@ Extend `src/lib/schema.ts`. Add fields to Better Auth's `user` table with `addit
 - `allowlist`, `invite_links`, `invite_redemptions`
 - `exchanges`, `exchange_participants`, `exclusions`, `assignments`
 - `wishlists` (per user per exchange, with `surprise_me` and `likes`), `wishlist_items` (`priority`, `price_min`, `price_max`, `price_bucket`), `item_claims`
-- `messages` (`assignment_id`, `sender_role`, `body`, `read_at`)
 - `email_log`, `unfurl_cache`, `audit_log`
+
+The legacy `message` table is retained without messaging reads or writes; the redraw safeguard may count rows linked to assignments, but never reads or surfaces content. Do not add message functionality or drop the table without a separately reviewed data-safe migration.
 
 ## Security checklist
 
 - Check authorization on the server for every read and write. A user sees only their own data, plus their recipient's wishlist and settings for exchanges they're in.
-- Never send other people's assignments, or the giver's identity in a message thread, to the client.
+- Never send other people's assignments to the client.
 - Protect cron and admin routes on the server.
 - No secrets in client bundles. Keep `env.example` up to date.
 
@@ -311,7 +303,6 @@ Extend `src/lib/schema.ts`. Add fields to Better Auth's `user` table with `addit
    - the draw
    - the unfurl parser and SSRF guard
    - invite-token validation
-   - message anonymity: the recipient's API responses never include giver identity
    - email idempotency
 
 ## How to work
@@ -323,7 +314,7 @@ Extend `src/lib/schema.ts`. Add fields to Better Auth's `user` table with `addit
    2. Google + magic links + allowlist + invite links + roles.
    3. Admin dashboard + exchanges + draw (with tests).
    4. Wishlists + unfurl.
-   5. Home page + countdown + anonymous messages.
+   5. Home page + countdown + recipient wishlists + email nudge.
    6. Email notifications + cron.
    7. History + PWA + polish.
 4. Check the current docs for Next.js 16, Tailwind CSS v4, shadcn/ui, Better Auth, Drizzle, Resend and Vercel Cron instead of relying on memory. APIs have changed recently.

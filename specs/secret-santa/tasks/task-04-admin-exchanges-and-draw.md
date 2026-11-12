@@ -15,9 +15,9 @@ Build the administrator experience for allowlist/invite management, user setting
 ## Dependencies
 
 **Depends on:** task-03-auth-access-and-invites
-**Blocks:** task-05-wishlists-and-unfurl, task-06-home-and-anonymous-messages, task-08-history-pwa-seed-and-docs
+**Blocks:** task-05-wishlists-and-unfurl, task-06-home-and-nudge, task-08-history-pwa-seed-and-docs
 
-**Context from dependencies:** Auth now provides normalized allowlist/invite eligibility, roles, trusted server guards, and the user extension fields. This task introduces exchange membership and assignment records that downstream wishlist, message, email, and history features rely on.
+**Context from dependencies:** Auth now provides normalized allowlist/invite eligibility, roles, trusted server guards, and the user extension fields. This task introduces exchange membership and assignment records that downstream wishlist, email, and history features rely on.
 
 ## Files to Create
 
@@ -40,7 +40,7 @@ Build the administrator experience for allowlist/invite management, user setting
 2. Admin UI supports allowlist and invite administration, user profile settings/roles, exchange setup, participant selection, budget/date/time zone, exclusions, draw, reminders-now action, and email log view when available. Do not show assignments by default.
 3. Assignment reveal is a distinct confirmation action and every reveal is audited. Protect diagnostics for admins.
 4. Draw algorithm forbids self-assignment, guarantees a one-to-one permutation, honors exclusions, prefers avoiding the giver's last two pairings where a valid draw exists, uses crypto randomness (never `Math.random`), and fails clearly when impossible. Save all assignments in one transaction.
-5. Redraw requires explicit confirmation and clears that exchange's dependent assignment data with the warning specified in the UI.
+5. Redraw requires explicit confirmation and clears item claims. If assignments have retained legacy message rows, block the redraw rather than cascading deletion of those rows.
 6. Add tests: no self-assignment, perfect mapping, exclusions, past-year avoidance preference, impossible case rejection, and thousands of randomized valid cases for 2–30 participants.
 7. Review current Drizzle and Next.js docs; generate and apply migration with `pnpm db:generate` and `pnpm db:migrate`. Never use `db:push`.
 
@@ -50,7 +50,7 @@ Build the administrator experience for allowlist/invite management, user setting
 - [ ] Draw satisfies all invariants and tests, including impossible input and randomized run coverage.
 - [ ] Assignment writes are all-or-nothing and uniqueness is enforced by database constraints.
 - [ ] Regular admin screens do not reveal mappings; explicit reveal is confirmed and audited.
-- [ ] Admins cannot query/read anonymous messages; diagnostics route is admin-only.
+- [ ] Diagnostics route is admin-only.
 - [ ] `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `pnpm test -- --run` pass.
 
 ## Notes
@@ -63,3 +63,4 @@ Task scope owns the shared `schema.ts` for exchanges and draw-related tables. La
 - Draw coverage includes impossible inputs, constraints, previous-pair avoidance, and 2,000 randomized feasible draws. Verification: `pnpm test -- --run` (56 tests), `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `git diff --check` pass.
 - `pnpm db:migrate` applied pending migrations successfully to the configured live database.
 - Follow-up compatibility fix: exchange creation now writes the authenticated creator ID required by the deployed `exchange.created_by` column. Migration `0007_aspiring_doctor_octopus.sql` is recorded; it preserved the existing column/FK on the live database.
+- Redraw now checks for rows in the retained legacy message table and refuses to cascade-delete them; no schema migration was needed.

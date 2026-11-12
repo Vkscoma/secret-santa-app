@@ -134,7 +134,8 @@ export async function createPastedWishlistItem(input: z.input<typeof pastedWishS
     for (const [key, value] of Object.entries({ title: details?.title || validated.hostname, url, imageUrl: details?.imageUrl || "", storeName: details?.storeName || validated.hostname, notes: details?.notes || "", priority: details?.priority || "would_like", priceMin: details?.priceMin ?? "", priceMax: details?.priceMax ?? "" })) form.set(key, String(value));
     const item = parseItem(form);
     const [last] = await db.select({ sortOrder: wishlistItems.sortOrder }).from(wishlistItems).where(eq(wishlistItems.wishlistId, wishlistId)).orderBy(desc(wishlistItems.sortOrder)).limit(1);
-    await db.insert(wishlistItems).values({ ...item, id: itemId, wishlistId, previewTitlePending: !details?.title, sortOrder: (last?.sortOrder ?? -1) + 1 }).onConflictDoNothing({ target: wishlistItems.id });
+    const [inserted] = await db.insert(wishlistItems).values({ ...item, id: itemId, wishlistId, previewTitlePending: !details?.title, sortOrder: (last?.sortOrder ?? -1) + 1 }).onConflictDoNothing({ target: wishlistItems.id }).returning({ id: wishlistItems.id });
+    if (inserted) await db.update(wishlists).set({ updatedAt: new Date() }).where(eq(wishlists.id, wishlistId));
     // A concurrent request with the same UUID must belong to this exact wish.
     const [saved] = await db.select({ wishlistId: wishlistItems.wishlistId, url: wishlistItems.url }).from(wishlistItems).where(eq(wishlistItems.id, itemId)).limit(1);
     if (!saved || saved.wishlistId !== wishlistId || saved.url !== url) return { ok: false, error: "This gift could not be saved. Paste the link again." };
@@ -200,6 +201,7 @@ export async function createWishlistItem(formData: FormData) {
   const [last] = await db.select({ sortOrder: wishlistItems.sortOrder }).from(wishlistItems)
     .where(eq(wishlistItems.wishlistId, wishlistId)).orderBy(desc(wishlistItems.sortOrder)).limit(1);
   await db.insert(wishlistItems).values({ ...item, wishlistId, sortOrder: (last?.sortOrder ?? -1) + 1 });
+  await db.update(wishlists).set({ updatedAt: new Date() }).where(eq(wishlists.id, wishlistId));
   revalidatePath(`/wishlists/${exchangeId}`);
 }
 
@@ -221,6 +223,7 @@ export async function updateWishlistItem(formData: FormData) {
     ...(clearSourcePrice ? { priceFetchedAt: null, previewPrice: null, previewCurrency: null } : {}),
     ...(owned.url !== item.url ? { previewFinalUrl: null } : {}),
   }).where(eq(wishlistItems.id, itemId));
+  await db.update(wishlists).set({ updatedAt: new Date() }).where(and(eq(wishlists.exchangeId, exchangeId), eq(wishlists.userId, session.user.id)));
   revalidatePath(`/wishlists/${exchangeId}`);
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
 }
@@ -230,11 +233,12 @@ export async function deleteWishlistItem(formData: FormData) {
   const itemId = uuid.parse(field(formData, "itemId"));
   const session = await requireExchangeMember(exchangeId);
   await requireEditableExchange(exchangeId, session.user.id);
-  const [owned] = await db.select({ id: wishlistItems.id }).from(wishlistItems)
+  const [owned] = await db.select({ id: wishlistItems.id, wishlistId: wishlistItems.wishlistId }).from(wishlistItems)
     .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
     .where(and(eq(wishlistItems.id, itemId), eq(wishlists.exchangeId, exchangeId), eq(wishlists.userId, session.user.id))).limit(1);
   if (!owned) throw new Error("Wishlist item not found.");
   await db.delete(wishlistItems).where(eq(wishlistItems.id, itemId));
+  await db.update(wishlists).set({ updatedAt: new Date() }).where(eq(wishlists.id, owned.wishlistId));
   revalidatePath(`/wishlists/${exchangeId}`);
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
 }
@@ -293,7 +297,7 @@ export async function moveWishlistItem(formData: FormData) {
   const direction = z.enum(["up", "down"]).parse(field(formData, "direction"));
   const session = await requireExchangeMember(exchangeId);
   await requireEditableExchange(exchangeId, session.user.id);
-  const rows = await db.select({ id: wishlistItems.id, sortOrder: wishlistItems.sortOrder }).from(wishlistItems)
+  const rows = await db.select({ id: wishlistItems.id, sortOrder: wishlistItems.sortOrder, wishlistId: wishlistItems.wishlistId }).from(wishlistItems)
     .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
     .where(and(eq(wishlists.exchangeId, exchangeId), eq(wishlists.userId, session.user.id)))
     .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.createdAt));
@@ -306,6 +310,7 @@ export async function moveWishlistItem(formData: FormData) {
     await db.transaction(async (tx) => {
       await tx.update(wishlistItems).set({ sortOrder: other.sortOrder }).where(eq(wishlistItems.id, current.id));
       await tx.update(wishlistItems).set({ sortOrder: current.sortOrder }).where(eq(wishlistItems.id, other.id));
+      await tx.update(wishlists).set({ updatedAt: new Date() }).where(eq(wishlists.id, current.wishlistId));
     });
   }
   revalidatePath(`/wishlists/${exchangeId}`);
@@ -366,6 +371,7 @@ export async function copyPreviousWishlist(formData: FormData) {
         sortOrder,
       })));
     }
+    await tx.update(wishlists).set({ updatedAt: new Date() }).where(eq(wishlists.id, targetId));
   });
   revalidatePath(`/wishlists/${exchangeId}`);
 }

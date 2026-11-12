@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { addAllowlistEntry, createExchange, removeAllowlistEntry, saveUserSettings, setUserRole } from "@/lib/actions/admin";
 import { requireAdmin } from "@/lib/authz";
 import { db } from "@/lib/db";
-import { allowlist, exchanges, user } from "@/lib/schema";
+import { allowlist, emailLog, exchanges, user } from "@/lib/schema";
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(value);
@@ -28,7 +28,7 @@ function inputText(value: unknown): string {
 
 export default async function AdminPage() {
   await requireAdmin();
-  const [exchangeRows, allowlistRows, users, exchangeColumns] = await Promise.all([
+  const [exchangeRows, allowlistRows, users, exchangeColumns, emailRows] = await Promise.all([
     db.select({ id: exchanges.id, name: exchanges.name, year: exchanges.year, status: exchanges.status, createdAt: exchanges.createdAt })
       .from(exchanges)
       .orderBy(desc(exchanges.year), desc(exchanges.createdAt)),
@@ -37,6 +37,8 @@ export default async function AdminPage() {
       .orderBy(allowlist.createdAt),
     db.select({ id: user.id, name: user.name, email: user.email, role: user.role, displayName: user.displayName, shippingAddress: user.shippingAddress, sizes: user.sizes, notes: user.notes, notificationPrefs: user.notificationPrefs }).from(user).orderBy(user.name),
     db.execute(sql`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'exchange'`),
+    db.select({ id: emailLog.id, recipientEmail: user.email, type: emailLog.type, status: emailLog.status, createdAt: emailLog.createdAt, sentAt: emailLog.sentAt })
+      .from(emailLog).innerJoin(user, sql`${emailLog.recipientUserId} = ${user.id}`).orderBy(desc(emailLog.createdAt)).limit(30),
   ]);
   const presentExchangeColumns = new Set(exchangeColumns.map((row) => String(row.column_name)));
   const requiredExchangeColumns = ["budget_min", "budget_max", "exchange_at", "time_zone", "notes", "auto_reveal"];
@@ -95,6 +97,17 @@ export default async function AdminPage() {
           </form>
         </Card>
       </section>
+
+      <Card className="space-y-4 p-5 sm:p-6">
+        <div><h2 className="text-xl font-bold">Recent email activity</h2><p className="text-sm text-muted-foreground">Delivery history includes recipient and status only. Assignment pairings are never stored here.</p></div>
+        <div className="max-h-80 divide-y divide-border overflow-auto">
+          {emailRows.map((entry) => <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm first:pt-0 last:pb-0">
+            <span className="min-w-0"><strong className="block truncate">{entry.recipientEmail}</strong><span className="text-xs text-muted-foreground">{entry.type.replaceAll("-", " ")}</span></span>
+            <span className="flex shrink-0 items-center gap-2"><span className="rounded-full bg-secondary px-2 py-1 text-xs font-semibold capitalize text-secondary-foreground">{entry.status}</span><span className="text-xs text-muted-foreground">{formatDate(entry.sentAt ?? entry.createdAt)}</span></span>
+          </div>)}
+          {!emailRows.length && <p className="py-2 text-sm text-muted-foreground">No emails have been logged yet.</p>}
+        </div>
+      </Card>
 
       <section className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-4 p-5 sm:p-6">

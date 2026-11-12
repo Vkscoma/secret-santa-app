@@ -14,7 +14,7 @@ vi.mock("@/lib/db", () => ({ db: {
     const result = { from: () => result, innerJoin: () => result, where: () => result, orderBy: () => result, limit: async () => mocks.rows.shift() ?? [] };
     return result;
   },
-  insert: () => ({ values: (value: unknown) => { mocks.inserted.push(value); return { onConflictDoNothing: async () => undefined }; } }),
+  insert: () => ({ values: (value: unknown) => { mocks.inserted.push(value); return { onConflictDoNothing: () => ({ returning: async () => [{ id: (value as { id?: string }).id }] }), returning: async () => [{ id: (value as { id?: string }).id }] }; } }),
   update: () => ({ set: (value: unknown) => { mocks.updated.push(value); return { where: async (condition: unknown) => { mocks.conditions.push(condition); return []; } }; } }),
 } }));
 const exchangeId = "11111111-1111-4111-8111-111111111111";
@@ -29,9 +29,12 @@ describe("pasted wish persistence", () => {
     mocks.rows.push(...accessRows(), [{ id: wishlistId }], [], [{ sortOrder: 2 }], [{ wishlistId, url }]);
     expect(await createPastedWishlistItem({ exchangeId, itemId, url })).toEqual({ ok: true, itemId });
     expect(mocks.inserted.at(-1)).toMatchObject({ id: itemId, url, title: "store.example", wishlistId });
+    expect(mocks.updated).toHaveLength(1);
+    expect(mocks.updated[0]).toHaveProperty("updatedAt");
     mocks.rows.push(...accessRows(), [{ id: wishlistId }], [{ id: itemId, wishlistId, url }]);
     expect(await createPastedWishlistItem({ exchangeId, itemId, url })).toEqual({ ok: true, itemId });
     expect(mocks.inserted.filter((value) => (value as { id?: string }).id === itemId)).toHaveLength(1);
+    expect(mocks.updated).toHaveLength(1);
   });
   it("cannot reuse an item id belonging to another wishlist", async () => {
     mocks.rows.push(...accessRows(), [{ id: wishlistId }], [{ id: itemId, wishlistId: "someone-else", url }]);
@@ -81,6 +84,7 @@ describe("pasted wish persistence", () => {
     expect(mocks.updated[0]).not.toHaveProperty("previewPrice");
     expect(mocks.updated[0]).not.toHaveProperty("priceFetchedAt");
     expect(mocks.updated[0]).not.toHaveProperty("previewFinalUrl");
+    expect(mocks.updated[1]).toHaveProperty("updatedAt");
   });
   it.each([true, false])("refresh fills a pending hostname title only when eligible=%s", async (pending) => {
     mocks.rows.push(...accessRows(), [{ id: itemId, url, imageUrl: null, previewTitlePending: pending, revision: "123" }]);

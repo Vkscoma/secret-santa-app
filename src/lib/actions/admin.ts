@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getEligibleUserIdsForExchange } from "@/lib/admin-data";
 import { isSuperAdminEmail } from "@/lib/auth-access";
@@ -12,6 +12,8 @@ import { drawSecretSanta } from "@/lib/draw";
 import { localTimeToUtc } from "@/lib/exchange-time";
 import { normalizeEmail } from "@/lib/invite-tokens";
 import { createInviteRecord } from "@/lib/invites";
+import { sendAssignmentNotifications, sendManualExchangeReminders } from "@/lib/notification-scheduler";
+import { hasLegacyMessageRows } from "@/lib/redraw-policy";
 import {
   allowlist,
   assignments,
@@ -21,6 +23,7 @@ import {
   exclusions,
   inviteLinks,
   itemClaims,
+  messages,
   wishlistItems,
   wishlists,
   user,
@@ -183,6 +186,13 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean) 
     const result = drawSecretSanta({ participantIds, exclusions: excluded, previousPairs: prior });
 
     if (redraw) {
+      const [existingMessages] = await tx.select({ count: count() })
+        .from(messages)
+        .innerJoin(assignments, eq(messages.assignmentId, assignments.id))
+        .where(eq(assignments.exchangeId, exchangeId));
+      if (hasLegacyMessageRows(Number(existingMessages?.count ?? 0))) {
+        throw new Error("This exchange has historical message records. Redraw is blocked to preserve them until they can be archived safely.");
+      }
       const exchangeWishlistItems = tx.select({ id: wishlistItems.id })
         .from(wishlistItems)
         .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
@@ -207,6 +217,8 @@ export async function drawExchange(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
   await createDraw(exchangeId, session.user.id, false);
+  const assignmentEmailResult = await sendAssignmentNotifications(exchangeId);
+  if (assignmentEmailResult.failed) console.warn(`Assignment notifications failed for exchange ${exchangeId}; the daily notification cron will retry.`);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
   revalidatePath("/admin");
 }
@@ -216,6 +228,8 @@ export async function redrawExchange(formData: FormData) {
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
   requireChecked(formData, "confirmRedraw", "Confirm the redraw and item claim reset before continuing.");
   await createDraw(exchangeId, session.user.id, true);
+  const assignmentEmailResult = await sendAssignmentNotifications(exchangeId);
+  if (assignmentEmailResult.failed) console.warn(`Assignment notifications failed for exchange ${exchangeId}; the daily notification cron will retry.`);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
   revalidatePath("/admin");
 }
@@ -363,39 +377,9 @@ export async function saveUserSettings(formData: FormData) {
 export async function requestExchangeReminders(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
-  const [exchange] = await db.select({ status: exchanges.status, name: exchanges.name, exchangeAt: exchanges.exchangeAt, timeZone: exchanges.timeZone }).from(exchanges).where(eq(exchanges.id, exchangeId)).limit(1);
-  if (!exchange || exchange.status === "closed") throw new Error("Reminders are unavailable for this exchange.");
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) throw new Error("Reminder email is not configured yet.");
-  const recipients = await db.select({ id: user.id, name: user.name, email: user.email, notificationPrefs: user.notificationPrefs })
-    .from(exchangeParticipants)
-    .innerJoin(user, eq(exchangeParticipants.userId, user.id))
-    .where(eq(exchangeParticipants.exchangeId, exchangeId));
-  const eligible = recipients.filter(({ notificationPrefs }) => notificationPrefs?.reminders !== false);
-  const when = new Intl.DateTimeFormat("en-US", { dateStyle: "full", timeStyle: "short", timeZone: exchange.timeZone }).format(exchange.exchangeAt);
-  const escapeHtml = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
-  let sentCount = 0;
-  let failedCount = 0;
-  await Promise.all(eligible.map(async (recipient) => {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `exchange-reminder/${exchangeId}/${recipient.id}/${new Date().toISOString().slice(0, 10)}`,
-      },
-      body: JSON.stringify({
-        from,
-        to: [recipient.email],
-        subject: `A reminder about ${exchange.name}`,
-        html: `<p>Hi ${escapeHtml(recipient.name)},</p><p>${escapeHtml(exchange.name)} is coming up on ${escapeHtml(when)}.</p><p>Sign in to Secret Santa to check your list and share any final gift ideas.</p>`,
-      }),
-    }).catch(() => null);
-    if (response?.ok) sentCount += 1;
-    else failedCount += 1;
-  }));
-  await writeAudit({ actorId: session.user.id, action: "exchange.reminders_sent", targetType: "exchange", targetId: exchangeId, metadata: { attempted: eligible.length, sent: sentCount, failed: failedCount } });
-  if (failedCount) throw new Error(`Sent ${sentCount} reminder(s); ${failedCount} could not be delivered. Check the email provider before retrying.`);
+  const result = await sendManualExchangeReminders(exchangeId);
+  if (!result.attempted) throw new Error("Reminders are unavailable for this exchange or all participants opted out.");
+  await writeAudit({ actorId: session.user.id, action: "exchange.reminders_sent", targetType: "exchange", targetId: exchangeId, metadata: result });
+  if (result.failed) throw new Error(`Sent ${result.sent} reminder(s); ${result.failed} could not be delivered. Check the email provider before retrying.`);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
 }

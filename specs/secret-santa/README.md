@@ -36,7 +36,7 @@ graph TD
 | 3 | task-04 | Build admin/exchange management, secure draw and assignment persistence, audit logging, and draw tests. |
 | 4 | task-05 | Build per-exchange wishlists, claims, copy-forward, safe URL unfurl, and related tests. |
 | 5 | task-06 | Build Home/recipient experiences and an email nudge for recipients with gift ideas. |
-| 6 | task-07 | Add Resend templates, notification scheduling, idempotency, and protected Vercel Cron. |
+| 6 | task-07 | Add Resend templates, daily notification scheduling, idempotency, and protected Vercel Cron. |
 | 7 | task-08 | Add history, PWA installation, seed data, setup documentation, and integration polish. |
 
 ## Task Status
@@ -55,10 +55,10 @@ graph TD
 - [x] [task-05-wishlists-and-unfurl](./tasks/task-05-wishlists-and-unfurl.md) — Wishlist management, claims, URL unfurl, SSRF tests, and live database migration complete.
 
 ### Wave 5
-- [x] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Participant Home and recipient email nudge complete.
+- [x] [task-06-home-recipient-and-nudge](./tasks/task-06-home-and-nudge.md) — Participant Home and recipient email nudge complete; messaging remains out of scope.
 
 ### Wave 6
-- [ ] [task-07-email-and-cron](./tasks/task-07-email-and-cron.md) — Implement notification emails and idempotent protected daily cron.
+- [x] [task-07-email-and-cron](./tasks/task-07-email-and-cron.md) — Notification emails, preferences, idempotent delivery, and protected daily cron complete.
 
 ### Wave 7
 - [ ] [task-08-history-pwa-seed-and-docs](./tasks/task-08-history-pwa-seed-and-docs.md) — Add past exchange history, PWA support, sample data, documentation, and final polish.

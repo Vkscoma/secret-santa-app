@@ -17,6 +17,11 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+  // Email and scheduled notifications
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+  CRON_SECRET: z.string().min(1).optional(),
+
   // App
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -91,6 +96,12 @@ export function checkEnv(): void {
   // Check optional variables and warn
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     warnings.push("Google OAuth is not configured. Social login will be disabled.");
+  }
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    warnings.push("Resend is not configured. Outbound email will be unavailable.");
+  }
+  if (!process.env.CRON_SECRET) {
+    warnings.push("CRON_SECRET is not configured. Scheduled notifications will be unavailable.");
   }
 
   // Log warnings in development

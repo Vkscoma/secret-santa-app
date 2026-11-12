@@ -2,7 +2,7 @@
 
 ## Summary
 
-Build a production-ready Secret Santa web app for a family or friend group, extending this repository's Next.js 16, React 19, TypeScript, Better Auth, Neon Postgres, and Drizzle starter. The experience covers account onboarding, yearly exchanges and assignments, wishlists, private anonymous messaging, email reminders, administration, and history.
+Build a production-ready Secret Santa web app for a family or friend group, extending this repository's Next.js 16, React 19, TypeScript, Better Auth, Neon Postgres, and Drizzle starter. The experience covers account onboarding, yearly exchanges and assignments, wishlists, email reminders, administration, and history. Participant communication is limited to the assigned giver's email nudge while their recipient has no wishlist items; private messaging is out of scope.
 
 The supplied `specs/secret-santa-spec.md` is the product source of truth. Preserve its exact seven-wave ordering and the visual review checkpoint after Wave 1. This document captures the delivery plan and schema proposal so implementation can be approved task-by-task before work begins.
 
@@ -11,7 +11,7 @@ The supplied `specs/secret-santa-spec.md` is the product source of truth. Preser
 - Deliver the exact app flows and security behavior in the source spec.
 - Keep the existing Better Auth Drizzle adapter and Neon database wiring intact.
 - Use server-side authorization and Zod validation for every mutation/route boundary.
-- Add the required Vitest coverage for draw, invites, unfurl/SSRF, nudge authorization, and email idempotency.
+- Add the required Vitest coverage for draw, invites, unfurl/SSRF, nudge visibility/authorization, and email idempotency.
 - Produce a runnable app, migrations, seed data, environment example, and setup documentation.
 
 ## Non-Goals
@@ -71,9 +71,13 @@ Refine details against current Drizzle and Better Auth documentation during impl
 | `wishlists` | UUID `id`; exchange/user FKs; `surprise_me`, nullable `likes`, timestamps; unique `(exchange_id,user_id)`. |
 | `wishlist_items` | UUID `id`; wishlist FK; title, URL, image, store/domain, notes, `priority`, numeric `price_min`/`price_max`, `price_bucket`, sort position, timestamps. |
 | `item_claims` | UUID `id`; wishlist item FK, giver user FK, created timestamp; unique `(item_id,giver_id)`. Visible only to giver; never expose claim marker to list owner. |
-| `email_log` | UUID `id`; recipient user FK, optional exchange FK, type, unique idempotency key, status, sent/error timestamps and provider ID. Avoid storing sensitive anonymous message content. |
+| `email_log` | UUID `id`; recipient user FK, optional exchange FK, type, unique idempotency key, status, sent/error timestamps and provider ID. Store delivery metadata only, never email content. |
 | `unfurl_cache` | UUID `id`; unique normalized URL, extracted title/image/site/price fields, fetched/expiry timestamps. |
-| `audit_log` | UUID `id`; actor user FK, action, target type/UUID, JSON metadata, created timestamp. Never store message bodies; record assignment reveal and redraw actions. |
+| `audit_log` | UUID `id`; actor user FK, action, target type/UUID, JSON metadata, created timestamp. Record assignment reveal and redraw actions. |
+
+The legacy `message` table is retained without messaging reads or writes. The redraw safeguard may count linked rows but never reads or surfaces content. Do not add messaging functionality or drop the table without a separately reviewed, data-safe migration.
+
+The Wave 6 cron runs daily at 15:00 UTC. Reminder milestones have independent six-day windows: days 8–14 for the 14-day reminder, days 1–7 for the 7-day reminder, and exchange day through five days after for the 1-day reminder. Daily checks process eligible milestones on the next run; if no cron run falls within a window, that milestone is skipped. Wishlist updates are summarized from the prior 24 hours and sent at most once per giver per exchange per exchange-local date. Empty-wishlist nudges remain limited to once every seven days.
 
 Use explicit FK delete behavior: cascade dependent join/data rows where ownership ends; restrict deleting users/exchanges that must remain historically auditable, or soft-delete/close as appropriate. Add indexes for foreign keys and common exchange/user/time queries. Review uniqueness and nullable behavior before generating migration SQL. Every schema change runs `pnpm db:generate` then `pnpm db:migrate`; do not use `db:push`.
 

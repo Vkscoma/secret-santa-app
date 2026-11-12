@@ -12,7 +12,7 @@ Manual setup needed for full integration and deployment.
 - [ ] **Set `SUPER_ADMIN_EMAIL`** — this email is the always-allowed bootstrap administrator.
 - [ ] **Set app/auth URLs and Better Auth secret** — configure `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `NEXT_PUBLIC_APP_URL` for each environment.
 - [ ] **Create a Resend account/API key and verify the sender domain** — configure `RESEND_API_KEY` and `EMAIL_FROM`.
-- [ ] **Configure Vercel Cron and `CRON_SECRET`** — required for authenticated daily notification processing in production.
+- [ ] **Configure Vercel Cron and `CRON_SECRET`** — required for authenticated daily notification processing in production. The schedule runs daily at 15:00 UTC; each reminder is eligible in its own six-day window and is processed at the next daily run. A reminder is skipped if no run falls within its window.
 
 ## After Implementation
 

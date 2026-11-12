@@ -17,7 +17,7 @@ Connect the signed-in Home experience to real exchange data: countdown/budget, g
 **Depends on:** task-04-admin-exchanges-and-draw, task-05-wishlists-and-unfurl
 **Blocks:** task-07-email-and-cron, task-08-history-pwa-seed-and-docs
 
-**Context from dependencies:** Exchange assignments and participant membership exist, and protected wishlist APIs provide owned and recipient-visible list data. The giver's UI must identify the recipient, while the recipient-facing thread API must not serialize giver identity before reveal.
+**Context from dependencies:** Exchange assignments and participant membership exist, and protected wishlist APIs provide owned and recipient-visible list data. The giver's UI must identify the recipient without exposing assignment data to other participants.
 
 ## Files to Create
 
@@ -58,5 +58,5 @@ Keep data projections explicit and minimal. Do not fetch a full user/assignment 
 - Replaced the signed-in landing page with participant Home cards for exchange countdown/budget, assignment, recipient wishlist, nudge, and own wishlist progress.
 - Added an assignment-validated, rate-limited email nudge for the recipient using the magic-link email’s visual style.
 - Recipient lists now sort by priority and show profile sizes/address, over-budget items, and giver-only claims.
-- Added DST-safe countdown and nudge authorization/email tests. Existing message table migration is retained to avoid dropping potentially useful historical data; the feature UI, routes, and message queries are removed.
+- Added DST-safe countdown and nudge authorization/email tests. The recipient nudge is offered only while their list has no gift ideas. Messaging remains out of scope; the existing message table migration is retained without feature UI, routes, or content queries to avoid a destructive schema change.
 - Verification after the email nudge replacement: 172 tests pass, lint passes with five import-order warnings, typecheck passes, and `git diff --check` passes. Production build is being rerun.
