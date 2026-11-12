@@ -38,9 +38,9 @@ Build the administrator experience for allowlist/invite management, user setting
 
 1. Implement exchange fields/statuses, participants, exclusions, assignment unique constraints `(exchange_id,giver_id)` and `(exchange_id,receiver_id)`, and audit log. All new non-auth IDs are random UUIDs.
 2. Admin UI supports allowlist and invite administration, user profile settings/roles, exchange setup, participant selection, budget/date/time zone, exclusions, draw, reminders-now action, and email log view when available. Do not show assignments by default.
-3. Assignment reveal is a distinct confirmation action and every reveal is audited. Admins cannot read anonymous message threads. Protect diagnostics for admins.
+3. Assignment reveal is a distinct confirmation action and every reveal is audited. Protect diagnostics for admins.
 4. Draw algorithm forbids self-assignment, guarantees a one-to-one permutation, honors exclusions, prefers avoiding the giver's last two pairings where a valid draw exists, uses crypto randomness (never `Math.random`), and fails clearly when impossible. Save all assignments in one transaction.
-5. Redraw requires explicit confirmation and clears that exchange's message threads with the warning specified in the UI.
+5. Redraw requires explicit confirmation and clears that exchange's dependent assignment data with the warning specified in the UI.
 6. Add tests: no self-assignment, perfect mapping, exclusions, past-year avoidance preference, impossible case rejection, and thousands of randomized valid cases for 2–30 participants.
 7. Review current Drizzle and Next.js docs; generate and apply migration with `pnpm db:generate` and `pnpm db:migrate`. Never use `db:push`.
 

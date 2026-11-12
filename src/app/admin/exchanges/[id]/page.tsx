@@ -213,8 +213,8 @@ export default async function AdminExchangePage({ params }: PageProps) {
           {isOpen && <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" disabled={participantRows.length < 2}><Gift className="size-4" /> Draw names</Button></form>}
           {canRedraw && <form action={redrawExchange} className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <input type="hidden" name="exchangeId" value={id} />
-            <div><h3 className="font-bold text-destructive">Redraw this exchange</h3><p className="mt-1 text-sm text-muted-foreground">This replaces every assignment and clears item claims and anonymous message threads for this exchange. Participants will need to start over.</p></div>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirmRedraw" required className="mt-1 size-4 accent-primary" /><span>I understand this replaces the draw and clears item claims and message threads.</span></label>
+            <div><h3 className="font-bold text-destructive">Redraw this exchange</h3><p className="mt-1 text-sm text-muted-foreground">This replaces every assignment and clears item claims for this exchange. Participants will need to start over.</p></div>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirmRedraw" required className="mt-1 size-4 accent-primary" /><span>I understand this replaces the draw and clears item claims.</span></label>
             <Button type="submit" variant="destructive">Confirm redraw</Button>
           </form>}
           {exchange.status === "drawn" && <form action={revealExchange} className="space-y-3 rounded-xl border border-gold/50 bg-gold/10 p-4">

@@ -1,4 +1,4 @@
-# Task 06: Home, Recipient View, and Anonymous Messages
+# Task 06: Home, Recipient View, and Email Nudge
 
 ## Status
 
@@ -10,7 +10,7 @@ complete
 
 ## Description
 
-Connect the signed-in Home experience to real exchange data: countdown/budget, giver assignment, recipient wishlist/settings, unread message counts, and the user's wishlist status. Add two-way anonymous assignment threads with strict server-side identity filtering, polling, rate limits, and item claim controls.
+Connect the signed-in Home experience to real exchange data: countdown/budget, giver assignment, recipient wishlist/settings, and the user's wishlist status. Allow assigned givers to send a rate-limited email nudge asking their recipient to add gift ideas.
 
 ## Dependencies
 
@@ -21,13 +21,12 @@ Connect the signed-in Home experience to real exchange data: countdown/budget, g
 
 ## Files to Create
 
-- `src/lib/actions/messages.ts`, message route handlers and thread UI under `src/app/messages/**`.
+- `src/lib/actions/nudges.ts` and the nudge button component.
 - Home and recipient components/pages as appropriate.
 - Vitest API-shape/privacy tests proving recipient payloads never include giver identity.
 
 ## Files to Modify
 
-- `src/lib/schema.ts` — messages table and any needed unread/read indexes; generated migration.
 - `src/app/page.tsx` — authenticated participant Home.
 - `src/app/proxy.ts`/route configuration only if routes need matcher additions; keep actual authorization in handlers.
 - Shared wishlist item components — read-only recipient presentation and claim toggle integration.
@@ -36,21 +35,18 @@ Connect the signed-in Home experience to real exchange data: countdown/budget, g
 
 ### Implementation Steps
 
-1. Build Home sections in required order: timezone-aware countdown and budget; assignment/recipient list and settings; message unread counts; own wishlist progress. Before draw, show “Names haven't been drawn yet.”
+1. Build Home sections in required order: timezone-aware countdown and budget; assignment/recipient list and settings; own wishlist progress. Before draw, show “Names haven't been drawn yet.”
 2. Recipient wishlist is priority-sorted, shows Most wanted and Over budget based on exchange budget, and exposes giver claim toggles without revealing claims to owner.
-3. Add one thread per assignment. Giver sees “Chat with [Recipient]”; recipient sees “Chat with your Secret Santa.” Derive sender role from authenticated user and assignment, not client input.
-4. Enforce participant-only thread access, 1000-character plain-text messages, Zod validation, send rate limits, unread/read status, polling about every 15 seconds while open and refresh on focus. Admins cannot read threads.
-5. Do not include giver user ID, name, email, avatar, or indirect identifying fields in recipient message payloads, user-visible logs, or email-related metadata. After reveal, the Santa name may be shown as a separate permitted field.
-6. Add tests asserting the full recipient API response omits giver identity and tests for participant-only access and message limits.
-7. Generate and apply migration using `pnpm db:generate` then `pnpm db:migrate`; never `db:push`.
+3. Add a “Nudge by email” action for the assigned giver. The server verifies the assignment, rate limits the sender, and emails the recipient a reminder linking to their wishlist.
+4. Use the visual style of the magic-link email while keeping the nudge copy independent of sign-in links. Do not disclose the giver's identity in the email.
+5. Add tests for assignment-only authorization and rate limiting.
 
 ### Acceptance Criteria
 
 - [x] Home content is ordered per requirements and respects exchange timezone.
 - [x] Recipient list, sizes, address, priorities, over-budget labels and claims follow permissions.
-- [x] Both assignment participants can converse; unrelated users and admins cannot read the thread.
-- [x] Recipient-facing payloads never contain giver identity before reveal; test passes.
-- [x] Message length, text-only rendering, rate limits, unread counts, polling, and focus refresh work.
+- [x] Only the assigned giver can send a nudge; recipients and unrelated users cannot.
+- [x] Nudge emails use the Secret Santa email visual style, prompt wishlist completion, and preserve giver anonymity.
 - [x] `pnpm lint`, `pnpm typecheck`, `pnpm build:ci`, and `pnpm test -- --run` pass.
 
 ## Notes
@@ -59,8 +55,8 @@ Keep data projections explicit and minimal. Do not fetch a full user/assignment 
 
 ## Completion Notes
 
-- Replaced the signed-in landing page with participant Home cards for exchange countdown/budget, assignment, recipient wishlist, messages, and own wishlist progress.
-- Added assignment-backed anonymous threads with participant and non-admin authorization, recipient-safe projections, text validation, per-sender throttling, unread/read tracking, polling, and focus refresh.
+- Replaced the signed-in landing page with participant Home cards for exchange countdown/budget, assignment, recipient wishlist, nudge, and own wishlist progress.
+- Added an assignment-validated, rate-limited email nudge for the recipient using the magic-link email’s visual style.
 - Recipient lists now sort by priority and show profile sizes/address, over-budget items, and giver-only claims.
-- Added route privacy/access, payload-shape, and DST-safe countdown tests. Generated and applied `drizzle/0014_simple_magdalene.sql`.
-- Verification: 179 tests pass; lint passes with seven import-order warnings; typecheck, `build:ci`, and `git diff --check` pass.
+- Added DST-safe countdown and nudge authorization/email tests. Existing message table migration is retained to avoid dropping potentially useful historical data; the feature UI, routes, and message queries are removed.
+- Verification after the email nudge replacement: 172 tests pass, lint passes with five import-order warnings, typecheck passes, and `git diff --check` passes. Production build is being rerun.

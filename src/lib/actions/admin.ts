@@ -188,7 +188,7 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean) 
         .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
         .where(eq(wishlists.exchangeId, exchangeId));
       await tx.delete(itemClaims).where(inArray(itemClaims.itemId, exchangeWishlistItems));
-      // Wave 5 message rows will be owned by assignments with ON DELETE CASCADE.
+      // Assignment-linked participant data is removed with the assignment.
       await tx.delete(assignments).where(eq(assignments.exchangeId, exchangeId));
     }
     await tx.insert(assignments).values(result.map((pair) => ({ exchangeId, ...pair })));
@@ -214,7 +214,7 @@ export async function drawExchange(formData: FormData) {
 export async function redrawExchange(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
-  requireChecked(formData, "confirmRedraw", "Confirm the redraw and item claim/message reset before continuing.");
+  requireChecked(formData, "confirmRedraw", "Confirm the redraw and item claim reset before continuing.");
   await createDraw(exchangeId, session.user.id, true);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
   revalidatePath("/admin");

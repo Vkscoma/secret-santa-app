@@ -11,7 +11,7 @@ The supplied `specs/secret-santa-spec.md` is the product source of truth. Preser
 - Deliver the exact app flows and security behavior in the source spec.
 - Keep the existing Better Auth Drizzle adapter and Neon database wiring intact.
 - Use server-side authorization and Zod validation for every mutation/route boundary.
-- Add the required Vitest coverage for draw, invites, unfurl/SSRF, message anonymity, and email idempotency.
+- Add the required Vitest coverage for draw, invites, unfurl/SSRF, nudge authorization, and email idempotency.
 - Produce a runnable app, migrations, seed data, environment example, and setup documentation.
 
 ## Non-Goals
@@ -42,7 +42,7 @@ The supplied `specs/secret-santa-spec.md` is the product source of truth. Preser
 - Review current official documentation for framework/library APIs before implementing the relevant integrations. Next.js 16 calls middleware `proxy`; proxy checks are optimistic only and cannot replace server authorization. Drizzle migration workflow is generate then migrate. Better Auth magic-link supports `disableSignUp` and configured expiration; verify provider/API details against current docs.
 - Use design tokens only; no raw hex or arbitrary colors. Update `DESIGN.md` to match the app theme.
 - Preserve the starter's database connection and Better Auth adapter wiring. Every Server Action and route handler rechecks session and role/participation.
-- Keep the recipient's giver identity out of all recipient-facing message payloads; admins cannot read anonymous message threads.
+- Keep assignment identities private until reveal. Assigned givers can send recipients an anonymous wishlist nudge.
 
 ## Short Plan
 
@@ -50,7 +50,7 @@ The supplied `specs/secret-santa-spec.md` is the product source of truth. Preser
 2. **Wave 2 — Access:** implement Google and eligible magic-link account creation/sign-in, allowlist/invite redemption, role bootstrap, and secure access checks.
 3. **Wave 3 — Admin and exchange core:** build allowlist/exchange administration, exclusions, auditable draw/reveal, transactional assignments, and draw tests.
 4. **Wave 4 — Wishlists:** build editing/claims/copy-forward and hardened URL unfurl with parser/SSRF tests.
-5. **Wave 5 — Participant experience:** build countdown, assignments, recipient list, and anonymous message APIs/UI with anonymity tests.
+5. **Wave 5 — Participant experience:** build countdown, assignments, recipient list, and an anonymous wishlist email nudge.
 6. **Wave 6 — Notifications:** build email templates, preference handling, email log idempotency and protected daily cron.
 7. **Wave 7 — Completion:** build history and PWA affordances, deterministic seed data, README/env setup, and final integration polish.
 
@@ -71,7 +71,6 @@ Refine details against current Drizzle and Better Auth documentation during impl
 | `wishlists` | UUID `id`; exchange/user FKs; `surprise_me`, nullable `likes`, timestamps; unique `(exchange_id,user_id)`. |
 | `wishlist_items` | UUID `id`; wishlist FK; title, URL, image, store/domain, notes, `priority`, numeric `price_min`/`price_max`, `price_bucket`, sort position, timestamps. |
 | `item_claims` | UUID `id`; wishlist item FK, giver user FK, created timestamp; unique `(item_id,giver_id)`. Visible only to giver; never expose claim marker to list owner. |
-| `messages` | UUID `id`; assignment FK; `sender_role` (`giver`/`recipient`), body (max 1000 chars), sent/read timestamps. API derives viewer role from assignment participant; never selects/serializes giver identity for recipient. |
 | `email_log` | UUID `id`; recipient user FK, optional exchange FK, type, unique idempotency key, status, sent/error timestamps and provider ID. Avoid storing sensitive anonymous message content. |
 | `unfurl_cache` | UUID `id`; unique normalized URL, extracted title/image/site/price fields, fetched/expiry timestamps. |
 | `audit_log` | UUID `id`; actor user FK, action, target type/UUID, JSON metadata, created timestamp. Never store message bodies; record assignment reveal and redraw actions. |

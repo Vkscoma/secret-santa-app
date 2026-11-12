@@ -10,7 +10,7 @@ pending
 
 ## Description
 
-Complete the app with past-year history, PWA add-to-home-screen behavior, deterministic fake seed data, comprehensive setup documentation, and final page polish. History preserves each year's wishlist and messages read-only and only shows the user's own giver/Santa relationships according to reveal state.
+Complete the app with past-year history, PWA add-to-home-screen behavior, deterministic fake seed data, comprehensive setup documentation, and final page polish. History preserves each year's wishlist read-only and only shows the user's own giver/Santa relationships according to reveal state.
 
 ## Dependencies
 

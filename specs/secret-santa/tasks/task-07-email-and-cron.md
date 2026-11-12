@@ -17,7 +17,7 @@ Deliver the specified transactional and scheduled emails through Resend using Re
 **Depends on:** task-06-home-and-anonymous-messages
 **Blocks:** task-08-history-pwa-seed-and-docs
 
-**Context from dependencies:** Exchanges, assignments, user preferences, wishlist state, and anonymous message threads are implemented. This task notifies participants about those records while keeping assignment and message identities private in email content and metadata.
+**Context from dependencies:** Exchanges, assignments, user preferences, wishlist state, and manual wishlist nudges are implemented. This task adds scheduled participant notifications while keeping assignment identities private in email content and metadata.
 
 ## Files to Create
 
@@ -38,7 +38,7 @@ Deliver the specified transactional and scheduled emails through Resend using Re
 
 1. Review current official Resend, React Email, Better Auth magic-link mailer, and Vercel Cron docs before implementation.
 2. Implement assignment email without recipient name; magic links and assignment emails always send. Other scheduled notifications honor preferences.
-3. Send exchange reminders 14/7/1 days before, empty-wishlist nudge after draw at most weekly until item added, recipient-updated daily digest, and new anonymous message at most once per 30 minutes per thread without naming Santa.
+3. Send exchange reminders 14/7/1 days before, empty-wishlist nudge after draw at most weekly until item added, and recipient-updated daily digest.
 4. Record sends in `email_log` with a unique idempotency key such as `exchange:user:type:date`; claim/insert transactionally before sending and record delivery/failure for safe retry semantics. Tests must prove retries do not duplicate sends.
 5. Add `/api/cron/notifications` guarded by constant-time comparison of bearer token to `CRON_SECRET`; validate authorization on server and keep the route out of client bundles.
 6. Build preference settings and manage-preferences links into all email templates. Avoid including sensitive message content or recipient identity in assignment notification previews.

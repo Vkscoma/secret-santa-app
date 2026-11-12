@@ -18,7 +18,6 @@ const links = [
   ["Home", "/"],
   ["My wish lists", "/wishlists"],
   ["Add from your phone", "/help/add-from-phone"],
-  ["Messages", "/messages"],
   ["History", "/history"],
   ["Settings", "/profile"],
 ] as const;

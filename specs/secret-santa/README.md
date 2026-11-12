@@ -18,7 +18,7 @@ graph TD
     t02 --> t03["03: Authentication, allowlist, invites, roles"]
     t03 --> t04["04: Exchanges, admin, secure draw"]
     t04 --> t05["05: Wishlists and safe unfurl"]
-    t04 --> t06["06: Home, recipient view, anonymous messages"]
+    t04 --> t06["06: Home, recipient view, email nudge"]
     t05 --> t06
     t06 --> t07["07: Email notifications and cron"]
     t04 --> t08["08: History, PWA, seed, docs, polish"]
@@ -35,7 +35,7 @@ graph TD
 | 2 | task-03 | Add Google and magic-link authentication, allowlist/invite onboarding, roles, and authorization foundations. |
 | 3 | task-04 | Build admin/exchange management, secure draw and assignment persistence, audit logging, and draw tests. |
 | 4 | task-05 | Build per-exchange wishlists, claims, copy-forward, safe URL unfurl, and related tests. |
-| 5 | task-06 | Build Home/recipient experiences and anonymous messaging with privacy tests. |
+| 5 | task-06 | Build Home/recipient experiences and an email nudge for recipients with gift ideas. |
 | 6 | task-07 | Add Resend templates, notification scheduling, idempotency, and protected Vercel Cron. |
 | 7 | task-08 | Add history, PWA installation, seed data, setup documentation, and integration polish. |
 
@@ -55,7 +55,7 @@ graph TD
 - [x] [task-05-wishlists-and-unfurl](./tasks/task-05-wishlists-and-unfurl.md) — Wishlist management, claims, URL unfurl, SSRF tests, and live database migration complete.
 
 ### Wave 5
-- [x] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Participant Home and anonymous message threads with privacy tests complete.
+- [x] [task-06-home-and-anonymous-messages](./tasks/task-06-home-and-anonymous-messages.md) — Participant Home and recipient email nudge complete.
 
 ### Wave 6
 - [ ] [task-07-email-and-cron](./tasks/task-07-email-and-cron.md) — Implement notification emails and idempotent protected daily cron.
