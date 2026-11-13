@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import { Gift, Heart, Plus, Settings2, Sparkles } from "lucide-react";
+import { Gift, Plus, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
@@ -10,6 +10,7 @@ import { WishlistComposer } from "@/components/secret-santa/wishlist-composer";
 import { WishlistEditForm } from "@/components/secret-santa/wishlist-edit-form";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
+import { WishlistPreferencesForm } from "@/components/secret-santa/wishlist-preferences-form";
 import { WishlistPrice } from "@/components/secret-santa/wishlist-price";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,7 +18,6 @@ import {
   copyPreviousWishlist,
   deleteWishlistItem,
   moveWishlistItem,
-  saveWishlistPreferences,
 } from "@/lib/actions/wishlists";
 import { requireExchangeMember } from "@/lib/authz";
 import { db } from "@/lib/db";
@@ -158,16 +158,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold/20 text-foreground"><Sparkles className="size-5" /></span>
           <div className="min-w-0 flex-1"><h2 className="font-bold">A few more clues</h2><p className="mt-1 text-sm text-muted-foreground">Add the things you like, or let your Santa surprise you.</p></div>
         </div>
-        {editable ? <form action={saveWishlistPreferences} className="grid gap-3 ">
-          <input type="hidden" name="exchangeId" value={exchangeId} />
-          <label className="grid gap-1.5 text-sm font-medium">Things I like
-            <textarea name="likes" maxLength={1000} rows={2} defaultValue={wishlist?.likes ?? ""} placeholder="Cozy evenings, hiking, favorite flavors…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-          </label>
-          <div className="flex flex-wrap items-center justify-between gap-3 ">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surpriseMe" defaultChecked={wishlist?.surpriseMe ?? false} className="size-4 accent-primary" /><Heart className="size-4 text-primary" /> Surprise me</label>
-            <Button type="submit" variant="outline">Save preferences</Button>
-          </div>
-        </form> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
+        {editable ? <WishlistPreferencesForm exchangeId={exchangeId} likes={wishlist?.likes ?? ""} surpriseMe={wishlist?.surpriseMe ?? false} /> : <div className="space-y-2 text-sm"><p><strong>Things I like:</strong> {wishlist?.likes || "Not added"}</p><p><strong>Surprise me:</strong> {wishlist?.surpriseMe ? "Yes" : "No"}</p></div>}
       </Card>
                 {!editable && <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">{exchange.year < new Date().getFullYear() ? "This past exchange wishlist is read-only in history." : "This exchange is closed. Its wishlist is saved for history."}</p>}
               </div>

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPaste, Gift, Plus, ArrowUpRight } from "lucide-react";
+import { ClipboardPaste, Gift, LoaderCircle, ArrowUpRight } from "lucide-react";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provider";
 import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
@@ -38,6 +38,10 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   }
 
   async function savePasted(link: string, details?: FormData) {
+    // The link is now being handled automatically; clear it so it cannot look
+    // like another item waiting to be added.
+    setDraft("");
+    setUrl("");
     try {
       await session.current.run(link, async ({ itemId, url: originalUrl }) => {
         activeItemId.current = itemId;
@@ -130,11 +134,12 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             readOnly={previewing || Boolean(savedUrl)}
             className="h-12 min-w-0 flex-1 rounded-xl px-4 text-base"
           />
-          <Button type="button" onClick={pasteFromClipboard} disabled={pasting || previewing} className="h-12 shrink-0 rounded-xl px-5">
-            {pasting ? <ClipboardPaste className="size-4" /> : <Plus className="size-5" />}{pasting ? "Pasting…" : "Add"}
+          <Button type="button" onClick={pasteFromClipboard} disabled={pasting || previewing || Boolean(savedUrl)} className="h-12 w-full shrink-0 rounded-xl sm:w-auto sm:min-w-32">
+            {previewing ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ClipboardPaste className="size-4" aria-hidden="true" />}
+            {previewing ? "Adding…" : pasting ? "Pasting…" : "Paste link"}
           </Button>
         </div>
-        {previewing && <p role="status" className="text-sm text-muted-foreground">Saving your wish…</p>}
+        {previewing && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />Saving your wish…</p>}
         {!savedUrl && <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} />}
         {!savedUrl && <details open className="group mt-5 border-t pt-4">
           <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
