@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import { Gift, Plus, Settings2, Sparkles } from "lucide-react";
+import { Gift, Heart, Plus, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
-import { WishlistComposer } from "@/components/secret-santa/wishlist-composer";
+import { WishlistComposerSheet } from "@/components/secret-santa/wishlist-composer-sheet";
 import { WishlistEditForm } from "@/components/secret-santa/wishlist-edit-form";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
@@ -86,9 +86,8 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
         <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground"><Sparkles className="size-3.5" aria-hidden="true" />{exchange.year} exchange</p>
         <PageHeading title="A list full of little joys" description="Add a wish or browse the ideas you’ve already saved. Your Secret Santa will thank you." />
         <div className={editable ? "grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.92fr)] xl:gap-8" : "mx-auto max-w-3xl"}>
-          {editable && <div id="add-a-wish" className="order-2 min-w-0 scroll-mt-24 space-y-4 lg:order-1">
-            <WishlistComposer exchangeId={exchangeId} {...(query.url ? { initialUrl: query.url } : {})} {...(query.sharedTitle ? { initialTitle: query.sharedTitle } : {})} {...(query.sharedImage ? { initialImageUrl: query.sharedImage } : {})} {...(query.sharedPrice ? { initialPrice: query.sharedPrice } : {})} {...(query.sharedBrand ? { initialStoreName: query.sharedBrand } : {})} />
-            <p className="px-1 text-xs leading-5 text-muted-foreground">Have a size, color, or model in mind? Add those little details so your Santa can choose with confidence.</p>
+          {editable && <div className="order-2 min-w-0 lg:order-1">
+            <WishlistComposerSheet exchangeId={exchangeId} {...(query.url ? { initialUrl: query.url } : {})} {...(query.sharedTitle ? { initialTitle: query.sharedTitle } : {})} {...(query.sharedImage ? { initialImageUrl: query.sharedImage } : {})} {...(query.sharedPrice ? { initialPrice: query.sharedPrice } : {})} {...(query.sharedBrand ? { initialStoreName: query.sharedBrand } : {})} />
           </div>}
           <div className="order-1 min-w-0 space-y-4 lg:order-2">
             <section aria-labelledby="wish-items-heading" className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
@@ -129,7 +128,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 <label className="grid gap-1 text-sm font-medium">Title<input name="title" required maxLength={200} defaultValue={item.title} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <label className="grid gap-1 text-sm font-medium">Product link<input name="url" type="url" maxLength={2000} defaultValue={item.url ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <label className="grid gap-1 text-sm font-medium">Store<input name="storeName" maxLength={100} defaultValue={item.storeName ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
-                <WishlistImagePicker exchangeId={exchangeId} itemId={item.id} imageUrl={item.imageUrl ?? ""} />
+                <WishlistImagePicker key={item.imageUrl ?? ""} exchangeId={exchangeId} itemId={item.id} imageUrl={item.imageUrl ?? ""} />
                 <div className="grid gap-3 sm:grid-cols-3">
                   <label className="grid gap-1 text-sm font-medium">Priority<select name="priority" defaultValue={item.priority} className="h-10 rounded-md border border-input bg-background px-3"><option value="most_wanted">Most wanted</option><option value="would_like">Would like</option><option value="nice_to_have">Nice to have</option></select></label>
                   <label className="grid gap-1 text-sm font-medium">Price from<input name="priceMin" type="number" min="0" max="1000000" step="1" defaultValue={item.priceMin ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
@@ -166,7 +165,6 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
             {myAssignment && exchange.year >= new Date().getFullYear() && exchange.status !== "open" && <div className="flex justify-end"><Button asChild variant="outline"><Link href={`/wishlists/${exchangeId}/recipient`}><Gift className="size-4" /> See my recipient’s list</Link></Button></div>}
           </div>
         </div>
-        {editable && <a href="#add-a-wish" aria-label="Add a wish" className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:hidden"><Plus className="size-6" aria-hidden="true" /></a>}
       </div>
     </WishlistPasteProvider>
   );

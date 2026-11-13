@@ -12,9 +12,13 @@ import { Input } from "@/components/ui/input";
 import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
 
-type Props = { exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string };
+export type WishlistComposerProps = {
+  exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string;
+  /** Called once a wish has been saved, e.g. so a mobile sheet can close and reveal the list. */
+  onSaved?: () => void;
+};
 
-export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "", initialImageUrl = "", initialPrice = "", initialStoreName = "" }: Props) {
+export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "", initialImageUrl = "", initialPrice = "", initialStoreName = "", onSaved }: WishlistComposerProps) {
   const router = useRouter();
   const pasteContext = useWishlistPaste();
   const session = useRef(createPasteSession(() => crypto.randomUUID()));
@@ -58,6 +62,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
           if (!result.ok) throw new Error(result.error || "Could not save your wish. Try again.");
           setSavedUrl(originalUrl);
           router.refresh();
+          onSaved?.();
           setPreviewMessage("Wish saved. Finding its picture and title… You can edit it in your list.");
           void (async () => {
             try {
@@ -93,7 +98,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
     const link = singlePastedUrl(draft);
     if (link) { await savePasted(link, formData); return; }
     setPreviewing(true);
-    try { await prepareWishlistImage(formData); await createWishlistItem(formData); resetDraft(); router.refresh(); }
+    try { await prepareWishlistImage(formData); await createWishlistItem(formData); resetDraft(); router.refresh(); onSaved?.(); }
     catch (error) { setPreviewMessage(error instanceof Error ? error.message : "Could not save your wish."); }
     finally { setPreviewing(false); }
   }
