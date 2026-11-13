@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
-import { Gift, Plus, Settings2, Sparkles } from "lucide-react";
+import { Gift, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
