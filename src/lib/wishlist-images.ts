@@ -5,6 +5,7 @@ import { isIP } from "node:net";
 import { put } from "@vercel/blob";
 import sharp from "sharp";
 import { isPublicAddress, normalizeUnfurlUrl, UnfurlSafetyError } from "@/lib/unfurl";
+import { hasWishlistBlobToken, isWishlistBlobUrl } from "@/lib/wishlist-image-url";
 
 export const MAX_WISHLIST_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -116,16 +117,7 @@ function convertToWebp(input: Buffer) {
     .toBuffer();
 }
 
-export function isWishlistBlobUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.endsWith(".public.blob.vercel-storage.com");
-  } catch { return false; }
-}
-
-export function hasWishlistBlobToken() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-}
+export { hasWishlistBlobToken, isWishlistBlobUrl };
 
 async function saveWebp(input: Buffer): Promise<string> {
   if (!hasWishlistBlobToken()) throw new Error("Wishlist image storage is not configured. Add BLOB_READ_WRITE_TOKEN to enable uploads.");

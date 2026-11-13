@@ -29,7 +29,7 @@ import {
   wishlistItems,
   wishlists,
 } from "@/lib/schema";
-import { normalizeUnfurlUrl } from "@/lib/unfurl";
+import { normalizeUnfurlUrl } from "@/lib/url-safety";
 
 function safeProductUrl(value: string | null) {
   if (!value) return null;

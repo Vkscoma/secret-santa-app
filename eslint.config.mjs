@@ -4,6 +4,7 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".vercel/**",
       "node_modules/**",
       ".cache/**",
       "dist/**",
@@ -15,6 +16,9 @@ const config = [
   },
   ...nextConfig,
   {
+    // Match the files eslint-config-next registers its react/react-hooks/import
+    // plugins for; elsewhere (e.g. *.cjs) those plugins are not in scope.
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
       // React rules
       "react/jsx-no-target-blank": "error",

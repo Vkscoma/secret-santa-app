@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { consumeAuthRateLimit } from "@/lib/auth-rate-limit";
 import { db } from "@/lib/db";
 import { exchanges, exchangeParticipants, wishlistItems, wishlists } from "@/lib/schema";
-import { hasWishlistBlobToken, MAX_WISHLIST_UPLOAD_BYTES, storeUploadedWishlistImage } from "@/lib/wishlist-images";
+import { hasWishlistBlobToken, MAX_WISHLIST_UPLOAD_BYTES, storeUploadedWishlistImage, storeProductImage } from "@/lib/wishlist-images";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -14,7 +14,6 @@ export const maxDuration = 20;
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Sign in to upload an image." }, { status: 401 });
-  if (!hasWishlistBlobToken()) return NextResponse.json({ error: "Image storage is not configured yet." }, { status: 503 });
   let form: FormData;
   try { form = await request.formData(); }
   catch { return NextResponse.json({ error: "Choose a valid image file." }, { status: 400 }); }
@@ -22,16 +21,19 @@ export async function POST(request: Request) {
   const itemIdValue = form.get("itemId");
   const itemId = itemIdValue ? z.string().uuid().safeParse(itemIdValue) : null;
   const file = form.get("file");
-  if (!exchangeId.success || (itemId && !itemId.success) || !(file instanceof File) || !file.type.startsWith("image/")) {
+  const imageUrl = form.get("imageUrl");
+  const remoteImage = typeof imageUrl === "string" && imageUrl.length > 0 && imageUrl.length <= 2_000;
+  if (!exchangeId.success || (itemId && !itemId.success) || (!remoteImage && (!(file instanceof File) || !file.type.startsWith("image/")))) {
     return NextResponse.json({ error: "Choose a valid image file." }, { status: 400 });
   }
-  if (file.size > MAX_WISHLIST_UPLOAD_BYTES) return NextResponse.json({ error: "Choose an image under 5 MB." }, { status: 413 });
+  if (!remoteImage && !hasWishlistBlobToken()) return NextResponse.json({ error: "Image storage is not configured yet." }, { status: 503 });
+  if (file instanceof File && file.size > MAX_WISHLIST_UPLOAD_BYTES) return NextResponse.json({ error: "Choose an image under 5 MB." }, { status: 413 });
   const [membership] = await db.select({ id: exchangeParticipants.id }).from(exchangeParticipants).where(and(
     eq(exchangeParticipants.exchangeId, exchangeId.data), eq(exchangeParticipants.userId, session.user.id),
   )).limit(1);
   if (!membership) return NextResponse.json({ error: "You are not a participant in this exchange." }, { status: 403 });
-  const [exchange] = await db.select({ status: exchanges.status }).from(exchanges).where(eq(exchanges.id, exchangeId.data)).limit(1);
-  if (!exchange || exchange.status === "closed") return NextResponse.json({ error: "This exchange is closed; its wishlist is read-only." }, { status: 403 });
+  const [exchange] = await db.select({ status: exchanges.status, year: exchanges.year }).from(exchanges).where(eq(exchanges.id, exchangeId.data)).limit(1);
+  if (!exchange || exchange.status === "closed" || exchange.year < new Date().getFullYear()) return NextResponse.json({ error: "This exchange is closed; its wishlist is read-only." }, { status: 403 });
   if (itemId?.success) {
     const [owned] = await db.select({ id: wishlistItems.id }).from(wishlistItems)
       .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
@@ -42,8 +44,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "You’ve uploaded several images. Wait a minute and try again." }, { status: 429 });
   }
   try {
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const url = await storeUploadedWishlistImage(bytes);
+    const url = remoteImage
+      ? await storeProductImage(imageUrl as string)
+      : await storeUploadedWishlistImage(Buffer.from(await (file as File).arrayBuffer()));
     return NextResponse.json({ url }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Image upload failed." }, { status: 400 });

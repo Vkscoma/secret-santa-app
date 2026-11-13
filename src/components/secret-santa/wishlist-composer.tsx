@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
+import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
 
 type Props = { exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string };
 
@@ -44,6 +45,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         pasteContext?.setPending({ itemId, url: originalUrl });
         setPreviewMessage("Saving your wish…");
         try {
+          if (details) await prepareWishlistImage(details);
           const result = await createPastedWishlistItem({ exchangeId, itemId, url: originalUrl, ...(details ? { details: {
             title: String(details.get("title") ?? ""), imageUrl: String(details.get("imageUrl") ?? ""), storeName: String(details.get("storeName") ?? ""),
             priceMin: details.get("priceMin") ? Number(details.get("priceMin")) : null, priceMax: details.get("priceMax") ? Number(details.get("priceMax")) : null,
@@ -87,7 +89,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
     const link = singlePastedUrl(draft);
     if (link) { await savePasted(link, formData); return; }
     setPreviewing(true);
-    try { await createWishlistItem(formData); resetDraft(); router.refresh(); }
+    try { await prepareWishlistImage(formData); await createWishlistItem(formData); resetDraft(); router.refresh(); }
     catch (error) { setPreviewMessage(error instanceof Error ? error.message : "Could not save your wish."); }
     finally { setPreviewing(false); }
   }

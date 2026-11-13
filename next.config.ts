@@ -1,18 +1,8 @@
 import type { NextConfig } from "next";
 
-const wishlistImageRuntimeFiles = [
-  "./node_modules/sharp/**",
-  "./node_modules/.pnpm/sharp@*/node_modules/sharp/**",
-  "./node_modules/@img/sharp-linux-x64/**",
-  "./node_modules/.pnpm/@img+sharp-linux-x64@*/node_modules/@img/sharp-linux-x64/**",
-  "./node_modules/@img/sharp-libvips-linux-x64/**",
-  "./node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/**",
-];
-
 const nextConfig: NextConfig = {
-  // The wishlist server actions import the Playwright renderer for link previews.
-  // Trace the complete Playwright package (including browsers.json) and Chromium
-  // runtime assets into every route that loads those actions or the unfurl helper.
+  // Browser runtime assets are needed only by the preview API handlers.
+  // Let Next trace Sharp and its native dependencies from their actual imports.
   outputFileTracingIncludes: {
     "/api/unfurl": [
       "./node_modules/playwright-core/**",
@@ -21,20 +11,6 @@ const nextConfig: NextConfig = {
     "/api/wishlist-items/enrich": [
       "./node_modules/playwright-core/**",
       "./node_modules/@sparticuz/chromium/bin/**",
-      ...wishlistImageRuntimeFiles,
-    ],
-    "/api/wishlist-images/upload": [
-      ...wishlistImageRuntimeFiles,
-    ],
-    "/wishlists/*": [
-      "./node_modules/playwright-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**",
-      ...wishlistImageRuntimeFiles,
-    ],
-    "/wishlists/*/recipient": [
-      "./node_modules/playwright-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**",
-      ...wishlistImageRuntimeFiles,
     ],
   },
 

@@ -1,8 +1,9 @@
 import { PgDialect } from "drizzle-orm/pg-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createPastedWishlistItem, enrichWishlistItem, refreshWishlistItemImage, updateWishlistItem } from "./wishlists";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { enrichWishlistItem, refreshWishlistItemImage } from "@/lib/wishlist-enrichment";
+import { createPastedWishlistItem, createWishlistItem, deleteWishlistItem, updateWishlistItem } from "./wishlists";
 
-const mocks = vi.hoisted(() => ({ rows: [] as unknown[][], inserted: [] as unknown[], updated: [] as unknown[], conditions: [] as unknown[], preview: vi.fn(), previewUrl: vi.fn(), storeImage: vi.fn(), rate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rows: [] as unknown[][], inserted: [] as unknown[], updated: [] as unknown[], deleted: [] as unknown[], conditions: [] as unknown[], preview: vi.fn(), previewUrl: vi.fn(), storeImage: vi.fn(), rate: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/authz", () => ({ requireExchangeMember: vi.fn(async () => ({ user: { id: "owner" } })) }));
 vi.mock("@/lib/auth-rate-limit", () => ({ consumeAuthRateLimit: mocks.rate }));
@@ -15,14 +16,22 @@ vi.mock("@/lib/db", () => ({ db: {
     return result;
   },
   insert: () => ({ values: (value: unknown) => { mocks.inserted.push(value); return { onConflictDoNothing: () => ({ returning: async () => [{ id: (value as { id?: string }).id }] }), returning: async () => [{ id: (value as { id?: string }).id }] }; } }),
+  delete: () => ({ where: async (condition: unknown) => { mocks.deleted.push(condition); return []; } }),
   update: () => ({ set: (value: unknown) => { mocks.updated.push(value); return { where: async (condition: unknown) => { mocks.conditions.push(condition); return []; } }; } }),
 } }));
 const exchangeId = "11111111-1111-4111-8111-111111111111";
 const itemId = "22222222-2222-4222-8222-222222222222";
 const url = "https://store.example/item?variant=red&utm_source=test#size-large";
 const wishlistId = "33333333-3333-4333-8333-333333333333";
+const blobImage = "https://store-abc.public.blob.vercel-storage.com/wishlist-images/scarf.webp";
 function accessRows() { return [[{ status: "open" }], [{ id: "member" }]]; }
-beforeEach(() => { mocks.rows.length = 0; mocks.inserted.length = 0; mocks.updated.length = 0; mocks.conditions.length = 0; mocks.rate.mockResolvedValue(true); mocks.storeImage.mockResolvedValue("https://images.example/product.webp"); mocks.preview.mockResolvedValue({ title: "Actual product", imageUrl: null, price: "19.95", currency: "EUR", fetchedAt: "2026-11-11T12:00:00.000Z", reason: null, fieldSources: { title: "meta" }, debug: { finalUrl: "https://store.example/final" } }); });
+function itemForm(values: Record<string, string>) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries({ exchangeId, title: "Scarf", url, notes: "", imageUrl: "", storeName: "", priority: "most_wanted", priceMin: "", priceMax: "", ...values })) form.set(key, value);
+  return form;
+}
+afterEach(() => { vi.unstubAllEnvs(); });
+beforeEach(() => { mocks.rows.length = 0; mocks.inserted.length = 0; mocks.updated.length = 0; mocks.conditions.length = 0; mocks.deleted.length = 0; mocks.rate.mockResolvedValue(true); mocks.storeImage.mockResolvedValue("https://images.example/product.webp"); mocks.preview.mockResolvedValue({ title: "Actual product", imageUrl: null, price: "19.95", currency: "EUR", fetchedAt: "2026-11-11T12:00:00.000Z", reason: null, fieldSources: { title: "meta" }, debug: { finalUrl: "https://store.example/final" } }); });
 
 describe("pasted wish persistence", () => {
   it("saves the exact link and retries the same intent without a second item insert", async () => {
@@ -126,5 +135,64 @@ describe("pasted wish persistence", () => {
     const result = await enrichWishlistItem({ exchangeId, itemId });
     expect(result).toMatchObject({ ok: false, itemId });
     expect(mocks.updated).toHaveLength(0);
+  });
+  it("saves a hosted image URL without image processing or previews in the action", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows(), [{ id: wishlistId }], [{ sortOrder: 2 }]);
+    await createWishlistItem(itemForm({ imageUrl: blobImage }));
+    expect(mocks.inserted.at(-1)).toMatchObject({ title: "Scarf", url, imageUrl: blobImage, wishlistId, sortOrder: 3 });
+    expect(mocks.storeImage).not.toHaveBeenCalled();
+    expect(mocks.preview).not.toHaveBeenCalled();
+    expect(mocks.previewUrl).not.toHaveBeenCalled();
+  });
+  it("rejects an unprocessed image URL on create when image storage is configured", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows());
+    await expect(createWishlistItem(itemForm({ imageUrl: "https://images.example/scarf.webp" }))).rejects.toThrow(/upload the image/);
+    expect(mocks.inserted).toHaveLength(0);
+  });
+  it("still applies the safe-URL check to hosted-looking image URLs", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows());
+    await expect(createWishlistItem(itemForm({ imageUrl: "https://user:pass@store-abc.public.blob.vercel-storage.com/a.webp" }))).rejects.toThrow(/Product image/);
+    expect(mocks.inserted).toHaveLength(0);
+  });
+  it("accepts a safe public image URL when image storage is not configured", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    mocks.rows.push(...accessRows(), [{ id: wishlistId }], [{ sortOrder: 0 }]);
+    await createWishlistItem(itemForm({ imageUrl: "https://images.example/scarf.webp" }));
+    expect(mocks.inserted.at(-1)).toMatchObject({ imageUrl: "https://images.example/scarf.webp", wishlistId, sortOrder: 1 });
+  });
+  it("rejects a changed unprocessed image URL on update", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows(), [{ id: itemId, url, imageUrl: "https://images.example/legacy.jpg" }]);
+    await expect(updateWishlistItem(itemForm({ itemId, imageUrl: "https://images.example/other.jpg" }))).rejects.toThrow(/upload the image/);
+    expect(mocks.updated).toHaveLength(0);
+  });
+  it("keeps an unchanged legacy image URL editable on update", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows(), [{ id: itemId, url, imageUrl: "https://images.example/legacy.jpg" }]);
+    await updateWishlistItem(itemForm({ itemId, title: "Renamed", imageUrl: "https://images.example/legacy.jpg" }));
+    expect(mocks.updated[0]).toMatchObject({ title: "Renamed", imageUrl: "https://images.example/legacy.jpg" });
+  });
+  it("refuses a pasted wish with an unprocessed image URL", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
+    mocks.rows.push(...accessRows(), [{ id: wishlistId }], [], [{ sortOrder: 0 }], [{ wishlistId, url }]);
+    const result = await createPastedWishlistItem({ exchangeId, itemId, url, details: { imageUrl: "https://images.example/scarf.webp" } });
+    expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/upload the image/) });
+    expect(mocks.inserted).toHaveLength(0);
+  });
+  it("removes an owned item", async () => {
+    mocks.rows.push(...accessRows(), [{ id: itemId, wishlistId }]);
+    const form = new FormData(); form.set("exchangeId", exchangeId); form.set("itemId", itemId);
+    await deleteWishlistItem(form);
+    expect(new PgDialect().sqlToQuery(mocks.deleted[0] as Parameters<PgDialect["sqlToQuery"]>[0]).params).toContain(itemId);
+    expect(mocks.updated[0]).toHaveProperty("updatedAt");
+  });
+  it("refuses to remove an item it cannot find in the owner's wishlist", async () => {
+    mocks.rows.push(...accessRows(), []);
+    const form = new FormData(); form.set("exchangeId", exchangeId); form.set("itemId", itemId);
+    await expect(deleteWishlistItem(form)).rejects.toThrow(/not found/);
+    expect(mocks.deleted).toHaveLength(0);
   });
 });

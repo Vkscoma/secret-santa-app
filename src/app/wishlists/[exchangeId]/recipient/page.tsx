@@ -11,7 +11,7 @@ import { toggleWishlistClaim } from "@/lib/actions/wishlists";
 import { requireExchangeMember } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { assignments, exchanges, itemClaims, wishlistItems, wishlists, user } from "@/lib/schema";
-import { normalizeUnfurlUrl } from "@/lib/unfurl";
+import { normalizeUnfurlUrl } from "@/lib/url-safety";
 
 type PageProps = { params: Promise<{ exchangeId: string }> };
 
