@@ -1,17 +1,24 @@
 import type { NextConfig } from "next";
 
+// Sharp's native binding loads libvips-cpp.so at runtime via dlopen, which
+// Next's tracer cannot see: it copies the package's JS files but not the shared
+// library. Include the library from its real pnpm path only (not the hoisted
+// symlink) so it is packaged once.
+const sharpNativeLibrary = [
+  "./node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/lib/**",
+];
+
+// Browser runtime assets are needed only by the preview API handlers.
+const previewBrowserFiles = [
+  "./node_modules/playwright-core/**",
+  "./node_modules/@sparticuz/chromium/bin/**",
+];
+
 const nextConfig: NextConfig = {
-  // Browser runtime assets are needed only by the preview API handlers.
-  // Let Next trace Sharp and its native dependencies from their actual imports.
   outputFileTracingIncludes: {
-    "/api/unfurl": [
-      "./node_modules/playwright-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/wishlist-items/enrich": [
-      "./node_modules/playwright-core/**",
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
+    "/api/unfurl": [...previewBrowserFiles, ...sharpNativeLibrary],
+    "/api/wishlist-items/enrich": [...previewBrowserFiles, ...sharpNativeLibrary],
+    "/api/wishlist-images/upload": [...sharpNativeLibrary],
   },
 
   // Image optimization configuration
