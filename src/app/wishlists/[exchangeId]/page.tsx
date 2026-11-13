@@ -129,7 +129,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 <label className="grid gap-1 text-sm font-medium">Title<input name="title" required maxLength={200} defaultValue={item.title} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <label className="grid gap-1 text-sm font-medium">Product link<input name="url" type="url" maxLength={2000} defaultValue={item.url ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <label className="grid gap-1 text-sm font-medium">Store<input name="storeName" maxLength={100} defaultValue={item.storeName ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
-                <WishlistImagePicker exchangeId={exchangeId} itemId={item.id} imageUrl={item.imageUrl ?? ""} />
+                <WishlistImagePicker key={item.imageUrl ?? ""} exchangeId={exchangeId} itemId={item.id} imageUrl={item.imageUrl ?? ""} />
                 <div className="grid gap-3 sm:grid-cols-3">
                   <label className="grid gap-1 text-sm font-medium">Priority<select name="priority" defaultValue={item.priority} className="h-10 rounded-md border border-input bg-background px-3"><option value="most_wanted">Most wanted</option><option value="would_like">Would like</option><option value="nice_to_have">Nice to have</option></select></label>
                   <label className="grid gap-1 text-sm font-medium">Price from<input name="priceMin" type="number" min="0" max="1000000" step="1" defaultValue={item.priceMin ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
