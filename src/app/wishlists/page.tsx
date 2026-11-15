@@ -120,10 +120,9 @@ export default async function WishlistsPage() {
           <Gift className="text-primary mx-auto size-8" />
           <h2 className="text-lg font-bold">You’re not in an exchange yet</h2>
           <p className="text-muted-foreground mx-auto max-w-md text-sm">
-            Your wish list will appear here once your organizer adds you. Check your inbox for a
-            Secret Santa invitation email or link. If you don’t find one, contact the organizer who
-            invited you: reply to their email or message where they shared the link and ask them to
-            send it again.
+            Your wish list will appear here once your organizer adds you. Check your inbox for a Secret
+            Santa invitation email or link. If you don’t find one, contact the organizer who invited you:
+            reply to their invitation email or message where they shared the link, and ask them to resend it.
           </p>
           <Button asChild variant="outline" className="mt-2">
             <Link href="/">Back home</Link>

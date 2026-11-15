@@ -30,12 +30,12 @@ export function SignInButton({ returnTo = "/wishlists" }: { returnTo?: string })
           <Label htmlFor="email">Email address</Label>
           <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={busy} />
         </div>
-        <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a sign-in link"}</Button>
+        <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
         {message && <div className="space-y-2 text-center text-sm text-muted-foreground">
           <p role="status">{message}</p>
-          <p>Check your inbox and spam folder for a sign-in email. Open the link to sign in and return to the page you started from, usually My Wishlists. If asked, use the same email address you entered above.</p>
+          <p>Check your inbox and spam folder for a sign-in email. Open its link to sign in and return to the page you started from (usually My Wishlists). If asked for your email again, use the same address you entered above.</p>
         </div>}
-        <p className="text-center text-xs text-muted-foreground">The link works once and expires after 15 minutes.</p>
+        <p className="text-center text-xs text-muted-foreground">Links are one-use and expire after 15 minutes.</p>
       </form>
     </div>
   );
