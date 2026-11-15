@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormActionRow } from "@/components/ui/form-action-row";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -326,16 +327,11 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                 Email cannot be changed for OAuth accounts
               </p>
             </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditProfileOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save Changes</Button>
-            </div>
+            <FormActionRow
+              className="pt-4"
+              secondary={<Button type="button" variant="outline" className="h-11 w-full sm:w-auto" onClick={() => setEditProfileOpen(false)}>Cancel</Button>}
+              primary={<Button type="submit" className="h-11 w-full sm:w-auto">Save Changes</Button>}
+            />
           </form>
         </DialogContent>
       </Dialog>
@@ -424,10 +420,11 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
               </label>
             ))}
             <p className="text-xs text-muted-foreground">Assignment notifications and secure sign-in links are always sent.</p>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setEmailPrefsOpen(false)}>Close</Button>
-              <Button type="submit">Save preferences</Button>
-            </div>
+            <FormActionRow
+              className="pt-2"
+              secondary={<Button type="button" variant="outline" className="h-11 w-full sm:w-auto" onClick={() => setEmailPrefsOpen(false)}>Close</Button>}
+              primary={<Button type="submit" className="h-11 w-full sm:w-auto">Save preferences</Button>}
+            />
           </form>
         </DialogContent>
       </Dialog>

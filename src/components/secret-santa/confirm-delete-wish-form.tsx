@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
+import { useWishlistEditContext } from "@/components/secret-santa/wishlist-edit-section";
 import { Button } from "@/components/ui/button";
 import { deleteWishlistItem } from "@/lib/actions/wishlists";
 
@@ -15,6 +16,7 @@ export function ConfirmDeleteWishForm({
   title: string;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const { saving } = useWishlistEditContext();
   const removeButtonRef = useRef<HTMLButtonElement>(null);
   const keepButtonRef = useRef<HTMLButtonElement>(null);
   const wasConfirming = useRef(false);
@@ -26,7 +28,7 @@ export function ConfirmDeleteWishForm({
   }, [confirming]);
 
   return (
-    <form action={deleteWishlistItem} className="mt-2">
+    <form action={deleteWishlistItem}>
       <input type="hidden" name="exchangeId" value={exchangeId} />
       <input type="hidden" name="itemId" value={itemId} />
       {confirming ? (
@@ -39,12 +41,13 @@ export function ConfirmDeleteWishForm({
               ref={keepButtonRef}
               type="button"
               variant="outline"
-              className="h-11"
+              disabled={saving}
+              className="h-11 rounded-md"
               onClick={() => setConfirming(false)}
             >
               Keep wish
             </Button>
-            <Button type="submit" variant="destructive" className="h-11">
+            <Button type="submit" variant="destructive" disabled={saving} className="h-11 rounded-md">
               <Trash2 className="size-4" aria-hidden="true" />
               Remove wish
             </Button>
@@ -55,8 +58,9 @@ export function ConfirmDeleteWishForm({
           ref={removeButtonRef}
           type="button"
           size="sm"
-          variant="destructive"
-          className="h-11"
+          variant="ghost"
+          disabled={saving}
+          className="h-11 justify-start rounded-md px-3 text-destructive hover:bg-destructive/5"
           onClick={() => setConfirming(true)}
         >
           <Trash2 className="size-4" aria-hidden="true" />

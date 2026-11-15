@@ -8,6 +8,7 @@ import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provi
 import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormActionRow } from "@/components/ui/form-action-row";
 import { Input } from "@/components/ui/input";
 import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
@@ -167,9 +168,9 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             <div className="sm:col-span-2"><WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} /></div>
           </div>
         </details>}
-        {!savedUrl && <Button type="submit" disabled={previewing} size="lg" className="w-full rounded-xl">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>}
+        {!savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="submit" disabled={previewing} className="h-11 w-full min-w-44 rounded-xl sm:w-auto">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>} />}
         {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
-        {savedUrl && <Button type="button" variant="outline" onClick={resetDraft} disabled={previewing}>Add another wish</Button>}
+        {savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="button" variant="outline" onClick={resetDraft} disabled={previewing} className="h-11 w-full rounded-xl sm:w-auto">Add another wish</Button>} />}
       </form>
     </Card>
   );
