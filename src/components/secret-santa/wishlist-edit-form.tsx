@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,32 @@ import { useWishlistEditContext } from "@/components/secret-santa/wishlist-edit-
 import { Button } from "@/components/ui/button";
 import { updateWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
+
+export function WishlistTitleInput({ initialTitle }: { initialTitle: string }) {
+  const [title, setTitle] = useState(initialTitle);
+  const userHasEdited = useRef(false);
+
+  useEffect(() => {
+    if (!userHasEdited.current) setTitle(initialTitle);
+  }, [initialTitle]);
+
+  return (
+    <label className="grid gap-1 text-sm font-medium">
+      Title
+      <input
+        name="title"
+        required
+        maxLength={200}
+        value={title}
+        onChange={(event) => {
+          userHasEdited.current = true;
+          setTitle(event.target.value);
+        }}
+        className="h-10 rounded-md border border-input bg-background px-3"
+      />
+    </label>
+  );
+}
 
 export function WishlistEditForm({ children, initialImageUrl }: { children: ReactNode; initialImageUrl: string }) {
   const [error, setError] = useState("");
