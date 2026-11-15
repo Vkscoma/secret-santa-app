@@ -8,7 +8,7 @@ import { ProductImage } from "@/components/secret-santa/product-image";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { WishlistComposerSheet } from "@/components/secret-santa/wishlist-composer-sheet";
-import { WishlistEditForm } from "@/components/secret-santa/wishlist-edit-form";
+import { WishlistEditForm, WishlistTitleInput } from "@/components/secret-santa/wishlist-edit-form";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
 import { WishlistPreferencesForm } from "@/components/secret-santa/wishlist-preferences-form";
@@ -125,7 +125,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
               {item.url && <RefreshWishlistImage exchangeId={exchangeId} itemId={item.id} />}
               <WishlistEditForm initialImageUrl={item.imageUrl ?? ""}>
                 <input type="hidden" name="exchangeId" value={exchangeId} /><input type="hidden" name="itemId" value={item.id} />
-                <label className="grid gap-1 text-sm font-medium">Title<input name="title" required maxLength={200} defaultValue={item.title} className="h-10 rounded-md border border-input bg-background px-3" /></label>
+                <WishlistTitleInput initialTitle={item.title} />
                 <label className="grid gap-1 text-sm font-medium">Product link<input name="url" type="url" maxLength={2000} defaultValue={item.url ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <label className="grid gap-1 text-sm font-medium">Store<input name="storeName" maxLength={100} defaultValue={item.storeName ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 <WishlistImagePicker key={item.imageUrl ?? ""} exchangeId={exchangeId} itemId={item.id} imageUrl={item.imageUrl ?? ""} />
