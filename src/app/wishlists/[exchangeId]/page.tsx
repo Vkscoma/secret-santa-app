@@ -145,9 +145,15 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
             </details>}
             </Card>;
           })}
-        </div> : <WishlistEmptyState><Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
-          <div><Gift className="mx-auto size-7 text-primary" /><p className="mt-2 font-semibold">Your list is ready for its first wish</p><p className="mt-1 text-sm text-muted-foreground">Add a favorite thing, a useful hint, or a link.</p></div>
-        </Card></WishlistEmptyState>}
+        </div> : editable ? <WishlistEmptyState><Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
+          <div className="max-w-md">
+            <Gift className="mx-auto size-7 text-primary" />
+            <p className="mt-2 font-semibold">Your list is ready for its first gift idea</p>
+            <p className="mt-1 text-sm text-muted-foreground">Type a gift name or paste a link. For example: “a blue wool scarf.” On your phone, tap + to add your first idea. You can add details later.</p>
+          </div>
+        </Card></WishlistEmptyState> : <Card className="grid min-h-36 place-items-center border-dashed p-6 text-center">
+          <div><Gift className="mx-auto size-7 text-primary" /><p className="mt-2 font-semibold">No gift ideas were saved for this list</p></div>
+        </Card>}
       {editable && previous && items.length === 0 && <Card className="flex flex-col gap-3 border-dashed p-4 shadow-none">
         <div><h2 className="font-bold">Start with last year’s list</h2><p className="text-sm text-muted-foreground">Copy items and preferences from {previous.name}. The original list stays unchanged.</p></div>
         <form action={copyPreviousWishlist}><input type="hidden" name="exchangeId" value={exchangeId} /><Button type="submit" variant="outline">Copy {previous.year} list</Button></form>

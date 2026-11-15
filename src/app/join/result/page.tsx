@@ -14,15 +14,15 @@ export default async function InviteResultPage({ searchParams }: { searchParams:
       <Card className="w-full max-w-lg">
         <CardHeader className="items-center text-center">
           <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-pine"><Icon className="size-6" aria-hidden="true" /></span>
-          <CardTitle>{joinedThisYear ? "You’re on the list!" : "Your account is ready"}</CardTitle>
+          <CardTitle>{joinedThisYear ? "You’re in this year’s exchange!" : "Your account is ready"}</CardTitle>
           <CardDescription>
             {joinedThisYear
-              ? "You’ve joined this year’s exchange. The organizer can now manage your participation."
-              : "This year’s names have already been drawn, so we added your account for future Secret Santa exchanges without changing this year’s draw. The organizer has been notified."}
+              ? "You’ve joined this year’s exchange. Add a few gift ideas to your wish list to help your Secret Santa choose."
+              : "This year’s names were already chosen, so you weren’t added to this exchange. Your account is ready for future exchanges, and the organizer has been notified."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button asChild><Link href={returnTo}>Continue</Link></Button>
+          <Button asChild><Link href={returnTo}>See my wish lists</Link></Button>
         </CardContent>
       </Card>
     </main>

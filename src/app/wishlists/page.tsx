@@ -46,7 +46,7 @@ export default async function WishlistsPage() {
       <PageHeading
         eyebrow="Your gift ideas"
         title="My Wishlists"
-        description="Keep a thoughtful list for each exchange and give your Secret Santa a few good clues."
+        description="Choose an exchange below to open your list and add gift ideas."
       />
       {rows.length ? (
         <div className="space-y-4">

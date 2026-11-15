@@ -63,15 +63,15 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
           setSavedUrl(originalUrl);
           router.refresh();
           onSaved?.();
-          setPreviewMessage("Wish saved. Finding its picture and title… You can edit it in your list.");
+          setPreviewMessage("Your wish is saved. We’ll add the gift name and picture when we can.");
           void (async () => {
             try {
               const response = await fetch("/api/wishlist-items/enrich", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ exchangeId, itemId, preserveTitle: Boolean(details && String(details.get("title") ?? "").trim()) }) });
               const result = await response.json() as { ok?: boolean; error?: string };
-              if (!response.ok || !result.ok) throw new Error(result.error || "Preview unavailable.");
-              if (activeItemId.current === itemId) setPreviewMessage("Wish saved. Review its details in your list; you can edit its title or add a picture there.");
+              if (!response.ok || !result.ok) throw new Error(result.error || "We couldn’t get details from that link.");
+              if (activeItemId.current === itemId) setPreviewMessage("Your wish is saved. You can change its name or add a photo in your list.");
             } catch {
-              if (activeItemId.current === itemId) setPreviewMessage("Wish saved. This page could not be previewed; you can name the gift and add a picture in your list.");
+              if (activeItemId.current === itemId) setPreviewMessage("Your wish is saved. We couldn’t get details from that link, but you can add a name or photo in your list.");
             } finally { router.refresh(); }
           })();
         } catch (error) {
@@ -121,21 +121,22 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold">Add a wish</h2>
-          <p className="mt-1 text-sm text-muted-foreground">A link, a little detail, or just an idea.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Type a gift name or paste a link. You can add details later.</p>
         </div>
       </div>
       <form ref={formRef} action={submitWish} className="grid gap-4">
         <input type="hidden" name="exchangeId" value={exchangeId} />
         <input type="hidden" name="url" value={url} />
-        <label htmlFor="wishlist-wish-draft" className="sr-only">Paste a link or type a wish</label>
+        <label htmlFor="wishlist-wish-draft" className="sr-only">Gift idea or product link</label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="wishlist-wish-draft"
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
             onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted, formRef.current ? new FormData(formRef.current) : undefined); } }}
-            placeholder="Add a wish or paste a link"
+            placeholder="Type a gift or paste a link"
             autoComplete="off"
+            required
             readOnly={previewing || Boolean(savedUrl)}
             className="h-12 min-w-0 flex-1 rounded-xl px-4 text-base"
           />
@@ -145,14 +146,13 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
           </Button>
         </div>
         {previewing && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />Saving your wish…</p>}
-        {!savedUrl && <WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} />}
-        {!savedUrl && <details open className="group mt-5 border-t pt-4">
-          <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
+        {!savedUrl && <details className="group mt-2 border-t pt-4">
+          <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details (optional) <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-sm font-medium">Gift title
-              <Input name="title" required={!url} maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="A title your Santa will recognize" className="h-12 rounded-xl px-4 sm:col-span-2" />
+            <label className="grid gap-1.5 text-sm font-medium">Gift name
+              <Input name="title" maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="For example, a blue wool scarf" className="h-12 rounded-xl px-4 sm:col-span-2" />
             </label>
-            <label className="grid gap-1.5 text-sm font-medium">Merchant
+            <label className="grid gap-1.5 text-sm font-medium">Store or website
                 <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />
               </label>
             <fieldset className="space-y-2 text-sm font-medium"><legend>Priority</legend><div className="flex flex-wrap gap-2">
@@ -164,9 +164,10 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
                 <Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Min" className="h-12 rounded-xl px-4" />
                 <Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Max" className="h-12 rounded-xl px-4" />
               </div></label>
+            <div className="sm:col-span-2"><WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} /></div>
           </div>
-          <Button type="submit" disabled={previewing} size="lg" className="mt-5 w-full rounded-xl">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>
         </details>}
+        {!savedUrl && <Button type="submit" disabled={previewing} size="lg" className="w-full rounded-xl">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>}
         {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
         {savedUrl && <Button type="button" variant="outline" onClick={resetDraft} disabled={previewing}>Add another wish</Button>}
       </form>
