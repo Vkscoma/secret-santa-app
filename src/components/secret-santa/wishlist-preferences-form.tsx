@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Heart, LoaderCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { FormActionRow } from "@/components/ui/form-action-row";
 import { saveWishlistPreferences } from "@/lib/actions/wishlists";
 
 export function WishlistPreferencesForm({ exchangeId, likes, surpriseMe }: {
@@ -48,14 +49,15 @@ export function WishlistPreferencesForm({ exchangeId, likes, surpriseMe }: {
       <label className="grid gap-1.5 text-sm font-medium">Things I like
         <textarea name="likes" maxLength={1000} rows={2} defaultValue={savedLikes} placeholder="Cozy evenings, hiking, favorite flavors…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
       </label>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="surpriseMe" defaultChecked={savedSurpriseMe} className="size-4 accent-primary" /><Heart className="size-4 text-primary" /> Surprise me</label>
-        <div className="flex gap-2">
-          {(savedLikes || savedSurpriseMe) && <Button type="button" variant="ghost" disabled={saving} onClick={() => setEditing(false)}>Cancel</Button>}
-          <Button type="submit" disabled={saving} aria-live="polite">
+        <FormActionRow
+          className="sm:flex-1"
+          secondary={(savedLikes || savedSurpriseMe) ? <Button type="button" variant="outline" disabled={saving} className="h-11 w-full rounded-md sm:w-auto" onClick={() => setEditing(false)}>Cancel</Button> : undefined}
+          primary={<Button type="submit" disabled={saving} aria-live="polite" className="h-11 w-full rounded-md sm:w-auto">
             {saving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : "Save preferences"}
-          </Button>
-        </div>
+          </Button>}
+        />
       </div>
       </form>}
     </div>

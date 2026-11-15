@@ -68,8 +68,9 @@ In Christmas Eve, cranberry, pine-tinted, and blush controls use brighter color 
 
 - **Panel header:** pine, subtle diagonal gradient and faint snowflake pattern; white title/subtitle; small settings/share actions with pine-foreground icons on a 12% pine-foreground surface and a full pine-foreground outline; string-light accent below.
 - **Progress nudge:** icon, concise nudge, subline and thin gold progress bar. Gold text uses `gold-foreground`.
-- **Wishlist item:** square festive placeholder/image, title, muted store/domain, priority, optional note and price chips. Reorder/remove controls appear only in the owner's editor.
+- **Wishlist item:** square festive placeholder/image, title, muted store/domain, priority, optional note and price chips. Reorder controls sit on the owner's card toolbar; gift editing opens from a clear pencil button, and Remove stays with the edit actions.
 - **Wish composer:** URL-or-text input, editable metadata, notes, priority and price. Use a mobile bottom sheet on small screens.
+- **Form action row:** use the shared `FormActionRow`. On phones, stack primary first at full width, secondary next at full width, then a separated destructive action. On wider screens, place destructive actions on the left and secondary/primary actions on the right. Keep related buttons at least 44px tall with a consistent radius.
 - **Gift tag:** notched/tag silhouette with punched hole, fine gold line, and warm dark-mode glow.
 - **Empty state:** helpful and kind; e.g. “Your list is as empty as Santa’s sleigh on Dec 26.”
 - **Illustration:** original inline SVG/simple shapes only; hide on phones and adapt colors for dark mode.
