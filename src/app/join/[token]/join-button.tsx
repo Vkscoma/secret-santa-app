@@ -34,7 +34,7 @@ export function JoinButton({ token }: { token: string }) {
         const response = await requestMagicLink(formData);
         setMessage(response.message);
       } catch {
-        setMessage("If this email is approved, a secure link will be sent shortly.");
+        setMessage("If you can sign in with this email, we’ll send a sign-in link shortly.");
       } finally {
         setBusy(false);
       }
@@ -44,7 +44,10 @@ export function JoinButton({ token }: { token: string }) {
         <Input id="invite-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required disabled={busy} />
       </div>
       <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
-      {message && <p role="status" className="text-center text-sm text-muted-foreground">{message}</p>}
+      {message && <div className="space-y-2 text-center text-sm text-muted-foreground">
+        <p role="status">{message}</p>
+        <p>Check your inbox and spam folder for a sign-in email. If asked for your email again, use the same address you entered above. Open the link to finish; you’ll then see a confirmation explaining whether you joined this year’s exchange or are set up for future exchanges. Tap Continue to see your wish lists.</p>
+      </div>}
     </form>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;

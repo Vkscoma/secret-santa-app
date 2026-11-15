@@ -11,7 +11,7 @@ import { canUseInvite } from "@/lib/invites";
 import { safeReturnTo } from "@/lib/safe-return-to";
 
 const emailSchema = z.string().trim().email().max(320);
-const genericResponse = "If this email is approved, a secure link will be sent shortly.";
+const genericResponse = "If you can sign in with this email, we’ll send a sign-in link shortly.";
 
 function suggestedName(email: string) {
   const localPart = email.split("@", 1)[0] ?? "Secret Santa";

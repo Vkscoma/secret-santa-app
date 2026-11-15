@@ -63,15 +63,15 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
           setSavedUrl(originalUrl);
           router.refresh();
           onSaved?.();
-          setPreviewMessage("Your wish was saved. We’re finding its title and photo from the link.");
+          setPreviewMessage("Your wish is saved. We’ll add the gift name and picture when we can.");
           void (async () => {
             try {
               const response = await fetch("/api/wishlist-items/enrich", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ exchangeId, itemId, preserveTitle: Boolean(details && String(details.get("title") ?? "").trim()) }) });
               const result = await response.json() as { ok?: boolean; error?: string };
               if (!response.ok || !result.ok) throw new Error(result.error || "We couldn’t get details from that link.");
-              if (activeItemId.current === itemId) setPreviewMessage("Your wish was saved. You can check its details in your list.");
+              if (activeItemId.current === itemId) setPreviewMessage("Your wish is saved. You can change its name or add a photo in your list.");
             } catch {
-              if (activeItemId.current === itemId) setPreviewMessage("Your wish was saved. We couldn’t find a title or photo from that link. You can add either later in your list if you’d like.");
+              if (activeItemId.current === itemId) setPreviewMessage("Your wish is saved. We couldn’t get details from that link, but you can add a name or photo in your list.");
             } finally { router.refresh(); }
           })();
         } catch (error) {
@@ -121,20 +121,20 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold">Add a wish</h2>
-          <p className="mt-1 text-sm text-muted-foreground">A link, a little detail, or just an idea.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Type a gift name or paste a link. You can add details later.</p>
         </div>
       </div>
       <form ref={formRef} action={submitWish} className="grid gap-4">
         <input type="hidden" name="exchangeId" value={exchangeId} />
         <input type="hidden" name="url" value={url} />
-        <label htmlFor="wishlist-wish-draft" className="sr-only">Paste a link or type a wish</label>
+        <label htmlFor="wishlist-wish-draft" className="sr-only">Gift idea or product link</label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="wishlist-wish-draft"
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
             onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted, formRef.current ? new FormData(formRef.current) : undefined); } }}
-            placeholder="Add a wish or paste a link"
+            placeholder="Type a gift or paste a link"
             autoComplete="off"
             required
             readOnly={previewing || Boolean(savedUrl)}
@@ -149,8 +149,8 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         {!savedUrl && <details className="group mt-2 border-t pt-4">
           <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details (optional) <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-sm font-medium">Gift title (optional)
-              <Input name="title" maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="A title your Santa will recognize" className="h-12 rounded-xl px-4 sm:col-span-2" />
+            <label className="grid gap-1.5 text-sm font-medium">Gift name (optional)
+              <Input name="title" maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="For example, a blue wool scarf" className="h-12 rounded-xl px-4 sm:col-span-2" />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">Store or website (optional)
                 <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />

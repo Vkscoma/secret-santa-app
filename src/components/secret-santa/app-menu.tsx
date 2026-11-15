@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ const links = [
 
 export function AppMenu() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const name = session?.user?.name ?? "Santa’s helper";
@@ -45,7 +46,7 @@ export function AppMenu() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="group/menu focus-visible:ring-ring h-10 w-20 shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="group/menu focus-visible:ring-ring h-11 w-auto shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-10 sm:w-20"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             <span className="border-border bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full border text-sm font-bold">
@@ -55,6 +56,7 @@ export function AppMenu() {
               <Menu className="text-muted-foreground absolute size-7 transition-[transform,opacity] duration-200 ease-out group-data-[state=open]/menu:rotate-45 group-data-[state=open]/menu:scale-75 group-data-[state=open]/menu:opacity-0 md:size-6" />
               <X className="text-muted-foreground absolute size-7 -rotate-45 scale-75 opacity-0 transition-[transform,opacity] duration-200 ease-out group-data-[state=open]/menu:rotate-0 group-data-[state=open]/menu:scale-100 group-data-[state=open]/menu:opacity-100 md:size-6" />
             </span>
+            <span className="text-sm font-medium sm:hidden">Menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -65,14 +67,29 @@ export function AppMenu() {
             </p>
           </div>
           <DropdownMenuSeparator />
-          {links.map(([label, href]) => (
-            <DropdownMenuItem asChild key={href}>
-              <Link href={href}>{label}</Link>
-            </DropdownMenuItem>
-          ))}
+          {links.map(([label, href]) => {
+            const current = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <DropdownMenuItem asChild key={href}>
+                <Link
+                  href={href}
+                  aria-current={current ? "page" : undefined}
+                  className={current ? "bg-secondary text-secondary-foreground" : undefined}
+                >
+                  {label}
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
           {session?.user?.role === "admin" && (
             <DropdownMenuItem asChild>
-              <Link href="/admin">Admin</Link>
+              <Link
+                href="/admin"
+                aria-current={pathname === "/admin" || pathname.startsWith("/admin/") ? "page" : undefined}
+                className={pathname === "/admin" || pathname.startsWith("/admin/") ? "bg-secondary text-secondary-foreground" : undefined}
+              >
+                Admin
+              </Link>
             </DropdownMenuItem>
           )}
           {session?.user ? (
