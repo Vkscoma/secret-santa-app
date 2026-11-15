@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { deleteExchange } from "@/lib/actions/admin";
 
@@ -29,7 +30,7 @@ export function ExchangeRowActions({ exchangeId, exchangeName, year, canDelete }
               event.preventDefault();
             }
           }}
-        >Delete</Button>
+        ><Trash2 className="size-4" aria-hidden="true" />Delete</Button>
       </form>}
     </div>
   );

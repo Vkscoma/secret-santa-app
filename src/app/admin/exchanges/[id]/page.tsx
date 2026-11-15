@@ -116,7 +116,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3" aria-label="Exchange summary">
-        <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-secondary text-pine"><Users className="size-5" /></span><span><strong className="block text-xl">{participantRows.length}</strong><span className="text-sm text-muted-foreground">Participants</span></span></Card>
+        <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Users className="size-5" /></span><span><strong className="block text-xl">{participantRows.length}</strong><span className="text-sm text-muted-foreground">Participants</span></span></Card>
         <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-accent text-primary"><Gift className="size-5" /></span><span><strong className="block text-xl">{exchange.budgetMin === null && exchange.budgetMax === null ? "—" : `$${exchange.budgetMin ?? 0}–$${exchange.budgetMax ?? "∞"}`}</strong><span className="text-sm text-muted-foreground">Gift budget</span></span></Card>
         <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-gold/20 text-gold-foreground"><CalendarDays className="size-5" /></span><span><strong className="block text-xl">{exchange.year}</strong><span className="text-sm text-muted-foreground">Exchange year</span></span></Card>
       </section>
@@ -211,13 +211,13 @@ export default async function AdminExchangePage({ params }: PageProps) {
         <Card className="space-y-4 p-5 sm:p-6">
           <div><h2 className="text-xl font-bold">Draw and reveal</h2><p className="text-sm text-muted-foreground">The assignment map stays hidden from admin views until the exchange is explicitly revealed.</p></div>
           {isOpen && <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" disabled={participantRows.length < 2}><Gift className="size-4" /> Draw names</Button></form>}
-          {canRedraw && <form action={redrawExchange} className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+          {canRedraw && <form action={redrawExchange} className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 dark:border-destructive/80 dark:bg-card">
             <input type="hidden" name="exchangeId" value={id} />
             <div><h3 className="font-bold text-destructive">Redraw this exchange</h3><p className="mt-1 text-sm text-muted-foreground">This replaces every assignment and clears item claims. If retained historical message records are linked to these assignments, redraw is blocked to preserve them.</p></div>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirmRedraw" required className="mt-1 size-4 accent-primary" /><span>I understand this replaces the draw and clears item claims.</span></label>
             <Button type="submit" variant="destructive">Confirm redraw</Button>
           </form>}
-          {exchange.status === "drawn" && <form action={revealExchange} className="space-y-3 rounded-xl border border-gold/50 bg-gold/10 p-4">
+          {exchange.status === "drawn" && <form action={revealExchange} className="space-y-3 rounded-xl border border-gold/50 dark:border-gold/70 bg-gold/10 p-4">
             <input type="hidden" name="exchangeId" value={id} />
             <div><h3 className="font-bold">Reveal assignments</h3><p className="mt-1 text-sm text-muted-foreground">This reveal is recorded in the audit log. Participants will be able to see who their Secret Santa is.</p></div>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="confirmReveal" required className="mt-1 size-4 accent-primary" /><span>I’m ready to reveal the assignment mappings.</span></label>

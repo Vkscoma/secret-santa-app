@@ -34,7 +34,7 @@ export function WishlistPreferencesForm({ exchangeId, likes, surpriseMe }: {
 
   return (
     <div className="grid gap-3">
-      {!editing ? <div className="rounded-lg border border-border/70 bg-background/60 p-4">
+      {!editing ? <div className="rounded-lg border border-border/70 dark:border-border/80 bg-background/60 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
             {savedLikes ? <p className="whitespace-pre-wrap text-sm leading-relaxed">{savedLikes}</p> : <p className="text-sm italic text-muted-foreground">No likes added yet.</p>}

@@ -92,7 +92,7 @@ export default async function HistoryExchangePage({ params }: PageProps) {
           let store = item.storeName || "Gift idea";
           if (!item.storeName && productUrl) store = new URL(productUrl).hostname;
           return <article key={`${index}-${item.title}`} className="flex gap-3 rounded-xl border border-border/80 bg-card p-3 shadow-sm sm:gap-4 sm:p-4">
-            <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-secondary text-pine">{imageUrl ? <Image src={imageUrl} alt="" width={48} height={48} unoptimized className="size-full object-cover" /> : <Gift className="size-5" aria-hidden="true" />}</div>
+            <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-secondary text-secondary-foreground">{imageUrl ? <Image src={imageUrl} alt="" width={48} height={48} unoptimized className="size-full object-cover" /> : <Gift className="size-5" aria-hidden="true" />}</div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold">{item.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{store} · {priorityLabel(item.priority)}</p>

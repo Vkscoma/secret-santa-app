@@ -15,7 +15,7 @@ const giftTileColors = [
   "bg-gold text-gold-foreground",
   "bg-secondary text-secondary-foreground",
   "bg-accent text-accent-foreground",
-  "bg-primary/40 text-primary-foreground",
+  "bg-primary/40 text-primary-foreground dark:text-foreground",
 ] as const;
 
 export default async function WishlistsPage() {
@@ -120,9 +120,10 @@ export default async function WishlistsPage() {
           <Gift className="text-primary mx-auto size-8" />
           <h2 className="text-lg font-bold">You’re not in an exchange yet</h2>
           <p className="text-muted-foreground mx-auto max-w-md text-sm">
-            Your wish list will appear here once your organizer adds you. Check your inbox for a Secret
-            Santa invitation email or link. If you don’t find one, contact the organizer who invited you:
-            reply to their invitation email or message where they shared the link, and ask them to resend it.
+            Your wish list will appear here once your organizer adds you. Check your inbox for a
+            Secret Santa invitation email or link. If you don’t find one, contact the organizer who
+            invited you: reply to their invitation email or message where they shared the link, and
+            ask them to resend it.
           </p>
           <Button asChild variant="outline" className="mt-2">
             <Link href="/">Back home</Link>
