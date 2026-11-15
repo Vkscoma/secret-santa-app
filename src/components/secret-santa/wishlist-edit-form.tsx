@@ -1,25 +1,57 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { LoaderCircle } from "lucide-react";
+import { toast } from "sonner";
+import { useWishlistEditContext } from "@/components/secret-santa/wishlist-edit-section";
+import { Button } from "@/components/ui/button";
 import { updateWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
 
 export function WishlistEditForm({ children, initialImageUrl }: { children: ReactNode; initialImageUrl: string }) {
   const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+  const { saving, setSaving, onSaved } = useWishlistEditContext();
   const router = useRouter();
-  async function save(form: FormData) {
+  const isSaving = saving || pending;
+
+  function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isSaving) return;
+    const form = new FormData(event.currentTarget);
     setError("");
-    try {
-      await prepareWishlistImage(form, { initialImageUrl });
-      await updateWishlistItem(form);
-      router.refresh();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Could not save your changes.");
-    }
+    setSaving(true);
+    startTransition(async () => {
+      try {
+        await prepareWishlistImage(form, { initialImageUrl });
+        await updateWishlistItem(form);
+        router.refresh();
+        onSaved();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "We couldn’t save your changes. Your edits are still here; please try again.";
+        setError(message);
+        toast.error("Could not save your changes. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    });
   }
-  return <form action={save} className="mt-3 grid gap-3">
-    {children}
-    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-  </form>;
+
+  return (
+    <>
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {isSaving ? "Saving your gift changes…" : ""}
+      </span>
+      <form onSubmit={save} aria-busy={isSaving} className="mt-3 grid gap-3">
+        {children}
+        <div className="grid justify-items-start gap-2">
+          <Button type="submit" size="sm" disabled={isSaving} className="min-w-36">
+            {isSaving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : "Save changes"}
+          </Button>
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        </div>
+      </form>
+    </>
+  );
 }
