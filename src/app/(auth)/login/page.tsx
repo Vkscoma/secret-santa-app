@@ -23,7 +23,7 @@ export default async function LoginPage({
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>Welcome to Secret Santa</CardTitle>
-          <CardDescription>Create your account or sign in with Google or an approved email address.</CardDescription>
+          <CardDescription>Sign in with Google or enter the email address your organizer invited.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
           <SignInButton returnTo={returnTo} />

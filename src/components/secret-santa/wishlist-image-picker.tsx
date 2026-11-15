@@ -63,12 +63,12 @@ export function WishlistImagePicker({ exchangeId, itemId, imageUrl, onChange }: 
     if (image) { event.preventDefault(); void upload(image); }
   }}>
     <input type="hidden" name="imageUrl" value={displayedImageUrl} />
-    {displayedImageUrl && <ProductImage src={displayedImageUrl} alt="Gift image preview" className="size-24" />}
+    {displayedImageUrl && <ProductImage src={displayedImageUrl} alt="Gift photo" className="size-24" />}
     <div className="flex flex-wrap gap-2">
       <input ref={inputRef} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Choose a gift image" onChange={(event) => void upload(event.target.files?.[0])} />
       <Button type="button" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Adding image…" : "Add photo or screenshot"}</Button>
-      <label className="sr-only" htmlFor={`wishlist-image-url-${itemId ?? "new"}`}>Paste image URL</label>
-      <Input id={`wishlist-image-url-${itemId ?? "new"}`} type="url" value={displayedImageUrl} onChange={(event) => changeImage(event.target.value)} placeholder="Or paste an image URL" className="min-w-[14rem] flex-1" />
+      <label className="sr-only" htmlFor={`wishlist-image-url-${itemId ?? "new"}`}>Paste image link</label>
+      <Input id={`wishlist-image-url-${itemId ?? "new"}`} type="url" value={displayedImageUrl} onChange={(event) => changeImage(event.target.value)} placeholder="Or paste an image link" className="min-w-[14rem] flex-1" />
     </div>
     <p role="status" className="text-xs text-muted-foreground">You can also paste a copied image here.</p>
     {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
