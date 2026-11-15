@@ -9,6 +9,7 @@ import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { WishlistComposerSheet } from "@/components/secret-santa/wishlist-composer-sheet";
 import { WishlistEditForm, WishlistTitleInput } from "@/components/secret-santa/wishlist-edit-form";
+import { WishlistEditSection } from "@/components/secret-santa/wishlist-edit-section";
 import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistPasteProvider, PendingWishlistCards, WishlistEmptyState } from "@/components/secret-santa/wishlist-paste-provider";
 import { WishlistPreferencesForm } from "@/components/secret-santa/wishlist-preferences-form";
@@ -120,10 +121,12 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 </div>
               </div>
             </div>
-            {editable && <details className="border-t border-border pt-3">
-              <summary className="cursor-pointer text-sm font-semibold text-muted-foreground">Edit this gift</summary>
+            {editable && <WishlistEditSection>
               {item.url && <RefreshWishlistImage exchangeId={exchangeId} itemId={item.id} />}
-              <WishlistEditForm initialImageUrl={item.imageUrl ?? ""}>
+              <WishlistEditForm
+                key={JSON.stringify([item.title, item.url, item.storeName, item.imageUrl, item.priority, item.priceMin, item.priceMax, item.notes])}
+                initialImageUrl={item.imageUrl ?? ""}
+              >
                 <input type="hidden" name="exchangeId" value={exchangeId} /><input type="hidden" name="itemId" value={item.id} />
                 <WishlistTitleInput initialTitle={item.title} />
                 <label className="grid gap-1 text-sm font-medium">Product link<input name="url" type="url" maxLength={2000} defaultValue={item.url ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
@@ -135,14 +138,13 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                   <label className="grid gap-1 text-sm font-medium">Price up to<input name="priceMax" type="number" min="0" max="1000000" step="1" defaultValue={item.priceMax ?? ""} className="h-10 rounded-md border border-input bg-background px-3" /></label>
                 </div>
                 <label className="grid gap-1 text-sm font-medium">Notes<textarea name="notes" maxLength={1000} rows={2} defaultValue={item.notes ?? ""} className="rounded-md border border-input bg-background px-3 py-2" /></label>
-                <Button type="submit" size="sm">Save changes</Button>
               </WishlistEditForm>
               <ConfirmDeleteWishForm exchangeId={exchangeId} itemId={item.id} title={item.title} />
               <div className="mt-3 flex gap-2">
                 <form action={moveWishlistItem}><input type="hidden" name="exchangeId" value={exchangeId} /><input type="hidden" name="itemId" value={item.id} /><input type="hidden" name="direction" value="up" /><Button type="submit" size="sm" variant="ghost" disabled={index === 0}>Move up</Button></form>
                 <form action={moveWishlistItem}><input type="hidden" name="exchangeId" value={exchangeId} /><input type="hidden" name="itemId" value={item.id} /><input type="hidden" name="direction" value="down" /><Button type="submit" size="sm" variant="ghost" disabled={index === items.length - 1}>Move down</Button></form>
               </div>
-            </details>}
+            </WishlistEditSection>}
             </Card>;
           })}
         </div> : editable ? <WishlistEmptyState><Card className="grid min-h-36 place-items-center border-dashed p-4 text-center sm:p-6">
