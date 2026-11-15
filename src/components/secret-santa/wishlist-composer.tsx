@@ -149,18 +149,18 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
         {!savedUrl && <details className="group mt-2 border-t pt-4">
           <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details (optional) <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-sm font-medium">Gift name
+            <label className="grid gap-1.5 text-sm font-medium">Gift name (optional)
               <Input name="title" maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="For example, a blue wool scarf" className="h-12 rounded-xl px-4 sm:col-span-2" />
             </label>
-            <label className="grid gap-1.5 text-sm font-medium">Store or website
+            <label className="grid gap-1.5 text-sm font-medium">Store or website (optional)
                 <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />
               </label>
-            <fieldset className="space-y-2 text-sm font-medium"><legend>Priority</legend><div className="flex flex-wrap gap-2">
+            <fieldset className="space-y-2 text-sm font-medium"><legend>Priority (optional)</legend><div className="flex flex-wrap gap-2">
                 <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="most_wanted" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Most wanted</span></label>
                 <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="would_like" defaultChecked /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Would like</span></label>
                 <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="nice_to_have" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Nice to have</span></label>
               </div></fieldset>
-            <label className="grid gap-1.5 text-sm font-medium">Price range <div className="flex gap-2">
+            <label className="grid gap-1.5 text-sm font-medium">Price range (optional) <div className="flex gap-2">
                 <Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Min" className="h-12 rounded-xl px-4" />
                 <Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Max" className="h-12 rounded-xl px-4" />
               </div></label>
