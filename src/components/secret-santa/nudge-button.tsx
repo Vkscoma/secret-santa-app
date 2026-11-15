@@ -5,11 +5,11 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { nudgeRecipient } from "@/lib/actions/nudges";
 
-export function NudgeButton({ exchangeId }: { exchangeId: string }) {
+export function NudgeButton({ exchangeId, className }: { exchangeId: string; className?: string }) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   return <div className="flex flex-wrap items-center gap-2">
-    <Button type="button" variant="outline" disabled={pending} onClick={() => startTransition(async () => {
+    <Button type="button" variant="outline" className={className} disabled={pending} onClick={() => startTransition(async () => {
       const result = await nudgeRecipient(exchangeId);
       setMessage(result.message);
     })}>

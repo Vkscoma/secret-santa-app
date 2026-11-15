@@ -26,7 +26,7 @@ export function InviteCreateForm({ exchangeId }: { exchangeId: string }) {
         <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create invite"}</Button>
       </form>
       {state.message && <p role="status" className="text-sm text-muted-foreground">{state.message}</p>}
-      {state.inviteUrl && <div className="rounded-lg border border-gold/40 bg-gold/10 p-3">
+      {state.inviteUrl && <div className="rounded-lg border border-gold/40 dark:border-gold/70 bg-gold/10 p-3">
         <p className="mb-2 break-all text-sm font-semibold">{state.inviteUrl}</p>
         <button type="button" className="text-sm font-bold text-primary underline underline-offset-4" onClick={() => navigator.clipboard.writeText(state.inviteUrl!)}>Copy invite link</button>
       </div>}

@@ -25,24 +25,28 @@ Tokens live in `:root` and `.dark`, bridged through `@theme inline`. The values 
 | `foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Main copy |
 | `card`, `popover` | `oklch(1 0 0)` | `oklch(0.22 0.035 168)` | Raised surfaces |
 | `card-foreground`, `popover-foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Surface copy |
-| `primary` | `oklch(0.44 0.17 25)` | `oklch(0.50 0.17 25)` | Cranberry actions and active states |
-| `primary-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.99 0.005 90)` | Text on primary |
-| `secondary` | `oklch(0.95 0.025 155)` | `oklch(0.29 0.045 162)` | Pine-tinted controls/chips |
-| `secondary-foreground` | `oklch(0.31 0.07 158)` | `oklch(0.94 0.015 90)` | Text on secondary |
+| `primary` | `oklch(0.44 0.17 25)` | `oklch(0.67 0.17 25)` | Cranberry actions and active states |
+| `primary-foreground` | `oklch(0.997 0 0)` | `oklch(0.12 0.06 25)` | Text on primary |
+| `secondary` | `oklch(0.95 0.025 155)` | `oklch(0.59 0.10 155)` | Pine-tinted controls/chips |
+| `secondary-foreground` | `oklch(0.31 0.07 158)` | `oklch(0.12 0.05 155)` | Text on secondary |
 | `muted` | `oklch(0.965 0.006 160)` | `oklch(0.25 0.03 170)` | Quiet surfaces |
 | `muted-foreground` | `oklch(0.46 0.02 160)` | `oklch(0.76 0.025 155)` | Helper/store text |
-| `accent` | `oklch(0.96 0.025 25)` | `oklch(0.30 0.06 25)` | Blush/warm hover |
-| `accent-foreground` | `oklch(0.34 0.13 25)` | `oklch(0.96 0.01 90)` | Text on accent |
-| `border`, `input` | `oklch(0.91 0.01 170)` | `oklch(0.33 0.035 168)` | Edges and form controls |
-| `ring` | `oklch(0.44 0.17 25)` | `oklch(0.64 0.19 25)` | Keyboard focus |
+| `accent` | `oklch(0.96 0.025 25)` | `oklch(0.62 0.11 25)` | Blush/warm hover |
+| `accent-foreground` | `oklch(0.34 0.13 25)` | `oklch(0.12 0.08 25)` | Text on accent |
+| `border`, `input` | `oklch(0.91 0.01 170)` | `oklch(0.58 0.035 168)` | Edges and form controls |
+| `ring` | `oklch(0.48 0.10 195)` | `oklch(0.54 0.10 195)` | Teal winter keyboard focus |
 | `destructive` | `oklch(0.48 0.19 30)` | `oklch(0.64 0.19 28)` | Destructive actions |
+| `destructive-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.18 0.06 28)` | Text on destructive actions |
 | `pine` | `oklch(0.36 0.09 158)` | `oklch(0.42 0.10 155)` | Panel headers and brand |
 | `pine-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.99 0.005 90)` | Pine header copy |
 | `gold` | `oklch(0.80 0.13 82)` | `oklch(0.85 0.14 85)` | Progress, stars, ribbons |
 | `gold-foreground` | `oklch(0.28 0.05 70)` | `oklch(0.22 0.04 70)` | Copy on gold |
 | `snow` | `oklch(0.97 0.01 230)` | `oklch(0.95 0.015 230)` | Decorations |
+| `success` | `oklch(0.52 0.17 150)` | `oklch(0.75 0.15 150)` | Success indicators |
 
 Set `--radius` to `0.75rem`. Surface and foreground pairs must retain readable contrast in both themes.
+
+In Christmas Eve, cranberry, pine-tinted, and blush controls use brighter color surfaces with dark, hue-matched foregrounds. Use a teal winter focus ring in both themes, with one 2px outline and 2px offset; do not add a second ring to controls that already receive the global focus outline. Keep validation errors destructive red. Destructive buttons use a transparent surface, a full destructive border, and destructive-colored text in both themes; add a trash icon to remove actions. Reserve the filled destructive surface and its foreground pair for badges and warning surfaces. This preserves the winter palette while separating controls from the evergreen surfaces.
 
 ## Typography
 
@@ -62,7 +66,7 @@ Set `--radius` to `0.75rem`. Surface and foreground pairs must retain readable c
 
 ## Components
 
-- **Panel header:** pine, subtle diagonal gradient and faint snowflake pattern; white title/subtitle; small settings/share actions; string-light accent below.
+- **Panel header:** pine, subtle diagonal gradient and faint snowflake pattern; white title/subtitle; small settings/share actions with pine-foreground icons on a 12% pine-foreground surface and a full pine-foreground outline; string-light accent below.
 - **Progress nudge:** icon, concise nudge, subline and thin gold progress bar. Gold text uses `gold-foreground`.
 - **Wishlist item:** square festive placeholder/image, title, muted store/domain, priority, optional note and price chips. Reorder/remove controls appear only in the owner's editor.
 - **Wish composer:** URL-or-text input, editable metadata, notes, priority and price. Use a mobile bottom sheet on small screens.

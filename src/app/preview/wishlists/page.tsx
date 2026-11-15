@@ -23,12 +23,12 @@ export default function PreviewWishlistsPage() {
                   <p className="mt-1 text-sm text-muted-foreground">{year.count} <span className="px-1">·</span> Gift exchange</p>
                 </div>
                 <div className="flex gap-1.5">
-                  <button aria-label={`Settings for ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70"><Settings2 className="size-4" /></button>
-                  <button aria-label={`Share ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70"><Share2 className="size-4" /></button>
+                  <button aria-label={`Settings for ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70 dark:hover:bg-secondary/95"><Settings2 className="size-4" /></button>
+                  <button aria-label={`Share ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70 dark:hover:bg-secondary/95"><Share2 className="size-4" /></button>
                 </div>
               </div>
               <div className="flex gap-2 border-t bg-muted/75 px-5 py-3 sm:px-6">
-                {year.colors.map((color, itemIndex) => <div key={`${year.title}-${itemIndex}`} className={`grid size-10 place-items-center rounded-lg ${color} ${color === "bg-secondary" ? "text-pine dark:text-pine-foreground" : "text-primary-foreground"}`}><Gift className="size-4" /></div>)}
+                {year.colors.map((color, itemIndex) => <div key={`${year.title}-${itemIndex}`} className={`grid size-10 place-items-center rounded-lg ${color} ${color === "bg-secondary" ? "text-secondary-foreground" : color === "bg-primary/40" ? "text-primary-foreground dark:text-foreground" : "text-primary-foreground"}`}><Gift className="size-4" /></div>)}
                 {index === 0 ? <p className="ml-1 self-center text-xs text-muted-foreground">and one more surprise…</p> : null}
               </div>
             </Card>

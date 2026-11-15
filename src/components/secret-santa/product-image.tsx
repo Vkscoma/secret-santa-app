@@ -19,7 +19,7 @@ export function ProductImage({ src, alt, className = "", iconClassName = "size-6
   const showImage = Boolean(safeSrc && safeSrc !== failedSrc);
 
   return (
-    <div className={`relative grid shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-pine ${className}`}>
+    <div className={`relative grid shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary text-secondary-foreground ${className}`}>
       {showImage ? (
         <Image
           src={safeSrc!}

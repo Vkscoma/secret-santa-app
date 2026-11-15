@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { deleteWishlistItem } from "@/lib/actions/wishlists";
 
@@ -44,6 +45,7 @@ export function ConfirmDeleteWishForm({
               Keep wish
             </Button>
             <Button type="submit" variant="destructive" className="h-11">
+              <Trash2 className="size-4" aria-hidden="true" />
               Remove wish
             </Button>
           </div>
@@ -54,8 +56,10 @@ export function ConfirmDeleteWishForm({
           type="button"
           size="sm"
           variant="destructive"
+          className="h-11"
           onClick={() => setConfirming(true)}
         >
+          <Trash2 className="size-4" aria-hidden="true" />
           Remove
         </Button>
       )}

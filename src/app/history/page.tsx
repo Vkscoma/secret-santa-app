@@ -49,7 +49,7 @@ export default async function HistoryPage() {
         : `$${exchange.budgetMin ?? 0}–$${exchange.budgetMax ?? "—"}`;
       return <Card key={exchange.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-pine"><Gift className="size-5" aria-hidden="true" /></span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></span>
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold">{exchange.name}</h2>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground"><CalendarDays className="size-4" aria-hidden="true" />{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: exchange.timeZone }).format(exchange.date)} <span aria-hidden="true">·</span> {budget} budget</p>

@@ -68,7 +68,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
       <PageHeading eyebrow={`${exchange.year} exchange`} title={`${recipientName}’s wish list`} description="Only you can see this assigned recipient’s gift list and your claim status." />
       {recipientList?.likes && <Card className="p-5"><h2 className="font-bold">Things they like</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{recipientList.likes}</p></Card>}
       {(assignment.sizes || assignment.shippingAddress) && <Card className="space-y-2 p-5"><h2 className="font-bold">Helpful details</h2>{assignment.sizes && <p className="text-sm text-muted-foreground"><strong className="text-foreground">Sizes:</strong> {assignment.sizes}</p>}{assignment.shippingAddress && <p className="whitespace-pre-wrap text-sm text-muted-foreground"><strong className="text-foreground">Shipping address:</strong> {assignment.shippingAddress}</p>}</Card>}
-      {recipientList?.surpriseMe && <Card className="border-gold/40 bg-gold/10 p-4 text-sm font-semibold">They’re happy to be surprised.</Card>}
+      {recipientList?.surpriseMe && <Card className="border-gold/40 dark:border-gold/70 bg-gold/10 p-4 text-sm font-semibold">They’re happy to be surprised.</Card>}
       {items.length ? <div className="space-y-3">{items.map((item) => {
         const claimed = claimedIds.has(item.id);
         const productUrl = safeProductUrl(item.url);

@@ -13,7 +13,7 @@ export default async function InviteResultPage({ searchParams }: { searchParams:
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="items-center text-center">
-          <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-pine"><Icon className="size-6" aria-hidden="true" /></span>
+          <span className="grid size-12 place-items-center rounded-2xl bg-secondary text-secondary-foreground"><Icon className="size-6" aria-hidden="true" /></span>
           <CardTitle>{joinedThisYear ? "You’re in this year’s exchange!" : "Your account is ready"}</CardTitle>
           <CardDescription>
             {joinedThisYear

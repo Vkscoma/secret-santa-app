@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { deleteUserAccount } from "@/lib/actions/admin";
 
@@ -16,7 +17,7 @@ export function RemoveAccountButton({ userId, email }: { userId: string; email: 
             event.preventDefault();
           }
         }}
-      >Remove account</Button>
+      ><Trash2 className="size-4" aria-hidden="true" />Remove account</Button>
     </form>
   );
 }

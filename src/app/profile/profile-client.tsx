@@ -223,7 +223,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <div className="h-2 w-2 rounded-full bg-success"></div>
                   <div>
                     <p className="font-medium">Current Session</p>
                     <p className="text-sm text-muted-foreground">Active now</p>

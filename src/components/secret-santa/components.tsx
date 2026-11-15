@@ -7,6 +7,7 @@ import {
   Snowflake,
   Sparkles,
   Star,
+  Trash2,
   TreePine,
   UserRound,
 } from "lucide-react";
@@ -63,13 +64,13 @@ export function PanelHeader({
           <div className="flex gap-2">
             <button
               aria-label="List settings"
-              className="rounded-lg bg-white/12 p-2 transition hover:bg-white/20"
+              className="rounded-lg border border-pine-foreground bg-pine-foreground/12 p-2 text-pine-foreground transition hover:bg-pine-foreground/20"
             >
               <span aria-hidden="true">⚙</span>
             </button>
             <button
               aria-label="Share list"
-              className="rounded-lg bg-white/12 p-2 transition hover:bg-white/20"
+              className="rounded-lg border border-pine-foreground bg-pine-foreground/12 p-2 text-pine-foreground transition hover:bg-pine-foreground/20"
             >
               <ArrowUpRight className="size-4" aria-hidden="true" />
             </button>
@@ -105,7 +106,7 @@ export function ProgressNudge({ count, target = 3 }: { count: number; target?: n
   const remaining = Math.max(target - count, 0);
   const value = Math.min((count / target) * 100, 100);
   return (
-    <Card className="border-gold/30 from-gold/10 via-card to-card flex items-center gap-4 bg-gradient-to-r p-4 shadow-none">
+    <Card className="border-gold/30 dark:border-gold/70 from-gold/10 via-card to-card flex items-center gap-4 bg-gradient-to-r p-4 shadow-none">
       <div className="bg-gold/20 text-gold-foreground dark:text-gold grid size-11 shrink-0 place-items-center rounded-full">
         <Sparkles className="size-5" aria-hidden="true" />
       </div>
@@ -169,7 +170,7 @@ export function WishlistItemCard({
           <span aria-hidden="true">⠿</span>
         </button>
       ) : null}
-      <div className="bg-secondary text-pine dark:text-pine-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg sm:size-[72px]">
+      <div className="bg-secondary text-secondary-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg sm:size-[72px]">
         <Icon className="size-7" strokeWidth={1.6} aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
@@ -205,10 +206,10 @@ export function WishlistItemCard({
       </div>
       {!readOnly ? (
         <button
-          className="text-muted-foreground hover:bg-accent hover:text-destructive -mt-1 -mr-1 shrink-0 rounded-full p-1 transition"
+          className="-mt-1 -mr-1 shrink-0 rounded-full border border-destructive p-1 text-destructive transition hover:bg-destructive/5 dark:hover:bg-destructive/[0.08]"
           aria-label={`Remove ${item.title}`}
         >
-          ×
+          <Trash2 className="size-4" aria-hidden="true" />
         </button>
       ) : null}
     </article>
@@ -287,7 +288,7 @@ export function WishComposer() {
 export function GiftTag({ recipient = "Names haven’t been drawn yet" }: { recipient?: string }) {
   const waiting = recipient.startsWith("Names");
   return (
-    <div className="border-gold/40 from-gold/20 via-card to-card relative overflow-hidden rounded-xl border bg-gradient-to-br p-5 shadow-sm dark:shadow-lg">
+    <div className="border-gold/40 dark:border-gold/70 from-gold/20 via-card to-card relative overflow-hidden rounded-xl border bg-gradient-to-br p-5 shadow-sm dark:shadow-lg">
       <div
         className="border-gold/10 absolute -top-5 -right-4 size-24 rounded-full border-[12px]"
         aria-hidden="true"
@@ -375,45 +376,45 @@ export function FestiveIllustration() {
       aria-label="Snowy holiday scene with a tree and gifts"
       role="img"
     >
-      <div className="absolute inset-x-8 bottom-7 h-24 rounded-[50%] bg-[#ffe7a3]/70 blur-2xl" />
+      <div className="absolute inset-x-8 bottom-7 h-24 rounded-[50%] bg-gold/70 blur-2xl" />
       <svg
         viewBox="0 0 320 320"
         className="relative w-full drop-shadow-sm"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <circle cx="248" cy="74" r="34" className="fill-[#ffd978]/65" />
+        <circle cx="248" cy="74" r="34" className="fill-gold/65" />
         <path
           d="M60 238c37-21 61-10 92 0 38 13 76-1 111-3 22-1 40 5 58 17v36H0v-31c18-13 38-25 60-19Z"
-          className="fill-[#f5fbff]"
+          className="fill-snow"
         />
-        <path d="m122 218 36-84 37 84h-19l27 31h-90l27-31h-18Z" className="fill-[#16834d]" />
+        <path d="m122 218 36-84 37 84h-19l27 31h-90l27-31h-18Z" className="fill-pine" />
         <path
           d="m137 185 21-51 21 51h-42Zm-17 34 19-23 19 23h-38Zm34 0 19-23 20 23h-39Z"
-          className="fill-[#0f7043]"
+          className="fill-pine-foreground/35"
         />
-        <path d="M154 249v-27h12v27" className="fill-[#8b552b]" />
-        <path d="m155 131 3-8 4 8h-7Z" className="fill-[#ffc83d]" />
-        <rect x="49" y="219" width="47" height="39" rx="5" className="fill-[#d83c4b]" />
+        <path d="M154 249v-27h12v27" className="fill-gold-foreground" />
+        <path d="m155 131 3-8 4 8h-7Z" className="fill-gold" />
+        <rect x="49" y="219" width="47" height="39" rx="5" className="fill-primary" />
         <path d="M69 219v39m-20-24h47" className="stroke-primary-foreground/80" strokeWidth="4" />
         <path
           d="m69 219-8-8 12 3 7-7 1 12m-12 0 8-8"
-          className="stroke-[#ffd34d]"
+          className="stroke-gold"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <rect x="215" y="229" width="54" height="33" rx="5" className="fill-[#22a56a]" />
-        <path d="M238 229v33m-23-18h54" className="stroke-[#e4bd52]" strokeWidth="4" />
+        <rect x="215" y="229" width="54" height="33" rx="5" className="fill-secondary" />
+        <path d="M238 229v33m-23-18h54" className="stroke-secondary-foreground" strokeWidth="4" />
         <path
           d="M73 94h35m-17-17v34m-31 24h18m-9-9v18m166-71h25m-13-13v26"
-          className="stroke-[#f3bd45]/85"
+          className="stroke-gold/85"
           strokeWidth="2"
           strokeLinecap="round"
         />
-        <circle cx="78" cy="178" r="3" className="fill-[#e74653]" />
-        <circle cx="236" cy="169" r="4" className="fill-[#ffc83d]" />
-        <circle cx="108" cy="152" r="2.5" className="fill-[#43bd7d]" />
+        <circle cx="78" cy="178" r="3" className="fill-primary" />
+        <circle cx="236" cy="169" r="4" className="fill-gold" />
+        <circle cx="108" cy="152" r="2.5" className="fill-secondary" />
       </svg>
       <p className="text-muted-foreground relative -mt-2 text-center text-xs font-semibold tracking-wide">
         A little joy, wrapped up.

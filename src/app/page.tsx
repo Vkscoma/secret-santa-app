@@ -66,7 +66,7 @@ export default async function Home() {
     return (
       <div className="mx-auto grid min-h-[calc(100svh-8rem)] max-w-6xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="mx-auto max-w-2xl space-y-7">
-          <div className="border-gold/40 bg-gold/10 text-gold-foreground dark:text-gold inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold">
+          <div className="border-gold/40 dark:border-gold/70 bg-gold/10 text-gold-foreground dark:text-gold inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold">
             <Sparkles className="size-3.5" /> A little holiday magic
           </div>
           <div className="space-y-4">
@@ -280,7 +280,7 @@ export default async function Home() {
                         {exchange.status}
                       </span>
                     </div>
-                    <Card className="border-pine/15 from-pine/10 via-card to-card flex w-full min-w-0 flex-col items-stretch gap-4 bg-gradient-to-br p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-6">
+                    <Card className="border-pine/15 dark:border-border/80 from-pine/10 via-card to-card flex w-full min-w-0 flex-col items-stretch gap-4 bg-gradient-to-br p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-6">
                       <div className="min-w-0">
                         <p className="text-foreground text-xs font-bold tracking-[0.15em] uppercase">
                           Until gift day
@@ -303,7 +303,7 @@ export default async function Home() {
                           <CalendarDays className="size-4 shrink-0" /> {date}
                         </p>
                       </div>
-                      <div className="border-border/70 bg-card/80 grid w-full min-w-0 grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1 rounded-xl border p-4 sm:block sm:w-auto sm:min-w-32">
+                      <div className="border-border/70 dark:border-border/80 bg-card/80 grid w-full min-w-0 grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1 rounded-xl border p-4 sm:block sm:w-auto sm:min-w-32">
                         <p className="text-foreground text-xs font-semibold tracking-wide uppercase">
                           Gift budget
                         </p>
@@ -336,8 +336,8 @@ export default async function Home() {
                           </h3>
                         </div>
                         {canNudge && (
-                          <div className="[&_button]:h-8 [&_button]:shrink-0 [&_button]:border-white/20 [&_button]:bg-white/15 [&_button]:text-white [&_button]:hover:bg-white/25 [&_span]:text-white/90">
-                            <NudgeButton exchangeId={exchange.id} />
+                          <div className="[&_span]:text-pine-foreground/90">
+                            <NudgeButton exchangeId={exchange.id} className="h-8 shrink-0 border-pine-foreground bg-pine-foreground/12 text-pine-foreground hover:bg-pine-foreground/20 dark:border-pine-foreground dark:bg-pine-foreground/12 dark:hover:bg-pine-foreground/20" />
                           </div>
                         )}
                       </div>
@@ -464,7 +464,7 @@ export default async function Home() {
               })}
             </div>
           )}
-          <div className="bg-accent/70 text-accent-foreground mt-6 flex items-center gap-2 rounded-xl p-3 text-xs">
+          <div className="bg-accent/70 text-accent-foreground mt-6 flex items-center gap-2 rounded-xl p-3 text-xs dark:bg-accent">
             <Sparkles className="size-4 shrink-0" /> Remember: the best gifts come with a little
             thought.
           </div>

@@ -1,5 +1,5 @@
 import { desc, sql } from "drizzle-orm";
-import { CalendarDays, Gift, ShieldCheck, Users } from "lucide-react";
+import { CalendarDays, Gift, ShieldCheck, Trash2, Users } from "lucide-react";
 import { ExchangeRowActions } from "@/app/admin/exchange-row-actions";
 import { RemoveAccountButton } from "@/app/admin/remove-account-button";
 import { Button } from "@/components/ui/button";
@@ -57,12 +57,12 @@ export default async function AdminPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3" aria-label="Admin overview">
-        <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-secondary text-pine"><CalendarDays className="size-5" /></span><span><strong className="block text-xl">{exchangeRows.length}</strong><span className="text-sm text-muted-foreground">Exchanges</span></span></Card>
+        <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-secondary text-secondary-foreground"><CalendarDays className="size-5" /></span><span><strong className="block text-xl">{exchangeRows.length}</strong><span className="text-sm text-muted-foreground">Exchanges</span></span></Card>
         <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-accent text-primary"><Users className="size-5" /></span><span><strong className="block text-xl">{users.length}</strong><span className="text-sm text-muted-foreground">Accounts</span></span></Card>
         <Card className="flex items-center gap-3 p-4"><span className="grid size-10 place-items-center rounded-xl bg-gold/20 text-gold-foreground"><Gift className="size-5" /></span><span><strong className="block text-xl">{allowlistRows.length}</strong><span className="text-sm text-muted-foreground">Allowlist entries</span></span></Card>
       </section>
 
-      <Card className="space-y-2 border-gold/50 bg-gold/10 p-4 sm:p-5">
+      <Card className="space-y-2 border-gold/50 dark:border-gold/70 bg-gold/10 p-4 sm:p-5">
         <h2 className="font-bold">Database schema readiness</h2>
         {exchangeSchemaReady
           ? <p className="text-sm text-muted-foreground">The exchange schema has the columns needed to create and manage exchanges.</p>
@@ -122,7 +122,7 @@ export default async function AdminPage() {
           <div className="max-h-72 space-y-2 overflow-auto">
             {allowlistRows.map((entry) => <div key={entry.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm">
               <span className="min-w-0 truncate">{entry.email}<span className="ml-2 text-xs text-muted-foreground">{entry.exchangeId ? "exchange access" : "global access"} · added {formatDate(entry.createdAt)}</span></span>
-              <form action={removeAllowlistEntry}><input type="hidden" name="allowlistId" value={entry.id} /><Button type="submit" size="sm" variant="ghost" aria-label={`Remove ${entry.email}`}>Remove</Button></form>
+              <form action={removeAllowlistEntry}><input type="hidden" name="allowlistId" value={entry.id} /><Button type="submit" size="sm" variant="ghost" className="dark:border dark:border-destructive dark:bg-transparent dark:text-destructive dark:hover:bg-destructive/[0.03] dark:hover:text-destructive" aria-label={`Remove ${entry.email}`}><Trash2 className="size-4" aria-hidden="true" />Remove</Button></form>
             </div>)}
             {!allowlistRows.length && <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">The allowlist is empty. Add an email to let someone join.</p>}
           </div>

@@ -62,10 +62,10 @@ export function InstallAppPrompt() {
   }
 
   return <aside className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md sm:hidden" aria-label="Install Secret Santa">
-    <Card className="safe-bottom relative border-pine/20 bg-card/95 p-4 shadow-xl backdrop-blur">
+    <Card className="safe-bottom relative border-pine/20 bg-card/95 dark:border-border/80 p-4 shadow-xl backdrop-blur">
       <Button type="button" variant="ghost" size="icon" onClick={dismiss} aria-label="Dismiss install tip" className="absolute right-2 top-2 size-8"><X className="size-4" /></Button>
       <div className="flex items-start gap-3 pr-7">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-pine">{mode === "ios" ? <Share2 className="size-5" /> : <Download className="size-5" />}</span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">{mode === "ios" ? <Share2 className="size-5" /> : <Download className="size-5" />}</span>
         <div className="min-w-0">
           <h2 className="text-sm font-bold">Add Secret Santa to your home screen</h2>
           {mode === "ios"
