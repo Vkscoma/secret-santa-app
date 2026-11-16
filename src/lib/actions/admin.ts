@@ -219,17 +219,6 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean, 
     const participants = await tx.select({ userId: exchangeParticipants.userId }).from(exchangeParticipants).where(eq(exchangeParticipants.exchangeId, exchangeId));
     const participantIds = participants.map(({ userId }) => userId);
     if (participantIds.length < 2) throw new Error("Add at least two participants before drawing.");
-    if (!redraw) {
-      const readyWishlists = await tx.select({ userId: wishlists.userId, gifts: count(wishlistItems.id) })
-        .from(wishlists)
-        .leftJoin(wishlistItems, eq(wishlistItems.wishlistId, wishlists.id))
-        .where(and(eq(wishlists.exchangeId, exchangeId), inArray(wishlists.userId, participantIds)))
-        .groupBy(wishlists.userId);
-      const readyUserIds = new Set(readyWishlists.filter(({ gifts }) => Number(gifts) > 0).map(({ userId }) => userId));
-      if (participantIds.some((userId) => !readyUserIds.has(userId))) {
-        throw new Error("Everyone must add at least one gift idea before names can be drawn.");
-      }
-    }
     const excluded = await tx.select({ giverId: exclusions.giverId, receiverId: exclusions.receiverId }).from(exclusions).where(eq(exclusions.exchangeId, exchangeId));
 
   const prior = await tx.select({ giverId: assignments.giverId, receiverId: assignments.receiverId })

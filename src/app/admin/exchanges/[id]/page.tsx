@@ -166,7 +166,9 @@ export default async function AdminExchangePage({ params }: PageProps) {
   const isOpen = exchange.status === "open";
   const canRedraw = exchange.status === "drawn" || exchange.status === "revealed";
   const giftDayPassed = exchange.exchangeAt <= new Date();
-  const allWishlistsReady = participantRows.length >= 2 && participantRows.every(({ userId }) => (giftsByUser.get(userId) ?? 0) > 0);
+  // Drawing only needs two people; wishlists can keep growing after the draw.
+  const canDraw = participantRows.length >= 2;
+  const allWishlistsReady = canDraw && participantRows.every(({ userId }) => (giftsByUser.get(userId) ?? 0) > 0);
   const optedInReminderRecipients = participantRows.filter(({ notificationPrefs }) => notificationPrefs?.reminders !== false);
   const currentLocalDate = utcToLocalInput(exchange.exchangeAt, exchange.timeZone);
   const giftDayText = formatGiftDay(exchange.exchangeAt, exchange.timeZone);
@@ -204,15 +206,12 @@ export default async function AdminExchangePage({ params }: PageProps) {
       <Card className="space-y-3 border-gold/50 bg-gold/10 p-5 sm:p-6">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Next step</p>
-          {isOpen ? allWishlistsReady ? <>
-            <h2 className="mt-1 text-xl font-bold">Everyone has added a gift idea</h2>
-            <p className="mt-1 text-sm text-muted-foreground">You’re ready to draw names.</p>
-          </> : participantRows.length < 2 ? <>
-            <h2 className="mt-1 text-xl font-bold">Invite people to join</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Once everyone has joined and added at least one gift idea, you can draw names.</p>
+          {isOpen ? canDraw ? <>
+            <h2 className="mt-1 text-xl font-bold">Ready to draw names</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{allWishlistsReady ? "Everyone has added a gift idea. You’re ready to draw names." : "Some people haven’t added gift ideas yet. They can keep adding after the draw."}</p>
           </> : <>
-            <h2 className="mt-1 text-xl font-bold">Wishlists are in progress</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Check who still needs to add a gift idea before you draw names.</p>
+            <h2 className="mt-1 text-xl font-bold">Invite people to join</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Once at least two people have joined, you can draw names.</p>
           </> : giftDayPassed && exchange.status === "drawn" ? <>
             <h2 className="mt-1 text-xl font-bold">Reveal Secret Santas</h2>
             <p className="mt-1 text-sm text-muted-foreground">Everyone will see who their Secret Santa was. This can’t be undone.</p>
@@ -224,17 +223,15 @@ export default async function AdminExchangePage({ params }: PageProps) {
             <p className="mt-1 text-sm text-muted-foreground">The exchange has been revealed and is {exchange.status}.</p>
           </>}
         </div>
-        {isOpen && (allWishlistsReady
+        {isOpen && (canDraw
           ? <Button asChild variant="affirmative"><a href="#draw-names">Go to Draw names</a></Button>
-          : participantRows.length < 2
-            ? <Button asChild variant="affirmative"><a href="#invite-people">Invite people</a></Button>
-            : <Button asChild variant="neutral"><a href="#wishlist-readiness">Check wishlist progress</a></Button>)}
+          : <Button asChild variant="affirmative"><a href="#invite-people">Invite people</a></Button>)}
         {!isOpen && exchange.status === "drawn" && <Button asChild variant="affirmative"><a href={giftDayPassed ? "#reveal" : "#reminders"}>{giftDayPassed ? "Go to reveal" : "Send wishlist reminders"}</a></Button>}
         {!isOpen && exchange.status === "drawn" && <p className="text-sm text-muted-foreground">{revealTimingText}</p>}
       </Card>
 
       <Card className="space-y-4 p-5 sm:p-6" id="wishlist-readiness">
-        <div><h2 className="text-xl font-bold">Wishlist readiness</h2><p className="text-sm text-muted-foreground">Each person needs at least one gift idea before you draw names.</p></div>
+        <div><h2 className="text-xl font-bold">Wishlist readiness</h2><p className="text-sm text-muted-foreground">See who has added gift ideas so far.</p></div>
         {participantRows.length ? <ul className="grid gap-2 sm:grid-cols-2">
           {participantRows.map((person) => {
             const gifts = giftsByUser.get(person.userId) ?? 0;
@@ -383,8 +380,8 @@ export default async function AdminExchangePage({ params }: PageProps) {
         </Card>
 
         <Card className="space-y-4 p-5 sm:p-6" id="draw-names">
-          <div><h2 className="text-xl font-bold">Draw names</h2><p className="text-sm text-muted-foreground">When everyone has joined and added at least one gift idea, make the Secret Santa pairings.</p></div>
-          <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" variant="affirmative" disabled={!allWishlistsReady}><Gift className="size-4" aria-hidden="true" />{allWishlistsReady ? "Draw names" : "Waiting for everyone to add a gift idea"}</Button></form>
+          <div><h2 className="text-xl font-bold">Draw names</h2><p className="text-sm text-muted-foreground">Once at least two people have joined, make the Secret Santa pairings.</p></div>
+          <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" variant="affirmative" disabled={!canDraw}><Gift className="size-4" aria-hidden="true" />{canDraw ? "Draw names" : "Waiting for at least two people"}</Button></form>
         </Card>
       </>}
 
