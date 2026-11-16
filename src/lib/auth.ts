@@ -30,7 +30,7 @@ async function sendMagicLink(email: string, url: string) {
     }
     throw new Error("Magic-link email is not configured.");
   }
-  await sendNotificationEmail({ to: email, kind: "magic-link", url, detail: "Use this secure one-time link to sign in or finish creating your account. It expires in 15 minutes." });
+  await sendNotificationEmail({ to: email, kind: "magic-link", url });
 }
 
 /**

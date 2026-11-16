@@ -73,7 +73,6 @@ describe("magic-link configuration", () => {
       to: "elf@example.test",
       kind: "magic-link",
       url: "https://example.test/verify",
-      detail: "Use this secure one-time link to sign in or finish creating your account. It expires in 15 minutes.",
     });
     expect(access.isEmailEligibleForSignIn).toHaveBeenCalledWith("elf@example.test", "valid-invite-token");
     expect(limits.consume).toHaveBeenCalledWith("email:elf@example.test");
