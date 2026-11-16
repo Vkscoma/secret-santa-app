@@ -4,9 +4,7 @@ import { and, asc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { FestiveIllustration, PageHeading, Snowfall } from "@/components/secret-santa/components";
 import { NudgeButton } from "@/components/secret-santa/nudge-button";
-import {
-  RecipientGiftCard,
-} from "@/components/secret-santa/recipient-gift-card";
+import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistOwnerGiftCard } from "@/components/secret-santa/wishlist-owner-gift-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -233,7 +231,11 @@ export default async function Home() {
               {exchangeRows.map((exchange) => {
                 const giving = assignmentsMap.get(exchange.id);
                 const recipient = giving
-                  ? formatFirstName(giving.recipientName, giving.recipientFullName, giving.recipientEmail)
+                  ? formatFirstName(
+                      giving.recipientName,
+                      giving.recipientFullName,
+                      giving.recipientEmail
+                    )
                   : null;
                 const recipientItems = previewsByExchange.get(exchange.id) ?? [];
                 const ownItems = exchangeRows[0]?.id === exchange.id ? ownPreviewItems : [];
@@ -414,10 +416,11 @@ export default async function Home() {
                             <Button
                               asChild
                               variant="neutral"
-                              className="min-h-11 max-w-full text-center leading-5 whitespace-normal"
+                              className="min-h-11 w-full max-w-full text-center leading-5 whitespace-normal md:w-auto"
                             >
                               <Link href={`/wishlists/${exchange.id}/recipient`}>
-                                See all of {recipient ? possessive(recipient) : "your recipient’s"} list
+                                See all of {recipient ? possessive(recipient) : "your recipient’s"}{" "}
+                                list
                               </Link>
                             </Button>
                           </div>
