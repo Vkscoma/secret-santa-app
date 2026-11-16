@@ -12,6 +12,7 @@ export function RemoveAccountButton({ userId, email }: { userId: string; email: 
         type="submit"
         size="sm"
         variant="destructive"
+        className="min-h-11"
         onClick={(event) => {
           if (!window.confirm(`Permanently remove the account ${email}? This also removes its sign-in sessions, invitation history, pending sign-in links, join permissions, and email history. Remove this person's exchange history first; removing an exchange does not remove the account.`)) {
             event.preventDefault();
