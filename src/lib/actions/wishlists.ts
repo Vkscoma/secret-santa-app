@@ -25,7 +25,8 @@ function field(formData: FormData, name: string): string {
 
 const uuid = z.string().uuid();
 const optionalPrice = z.preprocess(
-  (value) => value === "" || value === null ? null : Number(value),
+  // Prices are stored in whole dollars; a decimal keypad may send cents.
+  (value) => value === "" || value === null ? null : Math.round(Number(value)),
   z.number().int().min(0).max(1_000_000).nullable(),
 );
 const wishlistItemSchema = z.object({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useId, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -10,33 +10,15 @@ import { FormActionRow } from "@/components/ui/form-action-row";
 import { updateWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
 
-export function WishlistTitleInput({ initialTitle }: { initialTitle: string }) {
-  const [title, setTitle] = useState(initialTitle);
-  const userHasEdited = useRef(false);
-
-  useEffect(() => {
-    if (!userHasEdited.current) setTitle(initialTitle);
-  }, [initialTitle]);
-
-  return (
-    <label className="grid gap-1 text-sm font-medium">
-      Title
-      <input
-        name="title"
-        required
-        maxLength={200}
-        value={title}
-        onChange={(event) => {
-          userHasEdited.current = true;
-          setTitle(event.target.value);
-        }}
-        className="h-10 rounded-md border border-input bg-background px-3"
-      />
-    </label>
-  );
-}
-
-export function WishlistEditForm({ children, initialImageUrl, removeAction }: { children: ReactNode; initialImageUrl: string; removeAction: ReactNode }) {
+export function WishlistEditForm({
+  children,
+  initialImageUrl,
+  removeAction,
+}: {
+  children: ReactNode;
+  initialImageUrl: string;
+  removeAction: ReactNode;
+}) {
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const { saving, setSaving, onSaved, onCancel } = useWishlistEditContext();
@@ -57,7 +39,10 @@ export function WishlistEditForm({ children, initialImageUrl, removeAction }: { 
         router.refresh();
         onSaved();
       } catch (error) {
-        const message = error instanceof Error ? error.message : "We couldn’t save your changes. Your edits are still here; please try again.";
+        const message =
+          error instanceof Error
+            ? error.message
+            : "We couldn’t save your changes. Your edits are still here; please try again.";
         setError(message);
         toast.error("Could not save your changes. Please try again.");
       } finally {
@@ -72,24 +57,46 @@ export function WishlistEditForm({ children, initialImageUrl, removeAction }: { 
         {isSaving ? "Saving your gift changes…" : ""}
       </span>
       <form id={formId} onSubmit={save} aria-busy={isSaving}>
-        <fieldset disabled={isSaving} className="m-0 grid min-w-0 gap-3 border-0 p-0">
+        <fieldset disabled={isSaving} className="m-0 grid min-w-0 gap-4 border-0 p-0">
           {children}
         </fieldset>
       </form>
-      {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-destructive mt-3 text-sm">
+          {error}
+        </p>
+      )}
       <FormActionRow
-        className="mt-4 border-t border-border pt-4"
+        className="mt-4 pt-4"
         destructive={removeAction}
-        secondary={(
-          <Button type="button" variant="neutral" disabled={isSaving} className="h-11 w-full rounded-md sm:w-auto" onClick={onCancel}>
+        secondary={
+          <Button
+            type="button"
+            variant="neutral"
+            disabled={isSaving}
+            className="h-11 w-full rounded-md sm:w-auto"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
-        )}
-        primary={(
-          <Button type="submit" variant="affirmative" form={formId} disabled={isSaving} className="h-11 w-full min-w-36 rounded-md sm:w-auto">
-            {isSaving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : "Save changes"}
+        }
+        primary={
+          <Button
+            type="submit"
+            variant="affirmative"
+            form={formId}
+            disabled={isSaving}
+            className="h-11 w-full min-w-36 rounded-md sm:w-auto"
+          >
+            {isSaving ? (
+              <>
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…
+              </>
+            ) : (
+              "Save changes"
+            )}
           </Button>
-        )}
+        }
       />
     </div>
   );

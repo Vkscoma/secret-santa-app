@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { MobileAddWishButton } from "@/components/secret-santa/mobile-add-wish-button";
 import {
@@ -19,7 +19,39 @@ import { createMediaQueryStore } from "@/lib/media-query-store";
 // Matches Tailwind's default `lg` breakpoint (64rem), the only layout switch for the composer.
 const desktopQuery = createMediaQueryStore("(min-width: 1024px)");
 
-type Props = Omit<WishlistComposerProps, "onSaved"> & { autoOpen?: boolean };
+type Props = Omit<WishlistComposerProps, "onSaved" | "layout"> & { autoOpen?: boolean };
+
+/**
+ * Keeps the sheet inside the part of the screen that is actually visible. On iOS the
+ * on-screen keyboard covers the page without resizing it, so `dvh` alone would leave the
+ * pinned action hidden behind the keyboard. The visual viewport reports the real space.
+ */
+function useVisibleViewport(active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const viewport = window.visualViewport;
+    const root = document.documentElement;
+    function update() {
+      // Ignore pinch-zoom: it shrinks the visual viewport but is not a keyboard.
+      if (viewport && viewport.scale > 1.01) return;
+      const height = viewport?.height ?? window.innerHeight;
+      const keyboardInset = Math.max(0, window.innerHeight - height - (viewport?.offsetTop ?? 0));
+      root.style.setProperty("--sheet-visible-height", `${height}px`);
+      root.style.setProperty("--sheet-keyboard-inset", `${keyboardInset}px`);
+    }
+    update();
+    viewport?.addEventListener("resize", update);
+    viewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      viewport?.removeEventListener("resize", update);
+      viewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      root.style.removeProperty("--sheet-visible-height");
+      root.style.removeProperty("--sheet-keyboard-inset");
+    };
+  }, [active]);
+}
 
 function InlineLayout({ children }: { children: ReactNode }) {
   return (
@@ -65,6 +97,7 @@ export function WishlistComposerSheet({ autoOpen = false, ...props }: Props) {
   const closeSheet = useCallback(() => {
     setUserOpen(false);
   }, []);
+  useVisibleViewport(isDesktop === false && open);
 
   const attachHost = useCallback(
     (slot: HTMLDivElement | null) => {
@@ -78,7 +111,10 @@ export function WishlistComposerSheet({ autoOpen = false, ...props }: Props) {
   );
 
   const composer = (
-    <WishlistComposer {...props} {...(isDesktop === false ? { onSaved: closeSheet } : {})} />
+    <WishlistComposer
+      {...props}
+      {...(isDesktop === false ? { onSaved: closeSheet, layout: "sheet" as const } : {})}
+    />
   );
 
   // Server render and hydration: the viewport is unknown, so render the desktop
@@ -102,15 +138,19 @@ export function WishlistComposerSheet({ autoOpen = false, ...props }: Props) {
           <DialogTrigger asChild>
             <MobileAddWishButton />
           </DialogTrigger>
+          {/* Height-limited flex column: the composer scrolls its fields inside and pins its action. */}
           <DialogContent
-            className="fixed inset-x-0 top-auto bottom-0 left-0 z-50 max-h-[88svh] w-full max-w-full translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-t-2xl rounded-b-none border-x-0 border-b-0 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-full lg:hidden"
+            className="bg-card fixed inset-x-0 top-auto bottom-[var(--sheet-keyboard-inset,0px)] left-0 z-50 flex max-h-[calc(var(--sheet-visible-height,100dvh)-env(safe-area-inset-top)-0.75rem)] w-full max-w-full translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-2xl rounded-b-none border-x-0 border-b-0 p-0 shadow-2xl sm:max-w-full lg:hidden"
             showCloseButton
           >
             <DialogTitle className="sr-only">Add a wish</DialogTitle>
             <DialogDescription className="sr-only">
               Add an item to your Secret Santa wish list.
             </DialogDescription>
-            <div ref={attachHost} />
+            <div
+              ref={attachHost}
+              className="flex min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1 [&>div]:flex-col"
+            />
           </DialogContent>
         </Dialog>
       )}
