@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { CalendarDays, Clock3, PackageCheck, Sparkles } from "lucide-react";
-import { FestiveIllustration, GiftTag, PageHeading, ProgressNudge, Snowfall, WishlistItemCard, type WishItem } from "@/components/secret-santa/components";
+import { FestiveIllustration, GiftTag, PageHeading, ProgressNudge, Snowfall } from "@/components/secret-santa/components";
+import { RecipientGiftCard, type RecipientGiftItem } from "@/components/secret-santa/recipient-gift-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-const recipientItems: WishItem[] = [
-  { title: "A beginner’s sourdough baking kit", store: "King Arthur Baking", domain: "kingarthurbaking.com", notes: "No special tools needed", priority: "Most wanted", price: "$32", icon: "gift" },
-  { title: "A little indoor herb garden", store: "Local garden shop", domain: "idea only", notes: "Basil and mint are favorites", priority: "Would like", price: "$25–40", icon: "tree" },
+const recipientName = "Michelle";
+const recipientItems: RecipientGiftItem[] = [
+  { id: "preview-kate-spade", title: "www.katespadeoutlet.com", url: "https://www.katespadeoutlet.com/products/example", storeName: "www.katespadeoutlet.com", imageUrl: null, notes: "A small crossbody in black", priority: "most_wanted", priceMin: 60, priceMax: 90, previewPrice: null, previewCurrency: null, priceFetchedAt: null },
+  { id: "preview-quince", title: "www.quince.com", url: "https://www.quince.com/products/example", storeName: "www.quince.com", imageUrl: null, notes: "Soft and easy to care for", priority: "would_like", priceMin: null, priceMax: null, previewPrice: null, previewCurrency: null, priceFetchedAt: null },
 ];
 
 export default function PreviewHomePage() {
@@ -22,11 +24,11 @@ export default function PreviewHomePage() {
               <div className="grid w-full min-w-0 grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1 rounded-xl border border-border/70 dark:border-border/80 bg-card/80 p-4 sm:block sm:w-auto sm:min-w-32"><p className="text-xs font-semibold uppercase tracking-wide text-foreground">Gift budget</p><p className="row-span-2 text-right text-2xl font-extrabold text-foreground sm:mt-1 sm:text-left">$50</p><p className="text-xs text-muted-foreground">give a little, receive a little</p></div>
             </Card>
 
-            <GiftTag recipient="Maya" />
+            <GiftTag recipient={recipientName} />
 
             <section className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-              <div className="panel-pattern flex flex-col items-start gap-3 bg-pine px-5 py-4 text-pine-foreground sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-pine-foreground/75">Your recipient</p><h2 className="text-lg font-bold">Maya’s wish list</h2></div>{recipientItems.length === 0 && <Button variant="secondary" size="sm" className="h-8 shrink-0 border-pine-foreground bg-pine-foreground/12 text-pine-foreground hover:bg-pine-foreground/20 dark:border-pine-foreground dark:bg-pine-foreground/12 dark:hover:bg-pine-foreground/20"><Clock3 className="size-3.5" /> Nudge by email</Button>}</div>
-              <div className="min-w-0 space-y-3 p-4 sm:p-5">{recipientItems.map((item) => <div key={item.title} className="min-w-0 space-y-2"><WishlistItemCard item={item} readOnly /><label className="ml-2 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground"><input type="checkbox" className="size-4 accent-primary" /> I’m getting this</label></div>)}<div className="flex justify-center pt-1 sm:justify-end"><Button asChild variant="link" size="sm" className="max-w-full whitespace-normal text-center leading-5"><Link href="/preview/wishlists/sample">See all of Maya’s list</Link></Button></div></div>
+              <div className="panel-pattern flex flex-col items-start gap-3 bg-pine px-5 py-4 text-pine-foreground sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-pine-foreground/75">Your recipient</p><h2 className="text-lg font-bold">{recipientName}’s wish list</h2></div>{recipientItems.length === 0 && <Button variant="neutral-inverse" size="sm" className="h-11 shrink-0"><Clock3 className="size-3.5" /> Nudge by email</Button>}</div>
+              <div className="min-w-0 space-y-3 p-4 sm:p-5">{recipientItems.map((item) => <RecipientGiftCard key={item.id} item={item} exchangeId="preview" claimed={false} compact previewMode />)}<div className="flex justify-center pt-1 sm:justify-end"><Button asChild variant="neutral" size="sm" className="max-w-full whitespace-normal text-center leading-5"><Link href="/preview/wishlists/sample">See all of {recipientName}’s list</Link></Button></div></div>
             </section>
 
             <div className="grid gap-4 sm:grid-cols-[1fr_1fr]"><ProgressNudge count={2} target={3} /><Card className="flex items-center gap-3 p-4 shadow-none"><div className="grid size-10 place-items-center rounded-full bg-gold/20 text-gold-foreground dark:text-gold"><PackageCheck className="size-5" /></div><div><p className="text-sm font-bold">2 wishes on your list</p><p className="mt-0.5 text-xs text-muted-foreground">One more hint would be lovely.</p></div></Card></div>

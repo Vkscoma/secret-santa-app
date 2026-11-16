@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { ProductImage } from "@/components/secret-santa/product-image";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type PendingWish = { itemId: string; url: string; error?: string };
@@ -23,7 +24,7 @@ export function PendingWishlistCards({ savedItemIds }: { savedItemIds: string[] 
   if (!pending.length) return null;
   return <div className="space-y-3">{pending.map((item) => <Card key={item.itemId} className="flex gap-3 p-4 sm:p-5" aria-busy={!item.error}>
     <ProductImage src={null} alt="" className="size-20 sm:size-24" />
-    <div className="min-w-0 flex-1"><h3 className="break-words font-bold">{new URL(item.url).hostname}</h3><p role="status" className="mt-1 text-sm text-muted-foreground">{item.error ?? "Saving your wish…"}</p><a href={item.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-semibold text-primary">Open product link</a></div>
+    <div className="min-w-0 flex-1"><h3 className="break-words font-bold">{new URL(item.url).hostname}</h3><p role="status" className="mt-1 text-sm text-muted-foreground">{item.error ?? "Saving your wish…"}</p><Button asChild variant="neutral" size="sm" className="mt-2"><a href={item.url} target="_blank" rel="noopener noreferrer">Open product link</a></Button></div>
   </Card>)}</div>;
 }
 

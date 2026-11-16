@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Gift, Settings2, Share2 } from "lucide-react";
 import { FestiveIllustration, PageHeading } from "@/components/secret-santa/components";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const years = [
@@ -23,8 +24,8 @@ export default function PreviewWishlistsPage() {
                   <p className="mt-1 text-sm text-muted-foreground">{year.count} <span className="px-1">·</span> Gift exchange</p>
                 </div>
                 <div className="flex gap-1.5">
-                  <button aria-label={`Settings for ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70 dark:hover:bg-secondary/95"><Settings2 className="size-4" /></button>
-                  <button aria-label={`Share ${year.title}`} className="rounded-lg bg-secondary p-2 text-secondary-foreground hover:bg-secondary/70 dark:hover:bg-secondary/95"><Share2 className="size-4" /></button>
+                  <Button type="button" variant="neutral" size="icon" className="size-11 rounded-lg" aria-label={`Settings for ${year.title}`}><Settings2 /></Button>
+                  <Button type="button" variant="neutral" size="icon" className="size-11 rounded-lg" aria-label={`Share ${year.title}`}><Share2 /></Button>
                 </div>
               </div>
               <div className="flex gap-2 border-t bg-muted/75 px-5 py-3 sm:px-6">

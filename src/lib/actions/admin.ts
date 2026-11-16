@@ -127,6 +127,9 @@ export async function deleteExchange(formData: FormData) {
       .where(eq(exchanges.id, exchangeId))
       .for("update");
     if (!exchange) throw new Error("Exchange not found.");
+    if (field(formData, "confirmExchangeName") !== exchange.name) {
+      throw new Error("Type the exchange name exactly as shown to confirm deletion.");
+    }
 
     await tx.insert(auditLog).values(auditValues({
       actorId: session.user.id,
@@ -145,6 +148,7 @@ export async function deleteExchange(formData: FormData) {
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
   revalidatePath("/history");
   revalidatePath(`/history/${exchangeId}`);
+  redirect("/admin");
 }
 
 export async function setExchangeParticipants(formData: FormData) {
@@ -200,16 +204,30 @@ export async function setExchangeExclusions(formData: FormData) {
   revalidatePath(`/admin/exchanges/${exchangeId}`);
 }
 
-async function createDraw(exchangeId: string, actorId: string, redraw: boolean) {
+async function createDraw(exchangeId: string, actorId: string, redraw: boolean, confirmedExchangeName?: string) {
   await db.transaction(async (tx) => {
     const [exchange] = await tx.select().from(exchanges).where(eq(exchanges.id, exchangeId)).for("update");
     if (!exchange) throw new Error("Exchange not found.");
+    if (redraw && confirmedExchangeName !== exchange.name) {
+      throw new Error("Type the exchange name exactly as shown to confirm a new draw.");
+    }
     if (redraw ? exchange.status === "open" || exchange.status === "closed" : exchange.status !== "open") {
       throw new Error(redraw ? "Only a drawn or revealed exchange can be redrawn." : "This exchange has already been drawn.");
     }
     const participants = await tx.select({ userId: exchangeParticipants.userId }).from(exchangeParticipants).where(eq(exchangeParticipants.exchangeId, exchangeId));
     const participantIds = participants.map(({ userId }) => userId);
     if (participantIds.length < 2) throw new Error("Add at least two participants before drawing.");
+    if (!redraw) {
+      const readyWishlists = await tx.select({ userId: wishlists.userId, gifts: count(wishlistItems.id) })
+        .from(wishlists)
+        .leftJoin(wishlistItems, eq(wishlistItems.wishlistId, wishlists.id))
+        .where(and(eq(wishlists.exchangeId, exchangeId), inArray(wishlists.userId, participantIds)))
+        .groupBy(wishlists.userId);
+      const readyUserIds = new Set(readyWishlists.filter(({ gifts }) => Number(gifts) > 0).map(({ userId }) => userId));
+      if (participantIds.some((userId) => !readyUserIds.has(userId))) {
+        throw new Error("Everyone must add at least one gift idea before names can be drawn.");
+      }
+    }
     const excluded = await tx.select({ giverId: exclusions.giverId, receiverId: exclusions.receiverId }).from(exclusions).where(eq(exclusions.exchangeId, exchangeId));
 
   const prior = await tx.select({ giverId: assignments.giverId, receiverId: assignments.receiverId })
@@ -259,8 +277,7 @@ export async function drawExchange(formData: FormData) {
 export async function redrawExchange(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
-  requireChecked(formData, "confirmRedraw", "Confirm the redraw and item claim reset before continuing.");
-  await createDraw(exchangeId, session.user.id, true);
+  await createDraw(exchangeId, session.user.id, true, field(formData, "confirmExchangeName"));
   const assignmentEmailResult = await sendAssignmentNotifications(exchangeId);
   if (assignmentEmailResult.failed) console.warn(`Assignment notifications failed for exchange ${exchangeId}; the daily notification cron will retry.`);
   revalidatePath(`/admin/exchanges/${exchangeId}`);
@@ -336,13 +353,15 @@ export async function createExchangeInvite(_previous: CreateInviteState, formDat
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
   const expiresInDays = z.coerce.number().int().min(1).max(365).safeParse(field(formData, "expiresInDays"));
   const maxUses = z.preprocess((value) => value === "" ? null : Number(value), z.number().int().min(1).max(10_000).nullable()).safeParse(field(formData, "maxUses"));
-  if (!expiresInDays.success || !maxUses.success) return { message: "Check the invite expiration and use limit." };
+  const label = z.string().trim().max(100).safeParse(field(formData, "label"));
+  if (!expiresInDays.success || !maxUses.success || !label.success) return { message: "Check the invite label, expiration, and use limit." };
   const [exchange] = await db.select({ name: exchanges.name, status: exchanges.status }).from(exchanges).where(eq(exchanges.id, exchangeId)).limit(1);
   if (!exchange || exchange.status !== "open") return { message: "Invites can only be created for an open exchange." };
   const { token } = await createInviteRecord({
     exchangeId,
     exchangeName: exchange.name,
     createdBy: session.user.id,
+    label: label.data || null,
     expiresAt: new Date(Date.now() + expiresInDays.data * 86_400_000),
     maxUses: maxUses.data,
   });

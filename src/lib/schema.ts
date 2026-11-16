@@ -150,6 +150,7 @@ export const inviteLinks = pgTable(
     tokenHash: text("token_hash").notNull().unique(),
     exchangeId: uuid("exchange_id").notNull().references(() => exchanges.id, { onDelete: "cascade" }),
     exchangeNameSnapshot: text("exchange_name_snapshot").notNull(),
+    label: text("label"),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     expiresAt: timestamp("expires_at"),
     maxUses: integer("max_uses"),

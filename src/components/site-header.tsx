@@ -20,11 +20,11 @@ export function SiteHeader() {
           aria-label="Main navigation"
         >
           <Link href="/" className="group flex items-center gap-2.5" aria-label="Secret Santa home">
-            <span className="bg-primary text-primary-foreground grid size-9 place-items-center rounded-xl shadow-sm transition-transform group-hover:-rotate-6">
+            <span className="text-cranberry grid size-9 place-items-center rounded-xl shadow-sm transition-transform group-hover:-rotate-6">
               <Gift className="size-5" aria-hidden="true" />
             </span>
             <span className="text-foreground text-lg font-extrabold tracking-tight sm:text-xl">
-              Secret <span className="text-secondary">Santa</span>
+              Secret <span className="text-cranberry">Santa</span>
             </span>
           </Link>
           <AppMenu />

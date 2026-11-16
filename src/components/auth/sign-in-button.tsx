@@ -12,12 +12,12 @@ export function SignInButton({ returnTo = "/wishlists" }: { returnTo?: string })
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [busy, startTransition] = useTransition();
-  if (isPending) return <Button disabled>Loading…</Button>;
+  if (isPending) return <Button variant="affirmative" disabled>Loading…</Button>;
   if (session) return null;
 
   return (
     <div className="w-full max-w-sm space-y-5">
-      <Button className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: returnTo, errorCallbackURL: "/not-allowed" })}>
+      <Button variant="affirmative" className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: returnTo, errorCallbackURL: "/not-allowed" })}>
         Continue with Google
       </Button>
       <div className="relative text-center text-xs text-muted-foreground"><span className="bg-card px-2">or continue with email</span></div>
@@ -30,7 +30,7 @@ export function SignInButton({ returnTo = "/wishlists" }: { returnTo?: string })
           <Label htmlFor="email">Email address</Label>
           <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={busy} />
         </div>
-        <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
+        <Button type="submit" variant="neutral" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
         {message && <div className="space-y-2 text-center text-sm text-muted-foreground">
           <p role="status">{message}</p>
           <p>Check your inbox and spam folder for a sign-in email. Open its link to sign in and return to the page you started from (usually My Wishlists). If asked for your email again, use the same address you entered above.</p>

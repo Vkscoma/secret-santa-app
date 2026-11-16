@@ -48,6 +48,7 @@ export async function createInviteRecord(input: {
   exchangeId: string;
   exchangeName: string;
   createdBy: string;
+  label?: string | null;
   expiresAt?: Date | null;
   maxUses?: number | null;
 }) {
@@ -58,6 +59,7 @@ export async function createInviteRecord(input: {
       tokenHash: hashInviteToken(token),
       exchangeId: input.exchangeId,
       exchangeNameSnapshot: input.exchangeName,
+      label: input.label?.trim() || null,
       createdBy: input.createdBy,
       expiresAt: input.expiresAt ?? null,
       maxUses: input.maxUses ?? null,

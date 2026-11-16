@@ -66,7 +66,7 @@ export function WishlistImagePicker({ exchangeId, itemId, imageUrl, onChange }: 
     {displayedImageUrl && <ProductImage src={displayedImageUrl} alt="Gift photo" className="size-24" />}
     <div className="flex flex-wrap gap-2">
       <input ref={inputRef} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Choose a gift image" onChange={(event) => void upload(event.target.files?.[0])} />
-      <Button type="button" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Adding image…" : "Add photo or screenshot"}</Button>
+      <Button type="button" variant="neutral" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Adding image…" : "Add photo or screenshot"}</Button>
       <label className="sr-only" htmlFor={`wishlist-image-url-${itemId ?? "new"}`}>Paste image link</label>
       <Input id={`wishlist-image-url-${itemId ?? "new"}`} type="url" value={displayedImageUrl} onChange={(event) => changeImage(event.target.value)} placeholder="Or paste an image link" className="min-w-[14rem] flex-1" />
     </div>

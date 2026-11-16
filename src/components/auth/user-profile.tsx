@@ -27,12 +27,12 @@ export function UserProfile() {
     return (
       <div className="flex items-center gap-2">
         <Link href="/login">
-          <Button variant="ghost" size="sm">
+          <Button variant="affirmative" size="sm">
             Sign in
           </Button>
         </Link>
         <Link href="/register">
-          <Button size="sm">Sign up</Button>
+          <Button variant="affirmative" size="sm">Sign up</Button>
         </Link>
       </div>
     );
@@ -81,7 +81,7 @@ export function UserProfile() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} variant="destructive">
+        <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>

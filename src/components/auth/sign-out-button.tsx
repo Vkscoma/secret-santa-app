@@ -9,7 +9,7 @@ export function SignOutButton() {
   const router = useRouter();
 
   if (isPending) {
-    return <Button disabled>Loading...</Button>;
+    return <Button variant="neutral" disabled>Loading...</Button>;
   }
 
   if (!session) {
@@ -18,7 +18,7 @@ export function SignOutButton() {
 
   return (
     <Button
-      variant="outline"
+      variant="neutral"
       onClick={async () => {
         await signOut();
         router.replace("/");

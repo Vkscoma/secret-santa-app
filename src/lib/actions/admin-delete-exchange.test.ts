@@ -43,6 +43,7 @@ const { deleteExchange } = await import("./admin");
 function exchangeForm() {
   const form = new FormData();
   form.set("exchangeId", "0c9a56a0-6090-4c4c-b9b2-5f6cf4f231f4");
+  form.set("confirmExchangeName", "Holiday Gathering");
   return form;
 }
 
@@ -89,6 +90,14 @@ describe("deleteExchange", () => {
   it("does not delete when the exchange is missing", async () => {
     mocks.exchange = null;
     await expect(deleteExchange(exchangeForm())).rejects.toThrow("Exchange not found.");
+    expect(mocks.auditValues).toHaveLength(0);
+    expect(mocks.deletes).toHaveLength(0);
+  });
+
+  it("requires the exact exchange name before deletion", async () => {
+    const form = exchangeForm();
+    form.set("confirmExchangeName", "holiday gathering");
+    await expect(deleteExchange(form)).rejects.toThrow("Type the exchange name exactly as shown to confirm deletion.");
     expect(mocks.auditValues).toHaveLength(0);
     expect(mocks.deletes).toHaveLength(0);
   });

@@ -13,7 +13,7 @@ export function RemoveAccountButton({ userId, email }: { userId: string; email: 
         size="sm"
         variant="destructive"
         onClick={(event) => {
-          if (!window.confirm(`Permanently remove the account ${email}? This also removes its sessions, sign-in accounts, invite redemptions, pending magic links, allowlist entries, and email logs. Existing exchange history must be removed first; user accounts are not removed with exchanges.`)) {
+          if (!window.confirm(`Permanently remove the account ${email}? This also removes its sign-in sessions, invitation history, pending sign-in links, join permissions, and email history. Remove this person's exchange history first; removing an exchange does not remove the account.`)) {
             event.preventDefault();
           }
         }}

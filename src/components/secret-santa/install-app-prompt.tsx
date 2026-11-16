@@ -71,7 +71,7 @@ export function InstallAppPrompt() {
           {mode === "ios"
             ? <p className="mt-1 text-xs leading-5 text-muted-foreground">In Safari, tap Share, then choose <span className="font-semibold text-foreground">Add to Home Screen</span>.</p>
             : <p className="mt-1 text-xs leading-5 text-muted-foreground">Keep your exchange close at hand with the app on your home screen.</p>}
-          {mode === "install" && <Button type="button" size="sm" className="mt-3" onClick={install}>Install app</Button>}
+          {mode === "install" && <Button type="button" variant="affirmative" size="sm" className="mt-3" onClick={install}>Install app</Button>}
         </div>
       </div>
     </Card>

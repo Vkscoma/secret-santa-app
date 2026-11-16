@@ -9,7 +9,7 @@ export function NudgeButton({ exchangeId, className }: { exchangeId: string; cla
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   return <div className="flex flex-wrap items-center gap-2">
-    <Button type="button" variant="outline" className={className} disabled={pending} onClick={() => startTransition(async () => {
+    <Button type="button" variant="affirmative" className={className} disabled={pending} onClick={() => startTransition(async () => {
       const result = await nudgeRecipient(exchangeId);
       setMessage(result.message);
     })}>

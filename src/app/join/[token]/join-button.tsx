@@ -12,7 +12,7 @@ export function JoinButton({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   return <div className="space-y-3">
-    <Button className="w-full" disabled={busy} onClick={async () => {
+    <Button variant="affirmative" className="w-full" disabled={busy} onClick={async () => {
       setBusy(true);
       const state = await setPendingInvite(token);
       if (!state) { setError("This invite isn’t available anymore. Ask your organizer for a fresh link."); setBusy(false); return; }
@@ -43,7 +43,7 @@ export function JoinButton({ token }: { token: string }) {
         <Label htmlFor="invite-email">Email address</Label>
         <Input id="invite-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required disabled={busy} />
       </div>
-      <Button type="submit" variant="outline" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
+      <Button type="submit" variant="neutral" className="w-full" disabled={busy}>{busy ? "Sending…" : "Email me a secure link"}</Button>
       {message && <div className="space-y-2 text-center text-sm text-muted-foreground">
         <p role="status">{message}</p>
         <p>Check your inbox and spam folder for a sign-in email. If asked for your email again, use the same address you entered above. Open the link to finish; you’ll then see a confirmation explaining whether you joined this year’s exchange or are set up for future exchanges. Tap Continue to see your wish lists.</p>

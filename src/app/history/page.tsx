@@ -57,13 +57,13 @@ export default async function HistoryPage() {
             {santa && <p className="mt-1 text-sm text-muted-foreground">Your Secret Santa was <span className="font-semibold text-foreground">{santa.name || santa.fallbackName}</span>.</p>}
           </div>
         </div>
-        <Button asChild variant="outline" className="shrink-0"><Link href={`/history/${exchange.id}`}>View saved list <ArrowRight className="size-4" /></Link></Button>
+        <Button asChild variant="neutral" className="shrink-0"><Link href={`/history/${exchange.id}`}>View saved list <ArrowRight className="size-4" /></Link></Button>
       </Card>;
     })}</div> : <Card className="space-y-3 p-6 text-center sm:p-8">
       <Gift className="mx-auto size-8 text-primary" aria-hidden="true" />
       <h2 className="text-lg font-bold">Your first exchange is still ahead</h2>
       <p className="mx-auto max-w-md text-sm text-muted-foreground">When a past exchange is saved, you’ll find it here.</p>
-      <Button asChild variant="outline" className="mt-2"><Link href="/">Back home</Link></Button>
+      <Button asChild variant="neutral" className="mt-2"><Link href="/">Back home</Link></Button>
     </Card>}
   </div>;
 }
