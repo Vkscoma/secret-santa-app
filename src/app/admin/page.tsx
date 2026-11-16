@@ -61,7 +61,7 @@ export default async function AdminPage() {
   const exchangeSchemaReady = missingExchangeColumns.length === 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto min-w-0 max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
       <header className="space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground"><ShieldCheck className="size-4" /> Administration</div>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Keep the holiday plans in order</h1>
@@ -81,8 +81,8 @@ export default async function AdminPage() {
           : <p role="status" className="text-sm text-muted-foreground">The connected database is missing exchange fields required by this app ({missingExchangeColumns.join(", ")}). Existing data is still available below, but exchange creation is disabled until the schema is reconciled and migrated.</p>}
       </Card>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-        <Card className="space-y-4 p-5 sm:p-6">
+      <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
+        <Card className="min-w-0 space-y-4 p-5 sm:p-6">
           <div><h2 className="text-xl font-bold">Exchanges</h2><p className="text-sm text-muted-foreground">Secret Santa pairings stay private until you reveal them.</p></div>
           {exchangeRows.length ? <div className="divide-y divide-border">
             {exchangeRows.map((exchange) => {
@@ -142,26 +142,26 @@ export default async function AdminPage() {
         </div>
       </Card>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <Card className="space-y-4 p-5 sm:p-6">
+      <section className="grid min-w-0 gap-6 lg:grid-cols-2">
+        <Card className="min-w-0 space-y-4 p-5 sm:p-6">
           <div><h2 className="text-xl font-bold">People who can join any exchange</h2><p className="text-sm text-muted-foreground">These email addresses can join any open exchange. An invite link can also add someone to one exchange.</p></div>
           <form action={addAllowlistEntry} className="flex flex-col gap-2 sm:flex-row"><input name="email" type="email" required placeholder="friend@example.com" className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-background px-3" /><Button type="submit" variant="affirmative">Add email</Button></form>
-          <div className="max-h-72 space-y-2 overflow-auto">
-            {allowlistRows.map((entry) => <div key={entry.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm">
-              <span className="min-w-0 truncate">{entry.email}<span className="ml-2 text-xs text-muted-foreground">{entry.exchangeId ? "exchange access" : "global access"} · added {formatDate(entry.createdAt)}</span></span>
+          <div className="max-h-72 min-w-0 space-y-2 overflow-y-auto">
+            {allowlistRows.map((entry) => <div key={entry.id} className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+              <span className="min-w-0"><span className="block break-all">{entry.email}</span><span className="block text-xs text-muted-foreground">{entry.exchangeId ? "exchange access" : "global access"} · added {formatDate(entry.createdAt)}</span></span>
               <form action={removeAllowlistEntry}><input type="hidden" name="allowlistId" value={entry.id} /><Button type="submit" size="sm" variant="destructive" aria-label={`Remove ${entry.email}`}><Trash2 className="size-4" aria-hidden="true" />Remove</Button></form>
             </div>)}
             {!allowlistRows.length && <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">No one has join access yet. Add an email to let someone join.</p>}
           </div>
         </Card>
 
-        <Card className="space-y-4 p-5 sm:p-6">
+        <Card className="min-w-0 space-y-4 p-5 sm:p-6">
           <div><h2 className="text-xl font-bold">People and settings</h2><p className="text-sm text-muted-foreground">Admins can update profiles and roles. The configured super-admin cannot be demoted.</p></div>
-          <div className="max-h-[34rem] space-y-3 overflow-auto">
+          <div className="max-h-[34rem] min-w-0 space-y-3 overflow-y-auto">
             {users.map((person) => {
               const prefs = person.notificationPrefs ?? {};
-              return <details key={person.id} className="rounded-xl border border-border p-3">
-                <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2"><span className="min-w-0"><strong className="block truncate">{person.displayName || person.name}</strong><span className="text-xs text-muted-foreground">{person.email}</span></span><span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{person.role}</span></summary>
+              return <details key={person.id} className="min-w-0 rounded-xl border border-border p-3">
+                <summary className="grid min-w-0 cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-start gap-2"><span className="min-w-0"><strong className="block break-words">{person.displayName || person.name}</strong><span className="block break-all text-xs text-muted-foreground">{person.email}</span></span><span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{person.role}</span></summary>
                 <div className="mt-4 space-y-4 border-t border-border pt-4">
                   {isSuperAdmin && !isSuperAdminEmail(person.email) && <RemoveAccountButton userId={person.id} email={person.email} />}
                   <form action={setUserRole} className="flex items-center gap-2"><input type="hidden" name="userId" value={person.id} /><label className="sr-only" htmlFor={`role-${person.id}`}>Role for {person.email}</label><select id={`role-${person.id}`} name="role" defaultValue={person.role} className="h-9 flex-1 rounded-lg border border-input bg-background px-2 text-sm"><option value="user">User</option><option value="admin">Admin</option></select><Button size="sm" variant="affirmative">Save role</Button></form>

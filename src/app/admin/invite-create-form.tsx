@@ -15,16 +15,16 @@ export function InviteCreateForm({ exchangeId }: { exchangeId: string }) {
         <h2 className="text-lg font-bold">Invite people</h2>
         <p className="text-sm text-muted-foreground">For privacy, you can only see an invite link once, when you create it. Copy it somewhere safe to share.</p>
       </div>
-      <form action={action} className="grid gap-3 sm:grid-cols-2">
+      <form action={action} className="grid min-w-0 gap-3 sm:grid-cols-2">
         <input type="hidden" name="exchangeId" value={exchangeId} />
         <label className="grid gap-1 text-sm font-medium">Link label <span className="text-xs font-normal text-muted-foreground">Optional, such as “Family group chat”</span>
-          <input name="label" maxLength={100} placeholder="Family group chat" className="h-10 rounded-lg border border-input bg-background px-3" />
+          <input name="label" maxLength={100} placeholder="Family group chat" className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3" />
         </label>
         <label className="grid gap-1 text-sm font-medium">Expires in days
-          <input name="expiresInDays" type="number" min="1" max="365" defaultValue="14" required className="h-10 rounded-lg border border-input bg-background px-3" />
+          <input name="expiresInDays" type="number" min="1" max="365" defaultValue="14" required className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3" />
         </label>
         <label className="grid gap-1 text-sm font-medium">Maximum uses <span className="text-xs font-normal text-muted-foreground">Leave blank for unlimited</span>
-          <input name="maxUses" type="number" min="1" max="10000" className="h-10 rounded-lg border border-input bg-background px-3" />
+          <input name="maxUses" type="number" min="1" max="10000" className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3" />
         </label>
         <div className="sm:col-span-2"><Button type="submit" variant="affirmative" disabled={pending}>{pending ? "Creating…" : "Create invite"}</Button></div>
       </form>
