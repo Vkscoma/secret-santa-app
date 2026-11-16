@@ -35,7 +35,7 @@ export function PageHeading({
           {eyebrow}
         </p>
       ) : null}
-      <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight wrap-break-word sm:text-4xl">{title}</h1>
       {description ? (
         <p className="text-muted-foreground max-w-2xl text-sm leading-6 sm:text-base">
           {description}
@@ -57,7 +57,7 @@ export function PanelHeader({
   return (
     <div className="panel-pattern bg-pine text-pine-foreground relative overflow-hidden rounded-t-xl px-5 py-4 sm:px-6">
       <div className="relative z-10 flex items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0 wrap-break-word">
           <h2 className="text-lg leading-tight font-bold">{title}</h2>
           <p className="text-pine-foreground/80 mt-1 text-sm">{subtitle}</p>
         </div>

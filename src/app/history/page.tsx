@@ -2,9 +2,11 @@ import Link from "next/link";
 import { and, desc, eq, lt } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { isPastHistoryExchange, mayShowSantaIdentity } from "@/lib/history-policy";
 import { assignments, exchangeParticipants, exchanges, user } from "@/lib/schema";
@@ -41,18 +43,16 @@ export default async function HistoryPage() {
     return { exchange, recipient, santa };
   }));
 
-  return <div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
+  return <PageContainer maxWidth="5xl" className="space-y-7">
     <PageHeading eyebrow="Years of little surprises" title="Exchange history" description="Look back at your past exchanges and the gift ideas saved for each year." />
     {cards.length ? <div className="space-y-4">{cards.map(({ exchange, recipient, santa }) => {
-      const budget = exchange.budgetMin === exchange.budgetMax
-        ? `$${exchange.budgetMax ?? "—"}`
-        : `$${exchange.budgetMin ?? 0}–$${exchange.budgetMax ?? "—"}`;
+      const budget = formatBudget(exchange.budgetMin, exchange.budgetMax);
       return <Card key={exchange.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></span>
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold">{exchange.name}</h2>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground"><CalendarDays className="size-4" aria-hidden="true" />{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: exchange.timeZone }).format(exchange.date)} <span aria-hidden="true">·</span> {budget} budget</p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground"><CalendarDays className="size-4" aria-hidden="true" />{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: exchange.timeZone }).format(exchange.date)} <span aria-hidden="true">·</span> Budget: {budget}</p>
             <p className="mt-2 text-sm">{recipient ? <>You gave to <span className="font-semibold">{recipient.name || recipient.fallbackName}</span></> : "Your assignment is unavailable."}</p>
             {santa && <p className="mt-1 text-sm text-muted-foreground">Your Secret Santa was <span className="font-semibold text-foreground">{santa.name || santa.fallbackName}</span>.</p>}
           </div>
@@ -65,5 +65,5 @@ export default async function HistoryPage() {
       <p className="mx-auto max-w-md text-sm text-muted-foreground">When a past exchange is saved, you’ll find it here.</p>
       <Button asChild variant="neutral" className="mt-2"><Link href="/">Back home</Link></Button>
     </Card>}
-  </div>;
+  </PageContainer>;
 }

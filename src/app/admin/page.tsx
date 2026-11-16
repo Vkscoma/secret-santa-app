@@ -3,6 +3,7 @@ import { CalendarDays, Gift, ShieldCheck, Trash2, Users } from "lucide-react";
 import { ExchangeRowActions } from "@/app/admin/exchange-row-actions";
 import { RemoveAccountButton } from "@/app/admin/remove-account-button";
 import { ExchangeStepTracker, type ExchangeStep } from "@/components/admin/exchange-step-tracker";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { addAllowlistEntry, createExchange, removeAllowlistEntry, saveUserSettings, setUserRole } from "@/lib/actions/admin";
@@ -61,7 +62,7 @@ export default async function AdminPage() {
   const exchangeSchemaReady = missingExchangeColumns.length === 0;
 
   return (
-    <div className="mx-auto min-w-0 max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+    <PageContainer className="space-y-8">
       <header className="space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground"><ShieldCheck className="size-4" /> Administration</div>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Keep the holiday plans in order</h1>
@@ -181,6 +182,6 @@ export default async function AdminPage() {
         </Card>
       </section>
 
-    </div>
+    </PageContainer>
   );
 }

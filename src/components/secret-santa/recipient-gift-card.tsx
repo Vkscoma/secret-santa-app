@@ -160,7 +160,7 @@ export function RecipientGiftCard({
           />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-base leading-snug font-bold">
+          <h3 className="line-clamp-2 text-base leading-snug font-bold wrap-break-word">
             {productUrl ? (
               <a
                 href={productUrl}
@@ -178,7 +178,7 @@ export function RecipientGiftCard({
           <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
             {hasStore && (
               <>
-                <span>{store}</span>
+                <span className="min-w-0 wrap-anywhere">{store}</span>
                 {hasPrice && <span aria-hidden="true">·</span>}
               </>
             )}
@@ -203,7 +203,7 @@ export function RecipientGiftCard({
             )}
           </div>
           {!compact && item.notes && (
-            <p className="text-muted-foreground mt-2 text-sm leading-5 whitespace-pre-wrap">
+            <p className="text-muted-foreground mt-2 text-sm leading-5 whitespace-pre-wrap wrap-break-word">
               {item.notes}
             </p>
           )}

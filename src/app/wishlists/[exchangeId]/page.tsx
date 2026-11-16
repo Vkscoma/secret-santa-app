@@ -4,6 +4,7 @@ import { and, asc, desc, eq, lt } from "drizzle-orm";
 import { Gift, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ConfirmDeleteWishForm } from "@/components/secret-santa/confirm-delete-wish-form";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishFields } from "@/components/secret-santa/wish-fields";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { copyPreviousWishlist } from "@/lib/actions/wishlists";
 import { requireExchangeMember } from "@/lib/authz";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { formatFirstName, possessive } from "@/lib/person-name";
 import {
@@ -94,14 +96,11 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
     : null;
   const editable = exchange.year >= new Date().getFullYear() && exchange.status !== "closed";
 
-  const budget =
-    exchange.budgetMin === exchange.budgetMax
-      ? `$${exchange.budgetMax}`
-      : `$${exchange.budgetMin}–$${exchange.budgetMax}`;
+  const budget = formatBudget(exchange.budgetMin, exchange.budgetMax);
 
   return (
     <WishlistPasteProvider>
-      <div className="mx-auto max-w-6xl px-4 pt-5 pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] sm:px-6 sm:pt-10 lg:pb-10">
+      <PageContainer className="pt-5 pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] sm:pt-10 sm:pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] lg:pb-10">
         <WishlistBreadcrumb
           items={[
             { label: "Home", href: "/" },
@@ -348,7 +347,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
               )}
           </div>
         </div>
-      </div>
+      </PageContainer>
     </WishlistPasteProvider>
   );
 }

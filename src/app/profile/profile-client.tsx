@@ -6,6 +6,8 @@ import { Mail, Calendar, User, Shield, ArrowLeft, Lock, Smartphone } from "lucid
 import { toast } from "sonner";
 import { saveNotificationPreferences } from "@/app/actions/notification-settings";
 import { saveDisplayName } from "@/app/actions/profile";
+import { PageContainer } from "@/components/secret-santa/page-container";
+import { SettingRow } from "@/components/secret-santa/setting-row";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,8 +110,9 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="flex items-center gap-4 mb-8">
+    // Keeps the profile's original py-8/px-4 rhythm at every breakpoint.
+    <PageContainer maxWidth="4xl" className="sm:px-4 sm:py-8">
+      <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Button
           variant="neutral"
           size="sm"
@@ -119,15 +122,15 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h1 className="text-3xl font-bold">Your Profile</h1>
+        <h1 className="min-w-0 text-3xl font-bold">Your Profile</h1>
       </div>
 
       <div className="grid gap-6">
         {/* Profile Overview Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-20 w-20">
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16 shrink-0 sm:size-20">
                 <AvatarImage
                   src={user.image || ""}
                   alt={shownName || "User"}
@@ -137,15 +140,18 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
                   {(shownName?.[0] || user.email?.[0] || "U").toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">{shownName}</h2>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{user.email}</span>
+              <div className="min-w-0 flex-1 space-y-2">
+                <h2 className="text-2xl font-semibold wrap-break-word">{shownName}</h2>
+                {/* Email may be one unbreakable token; wrap-anywhere lets it break so the badge can wrap below. */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 wrap-anywhere">{user.email}</span>
+                  </span>
                   {user.emailVerified && (
                     <Badge
                       variant="outline"
-                      className="bg-success/10 text-success"
+                      className="shrink-0 bg-success/10 text-success"
                     >
                       <Shield className="h-3 w-3 mr-1" />
                       Verified
@@ -154,7 +160,7 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
                 </div>
                 {createdDate && (
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Calendar className="h-4 w-4" />
+                    <Calendar className="h-4 w-4 shrink-0" />
                     <span>Member since {createdDate}</span>
                   </div>
                 )}
@@ -171,24 +177,24 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   Display name
                 </label>
-                <div className="p-3 border rounded-md bg-muted/10">
+                <div className="min-w-0 p-3 border rounded-md bg-muted/10 wrap-break-word">
                   {shownName || "Not provided"}
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   Email Address
                 </label>
-                <div className="p-3 border rounded-md bg-muted/10 flex items-center justify-between">
-                  <span>{user.email}</span>
+                <div className="p-3 border rounded-md bg-muted/10 flex min-w-0 items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate" title={user.email}>{user.email}</span>
                   {user.emailVerified && (
                     <Badge
                       variant="outline"
-                      className="bg-success/10 text-success"
+                      className="shrink-0 bg-success/10 text-success"
                     >
                       Verified
                     </Badge>
@@ -202,26 +208,22 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Account Status</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Email Verification</p>
-                    <p className="text-sm text-muted-foreground">
-                      Email address verification status
-                    </p>
-                  </div>
-                  <Badge variant={user.emailVerified ? "default" : "secondary"}>
-                    {user.emailVerified ? "Verified" : "Unverified"}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Account Type</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your account access level
-                    </p>
-                  </div>
-                  <Badge variant="outline">Standard</Badge>
-                </div>
+                <SettingRow
+                  className="min-w-0"
+                  title="Email Verification"
+                  description="Email address verification status"
+                  trailing={
+                    <Badge variant={user.emailVerified ? "default" : "secondary"}>
+                      {user.emailVerified ? "Verified" : "Unverified"}
+                    </Badge>
+                  }
+                />
+                <SettingRow
+                  className="min-w-0"
+                  title="Account Type"
+                  description="Your account access level"
+                  trailing={<Badge variant="outline">Standard</Badge>}
+                />
               </div>
             </div>
           </CardContent>
@@ -237,21 +239,19 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="h-2 w-2 rounded-full bg-success"></div>
-                  <div>
-                    <p className="font-medium">Current Session</p>
-                    <p className="text-sm text-muted-foreground">Active now</p>
-                  </div>
-                </div>
-                <Badge
-                  variant="outline"
-                  className="bg-success/10 text-success"
-                >
-                  Active
-                </Badge>
-              </div>
+              <SettingRow
+                title="Current Session"
+                description="Active now"
+                leading={<div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-success"></div>}
+                trailing={
+                  <Badge
+                    variant="outline"
+                    className="bg-success/10 text-success"
+                  >
+                    Active
+                  </Badge>
+                }
+              />
             </div>
           </CardContent>
         </Card>
@@ -268,11 +268,11 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 variant="neutral"
-                className="justify-start h-auto p-4"
+                className="w-full min-w-0 justify-start whitespace-normal h-auto p-4"
                 onClick={() => setEditProfileOpen(true)}
               >
                 <User className="h-4 w-4 mr-2" />
-                <div className="text-left">
+                <div className="min-w-0 text-left">
                   <div className="font-medium">Edit Profile</div>
                   <div className="text-xs text-muted-foreground">
                     Update your information
@@ -281,11 +281,11 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
               </Button>
               <Button
                 variant="neutral"
-                className="justify-start h-auto p-4"
+                className="w-full min-w-0 justify-start whitespace-normal h-auto p-4"
                 onClick={() => setSecurityOpen(true)}
               >
                 <Shield className="h-4 w-4 mr-2" />
-                <div className="text-left">
+                <div className="min-w-0 text-left">
                   <div className="font-medium">Security Settings</div>
                   <div className="text-xs text-muted-foreground">
                     Manage security options
@@ -294,11 +294,11 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
               </Button>
               <Button
                 variant="neutral"
-                className="justify-start h-auto p-4"
+                className="w-full min-w-0 justify-start whitespace-normal h-auto p-4"
                 onClick={() => setEmailPrefsOpen(true)}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                <div className="text-left">
+                <div className="min-w-0 text-left">
                   <div className="font-medium">Email Preferences</div>
                   <div className="text-xs text-muted-foreground">
                     Configure notifications
@@ -367,50 +367,38 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Lock className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Password</p>
-                  <p className="text-sm text-muted-foreground">
-                    {user.email?.includes("@gmail")
-                      ? "Managed by Google"
-                      : "Set a password for your account"}
-                  </p>
-                </div>
-              </div>
-              <Badge variant="outline">
-                {user.email?.includes("@gmail") ? "OAuth" : "Not Set"}
-              </Badge>
-            </div>
+            <SettingRow
+              title="Password"
+              description={
+                user.email?.includes("@gmail")
+                  ? "Managed by Google"
+                  : "Set a password for your account"
+              }
+              leading={<Lock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />}
+              trailing={
+                <Badge variant="outline">
+                  {user.email?.includes("@gmail") ? "OAuth" : "Not Set"}
+                </Badge>
+              }
+            />
 
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Smartphone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Two-Factor Authentication</p>
-                  <p className="text-sm text-muted-foreground">
-                    Add an extra layer of security
-                  </p>
-                </div>
-              </div>
-              <Button variant="neutral" size="sm" disabled>
-                Coming Soon
-              </Button>
-            </div>
+            <SettingRow
+              title="Two-Factor Authentication"
+              description="Add an extra layer of security"
+              leading={<Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />}
+              trailing={
+                <Button variant="neutral" size="sm" disabled>
+                  Coming Soon
+                </Button>
+              }
+            />
 
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Active Sessions</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage devices logged into your account
-                  </p>
-                </div>
-              </div>
-              <Badge variant="default">1 Active</Badge>
-            </div>
+            <SettingRow
+              title="Active Sessions"
+              description="Manage devices logged into your account"
+              leading={<Shield className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />}
+              trailing={<Badge variant="default">1 Active</Badge>}
+            />
           </div>
           <div className="flex justify-end pt-4">
             <Button variant="neutral" onClick={() => setSecurityOpen(false)}>
@@ -437,7 +425,7 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
             ] as const).map(([key, label, description]) => (
               <label key={key} className="flex items-start gap-3 rounded-lg border p-4">
                 <input name={key} type="checkbox" checked={notificationPrefs[key]} onChange={(event) => setNotificationPrefs((current) => ({ ...current, [key]: event.target.checked }))} className="mt-1 size-4 accent-primary" />
-                <span><span className="block font-medium">{label}</span><span className="text-sm text-muted-foreground">{description}</span></span>
+                <span className="min-w-0"><span className="block font-medium">{label}</span><span className="text-sm text-muted-foreground">{description}</span></span>
               </label>
             ))}
             <p className="text-xs text-muted-foreground">Assignment notifications and secure sign-in links are always sent.</p>
@@ -449,6 +437,6 @@ export default function ProfilePage({ initialNotificationPrefs, initialDisplayNa
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

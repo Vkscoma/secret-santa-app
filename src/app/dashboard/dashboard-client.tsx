@@ -41,7 +41,7 @@ export default function DashboardPage() {
           <p>
             <strong>Name:</strong> {session.user.name}
           </p>
-          <p>
+          <p className="wrap-anywhere">
             <strong>Email:</strong> {session.user.email}
           </p>
         </div>

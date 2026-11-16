@@ -61,8 +61,8 @@ export function AppMenu() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <div className="px-2 py-2">
-            <p className="text-sm font-bold">{name}</p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-sm font-bold wrap-break-word">{name}</p>
+            <p className="text-muted-foreground text-xs wrap-anywhere">
               {session?.user?.email ?? "A little holiday magic"}
             </p>
           </div>
