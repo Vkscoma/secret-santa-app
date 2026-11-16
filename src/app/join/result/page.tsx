@@ -22,7 +22,7 @@ export default async function InviteResultPage({ searchParams }: { searchParams:
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button asChild><Link href={returnTo}>See my wish lists</Link></Button>
+          <Button variant="affirmative" asChild><Link href={returnTo}>See my wish lists</Link></Button>
         </CardContent>
       </Card>
     </main>

@@ -11,6 +11,7 @@ import {
   TreePine,
   UserRound,
 } from "lucide-react";
+import { MobileAddWishButton } from "@/components/secret-santa/mobile-add-wish-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,18 +63,12 @@ export function PanelHeader({
         </div>
         {actions ? (
           <div className="flex gap-2">
-            <button
-              aria-label="List settings"
-              className="rounded-lg border border-pine-foreground bg-pine-foreground/12 p-2 text-pine-foreground transition hover:bg-pine-foreground/20"
-            >
+            <Button type="button" variant="neutral-inverse" size="icon" className="size-11 rounded-lg" aria-label="List settings">
               <span aria-hidden="true">⚙</span>
-            </button>
-            <button
-              aria-label="Share list"
-              className="rounded-lg border border-pine-foreground bg-pine-foreground/12 p-2 text-pine-foreground transition hover:bg-pine-foreground/20"
-            >
-              <ArrowUpRight className="size-4" aria-hidden="true" />
-            </button>
+            </Button>
+            <Button type="button" variant="neutral-inverse" size="icon" className="size-11 rounded-lg" aria-label="Share list">
+              <ArrowUpRight aria-hidden="true" />
+            </Button>
           </div>
         ) : null}
       </div>
@@ -88,16 +83,16 @@ export function StringLights() {
       className="string-lights absolute inset-x-0 bottom-0 z-10 flex h-1 justify-around"
       aria-hidden="true"
     >
-      <span className="bg-primary text-primary size-1 rounded-full" />
+      <span className="bg-cranberry text-cranberry size-1 rounded-full" />
       <span className="bg-secondary text-secondary size-1 rounded-full" />
       <span className="bg-gold text-gold size-1 rounded-full" />
-      <span className="bg-primary text-primary size-1 rounded-full" />
+      <span className="bg-cranberry text-cranberry size-1 rounded-full" />
       <span className="bg-secondary text-secondary size-1 rounded-full" />
       <span className="bg-gold text-gold size-1 rounded-full" />
-      <span className="bg-primary text-primary size-1 rounded-full" />
+      <span className="bg-cranberry text-cranberry size-1 rounded-full" />
       <span className="bg-secondary text-secondary size-1 rounded-full" />
       <span className="bg-gold text-gold size-1 rounded-full" />
-      <span className="bg-primary text-primary size-1 rounded-full" />
+      <span className="bg-cranberry text-cranberry size-1 rounded-full" />
     </div>
   );
 }
@@ -163,12 +158,9 @@ export function WishlistItemCard({
   return (
     <article className="group border-border/80 bg-card flex gap-3 rounded-xl border p-3 shadow-sm transition hover:shadow-md sm:gap-4 sm:p-4">
       {!readOnly ? (
-        <button
-          className="text-muted-foreground/65 mt-1 hidden shrink-0 cursor-grab sm:block"
-          aria-label={`Reorder ${item.title}`}
-        >
+        <Button type="button" variant="ghost" size="icon" className="mt-1 hidden shrink-0 cursor-grab sm:flex" aria-label={`Reorder ${item.title}`}>
           <span aria-hidden="true">⠿</span>
-        </button>
+        </Button>
       ) : null}
       <div className="bg-secondary text-secondary-foreground grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg sm:size-[72px]">
         <Icon className="size-7" strokeWidth={1.6} aria-hidden="true" />
@@ -187,8 +179,8 @@ export function WishlistItemCard({
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <Badge
-            variant="secondary"
-            className="bg-secondary text-secondary-foreground h-5 border-0 px-2 text-[10px]"
+            variant="outline"
+            className="bg-muted text-muted-foreground h-5 px-2 text-[10px]"
           >
             {item.priority}
           </Badge>
@@ -205,12 +197,9 @@ export function WishlistItemCard({
         </div>
       </div>
       {!readOnly ? (
-        <button
-          className="-mt-1 -mr-1 shrink-0 rounded-full border border-destructive p-1 text-destructive transition hover:bg-destructive/5 dark:hover:bg-destructive/[0.08]"
-          aria-label={`Remove ${item.title}`}
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        <Button type="button" variant="destructive" size="icon" className="-mt-1 -mr-1 size-11 shrink-0 rounded-full" aria-label={`Remove ${item.title}`}>
+          <Trash2 aria-hidden="true" />
+        </Button>
       ) : null}
     </article>
   );
@@ -236,7 +225,7 @@ export function WishComposer() {
           placeholder="Add a wish or paste a link"
           aria-label="Add a wish or paste a link"
         />
-        <Button className="h-12 rounded-xl px-5">
+        <Button type="button" variant="neutral" className="h-12 rounded-xl px-5">
           <Plus className="size-4" aria-hidden="true" /> Add
         </Button>
       </div>
@@ -258,13 +247,13 @@ export function WishComposer() {
           <fieldset className="space-y-2 text-sm font-medium">
             <legend>Priority</legend>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="secondary">
+              <Button type="button" size="sm" variant="neutral-inverse">
                 Most wanted
               </Button>
-              <Button type="button" size="sm" variant="outline">
+              <Button type="button" size="sm" variant="neutral">
                 Would like
               </Button>
-              <Button type="button" size="sm" variant="outline">
+              <Button type="button" size="sm" variant="neutral">
                 Nice to have
               </Button>
             </div>
@@ -277,7 +266,7 @@ export function WishComposer() {
             </div>
           </label>
         </div>
-        <Button className="mt-5 w-full rounded-xl" size="lg">
+        <Button variant="affirmative" className="mt-5 w-full rounded-xl" size="lg">
           Add to my list <ArrowUpRight className="size-4" />
         </Button>
       </details>
@@ -328,12 +317,9 @@ export function HobbiesCard({
           <UserRound className="text-pine dark:text-pine-foreground size-4" />
           <h3 className="font-bold">Things I like</h3>
         </div>
-        <button
-          aria-label="More hobbies options"
-          className="text-muted-foreground hover:bg-muted rounded-full p-1.5"
-        >
-          <MoreHorizontal className="size-4" />
-        </button>
+        <Button type="button" variant="ghost" size="icon" className="size-11 rounded-full" aria-label="More hobbies options">
+          <MoreHorizontal />
+        </Button>
       </div>
       <p className="text-muted-foreground mt-2 text-sm leading-6">
         {likes || "You haven’t added any hobbies or interests yet."}
@@ -346,14 +332,7 @@ export function HobbiesCard({
 }
 
 export function FloatingAddButton() {
-  return (
-    <Button
-      aria-label="Add a wish"
-      className="bg-secondary fixed right-5 bottom-6 z-20 size-14 rounded-full p-0 shadow-lg sm:hidden"
-    >
-      <Plus className="size-6" />
-    </Button>
-  );
+  return <MobileAddWishButton className="sm:hidden" />;
 }
 
 export function Snowfall() {
@@ -395,8 +374,8 @@ export function FestiveIllustration() {
         />
         <path d="M154 249v-27h12v27" className="fill-gold-foreground" />
         <path d="m155 131 3-8 4 8h-7Z" className="fill-gold" />
-        <rect x="49" y="219" width="47" height="39" rx="5" className="fill-primary" />
-        <path d="M69 219v39m-20-24h47" className="stroke-primary-foreground/80" strokeWidth="4" />
+        <rect x="49" y="219" width="47" height="39" rx="5" className="fill-cranberry" />
+        <path d="M69 219v39m-20-24h47" className="stroke-cranberry-foreground/80" strokeWidth="4" />
         <path
           d="m69 219-8-8 12 3 7-7 1 12m-12 0 8-8"
           className="stroke-gold"
@@ -412,7 +391,7 @@ export function FestiveIllustration() {
           strokeWidth="2"
           strokeLinecap="round"
         />
-        <circle cx="78" cy="178" r="3" className="fill-primary" />
+        <circle cx="78" cy="178" r="3" className="fill-cranberry" />
         <circle cx="236" cy="169" r="4" className="fill-gold" />
         <circle cx="108" cy="152" r="2.5" className="fill-secondary" />
       </svg>

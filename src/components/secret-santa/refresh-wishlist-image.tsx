@@ -44,7 +44,7 @@ export function RefreshWishlistImage({ exchangeId, itemId }: Props) {
 
   return (
     <div className="mt-1 flex flex-wrap items-center gap-2">
-      <Button type="button" variant="ghost" size="sm" disabled={pending || saving} className="h-11 rounded-md px-3" onClick={refresh}>
+      <Button type="button" variant="neutral" size="sm" disabled={pending || saving} className="h-11 rounded-md px-3" onClick={refresh}>
         <RefreshCw className={`size-4 ${pending ? "animate-spin" : ""}`} aria-hidden="true" />
         {pending ? "Refreshing…" : "Refresh from link"}
       </Button>

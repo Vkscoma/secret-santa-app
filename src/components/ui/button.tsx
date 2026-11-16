@@ -4,21 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-transparent text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        affirmative:
+          "border-2 border-primary bg-transparent font-semibold text-affirmative-text shadow-none hover:bg-primary/10 active:bg-primary/15",
+        neutral:
+          "border border-neutral-border bg-transparent font-normal text-foreground shadow-none hover:bg-muted active:bg-muted",
         destructive:
-          "border border-destructive bg-transparent text-destructive shadow-none hover:bg-destructive/5 dark:hover:bg-destructive/[0.08]",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-card dark:border-input dark:hover:bg-accent",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 dark:hover:bg-secondary/95",
+          "border border-destructive-text bg-transparent text-destructive-text shadow-none hover:bg-destructive/10 active:bg-destructive/15",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80",
+        "neutral-inverse":
+          "border border-neutral-panel-border bg-transparent text-pine-foreground shadow-none hover:border-pine-foreground hover:bg-pine-foreground/10 active:border-pine-foreground active:bg-pine-foreground/15",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -28,7 +27,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "neutral",
       size: "default",
     },
   }
@@ -39,6 +38,7 @@ function Button({
   variant,
   size,
   asChild = false,
+  disabled,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -48,9 +48,13 @@ function Button({
 
   return (
     <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
       {...props}
+      disabled={asChild ? undefined : disabled}
+      aria-disabled={asChild && disabled ? true : props["aria-disabled"]}
+      tabIndex={asChild && disabled ? -1 : props.tabIndex}
+      data-slot="button"
+      data-variant={variant ?? "neutral"}
+      className={cn(buttonVariants({ variant, size, className }))}
     />
   )
 }

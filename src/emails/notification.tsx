@@ -10,7 +10,7 @@ import {
   Text,
 } from "@react-email/components";
 
-const colors = { background: "#f3f7f4", pine: "#174d3b", red: "#a9363b", ink: "#20382d", muted: "#53645a" };
+const colors = { background: "#f3f7f4", pine: "#174d3b", action: "#174d3b", ink: "#20382d", muted: "#53645a" };
 
 export type EmailKind = "magic-link" | "assignment" | "reminder" | "empty-wishlist" | "wishlist-digest" | "manual-nudge";
 
@@ -52,7 +52,7 @@ export function NotificationEmail({
             {exchangeName && <Text style={{ margin: "0 0 10px", color: "#63766b", fontSize: 13 }}>{exchangeName}</Text>}
             <Heading as="h1" style={{ margin: "0 0 14px", color: colors.ink, fontSize: 28, lineHeight: "36px" }}>{content.title}</Heading>
             <Text style={{ margin: "0 0 26px", color: colors.muted, fontSize: 16, lineHeight: "25px" }}>{detail ?? content.body}</Text>
-            <Button href={url} style={{ display: "block", width: "fit-content", margin: "0 auto", padding: "15px 28px", borderRadius: 9, backgroundColor: colors.red, color: "#ffffff", fontSize: 16, lineHeight: "20px", fontWeight: 700, textDecoration: "none" }}>
+            <Button href={url} style={{ display: "block", width: "fit-content", margin: "0 auto", padding: "15px 28px", borderRadius: 9, backgroundColor: "transparent", border: `2px solid ${colors.action}`, color: colors.action, fontSize: 16, lineHeight: "20px", fontWeight: 700, textDecoration: "none" }}>
               {kind === "magic-link" ? "Continue securely" : kind === "empty-wishlist" || kind === "manual-nudge" ? "Open your wish list" : "Open Secret Santa"}
             </Button>
           </Section>

@@ -96,7 +96,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="flex items-center gap-4 mb-8">
         <Button
-          variant="ghost"
+          variant="neutral"
           size="sm"
           onClick={() => router.back()}
           className="flex items-center gap-2"
@@ -130,7 +130,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                   {user.emailVerified && (
                     <Badge
                       variant="outline"
-                      className="text-green-600 border-green-600"
+                      className="bg-success/10 text-success"
                     >
                       <Shield className="h-3 w-3 mr-1" />
                       Verified
@@ -173,7 +173,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                   {user.emailVerified && (
                     <Badge
                       variant="outline"
-                      className="text-green-600 border-green-600"
+                      className="bg-success/10 text-success"
                     >
                       Verified
                     </Badge>
@@ -232,7 +232,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-green-600 border-green-600"
+                  className="bg-success/10 text-success"
                 >
                   Active
                 </Badge>
@@ -252,7 +252,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
-                variant="outline"
+                variant="neutral"
                 className="justify-start h-auto p-4"
                 onClick={() => setEditProfileOpen(true)}
               >
@@ -265,7 +265,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                 </div>
               </Button>
               <Button
-                variant="outline"
+                variant="neutral"
                 className="justify-start h-auto p-4"
                 onClick={() => setSecurityOpen(true)}
               >
@@ -278,7 +278,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                 </div>
               </Button>
               <Button
-                variant="outline"
+                variant="neutral"
                 className="justify-start h-auto p-4"
                 onClick={() => setEmailPrefsOpen(true)}
               >
@@ -329,8 +329,8 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             </div>
             <FormActionRow
               className="pt-4"
-              secondary={<Button type="button" variant="outline" className="h-11 w-full sm:w-auto" onClick={() => setEditProfileOpen(false)}>Cancel</Button>}
-              primary={<Button type="submit" className="h-11 w-full sm:w-auto">Save Changes</Button>}
+              secondary={<Button type="button" variant="neutral" className="h-11 w-full sm:w-auto" onClick={() => setEditProfileOpen(false)}>Cancel</Button>}
+              primary={<Button type="submit" variant="affirmative" className="h-11 w-full sm:w-auto">Save Changes</Button>}
             />
           </form>
         </DialogContent>
@@ -373,7 +373,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" disabled>
+              <Button variant="neutral" size="sm" disabled>
                 Coming Soon
               </Button>
             </div>
@@ -392,7 +392,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             </div>
           </div>
           <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={() => setSecurityOpen(false)}>
+            <Button variant="neutral" onClick={() => setSecurityOpen(false)}>
               Close
             </Button>
           </div>
@@ -422,8 +422,8 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             <p className="text-xs text-muted-foreground">Assignment notifications and secure sign-in links are always sent.</p>
             <FormActionRow
               className="pt-2"
-              secondary={<Button type="button" variant="outline" className="h-11 w-full sm:w-auto" onClick={() => setEmailPrefsOpen(false)}>Close</Button>}
-              primary={<Button type="submit" className="h-11 w-full sm:w-auto">Save preferences</Button>}
+              secondary={<Button type="button" variant="neutral" className="h-11 w-full sm:w-auto" onClick={() => setEmailPrefsOpen(false)}>Close</Button>}
+              primary={<Button type="submit" variant="affirmative" className="h-11 w-full sm:w-auto">Save preferences</Button>}
             />
           </form>
         </DialogContent>

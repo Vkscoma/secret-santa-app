@@ -38,7 +38,7 @@ export function GitHubStars({ repo }: GitHubStarsProps) {
   };
 
   return (
-    <Button variant="outline" size="sm" asChild>
+    <Button variant="neutral" size="sm" asChild>
       <a
         href={`https://github.com/${repo}`}
         target="_blank"

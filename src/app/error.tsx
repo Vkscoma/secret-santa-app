@@ -33,8 +33,8 @@ export default function Error({
           </p>
         )}
         <div className="flex gap-4 justify-center">
-          <Button onClick={reset}>Try again</Button>
-          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+          <Button variant="affirmative" onClick={reset}>Try again</Button>
+          <Button variant="neutral" onClick={() => (window.location.href = "/")}>
             Go home
           </Button>
         </div>

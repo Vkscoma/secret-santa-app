@@ -1,15 +1,14 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { WishComposer } from "@/components/secret-santa/components";
-import { Button } from "@/components/ui/button";
+import { MobileAddWishButton } from "@/components/secret-santa/mobile-add-wish-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export function MobileAddWish() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button aria-label="Add a wish" className="fixed right-5 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-20 size-14 rounded-full p-0 shadow-lg lg:hidden"><Plus className="size-6" aria-hidden="true" /></Button>
+        <MobileAddWishButton />
       </DialogTrigger>
       <DialogContent className="fixed inset-x-0 bottom-0 top-auto left-0 z-50 max-h-[88svh] w-full max-w-full translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-b-none rounded-t-2xl border-x-0 border-b-0 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:hidden" showCloseButton>
         <DialogTitle className="sr-only">Add a wish</DialogTitle>

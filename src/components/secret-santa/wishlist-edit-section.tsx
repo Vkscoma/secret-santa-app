@@ -69,7 +69,7 @@ export function WishlistEditSection({
           <Button
             ref={toggleRef}
             type="button"
-            variant="outline"
+            variant="neutral"
             disabled={saving}
             aria-expanded={open}
             aria-controls={sectionId}

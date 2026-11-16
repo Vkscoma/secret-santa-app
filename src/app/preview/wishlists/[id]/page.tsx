@@ -17,7 +17,7 @@ function WishListPanel() {
       <div className="space-y-4 p-4 sm:p-5">
         <ProgressNudge count={3} target={3} />
         <div className="space-y-3">{items.map((item) => <WishlistItemCard key={item.title} item={item} />)}</div>
-        <div className="flex justify-center"><Button variant="outline" size="sm" className="rounded-full"><Heart className="size-3.5 text-primary" /> Things I like</Button></div>
+        <div className="flex justify-center"><Button variant="neutral" size="sm" className="rounded-full"><Heart className="size-3.5" /> Things I like</Button></div>
         <HobbiesCard />
       </div>
     </section>
@@ -26,14 +26,14 @@ function WishListPanel() {
 
 export default function PreviewWishlistEditorPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <div className="mx-auto max-w-6xl px-4 pt-6 pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] sm:px-6 sm:pt-10 lg:pb-10">
       <Link href="/preview/wishlists" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> All wish lists</Link>
       <PageHeading eyebrow="Christmas 2026" title="A list full of little joys" description="Add a wish or browse the ideas you’ve already saved. Your Secret Santa will thank you." />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.92fr)] xl:gap-8">
         <div className="order-2 space-y-4 lg:order-1">
           <div className="hidden lg:block"><WishComposer /></div>
         </div>
-        <div className="order-1 space-y-4 lg:sticky lg:top-24 lg:order-2"><WishListPanel /><div className="flex justify-end gap-2"><Button variant="outline" className="rounded-xl"><Settings2 className="size-4" /> List settings</Button><Button variant="outline" className="rounded-xl"><Share2 className="size-4" /> Share</Button></div><div className="hidden lg:block"><FestiveIllustration /></div></div>
+        <div className="order-1 space-y-4 lg:sticky lg:top-24 lg:order-2"><WishListPanel /><div className="flex justify-end gap-2"><Button variant="neutral" className="rounded-xl"><Settings2 className="size-4" /> List settings</Button><Button variant="neutral" className="rounded-xl"><Share2 className="size-4" /> Share</Button></div><div className="hidden lg:block"><FestiveIllustration /></div></div>
       </div>
       <MobileAddWish />
     </div>

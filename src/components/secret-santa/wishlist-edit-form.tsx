@@ -81,12 +81,12 @@ export function WishlistEditForm({ children, initialImageUrl, removeAction }: { 
         className="mt-4 border-t border-border pt-4"
         destructive={removeAction}
         secondary={(
-          <Button type="button" variant="outline" disabled={isSaving} className="h-11 w-full rounded-md sm:w-auto" onClick={onCancel}>
+          <Button type="button" variant="neutral" disabled={isSaving} className="h-11 w-full rounded-md sm:w-auto" onClick={onCancel}>
             Cancel
           </Button>
         )}
         primary={(
-          <Button type="submit" form={formId} disabled={isSaving} className="h-11 w-full min-w-36 rounded-md sm:w-auto">
+          <Button type="submit" variant="affirmative" form={formId} disabled={isSaving} className="h-11 w-full min-w-36 rounded-md sm:w-auto">
             {isSaving ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : "Save changes"}
           </Button>
         )}

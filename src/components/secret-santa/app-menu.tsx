@@ -46,7 +46,7 @@ export function AppMenu() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="group/menu focus-visible:ring-ring h-11 w-auto shrink-0 gap-1.5 rounded-full px-2 focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-10 sm:w-20"
+            className="group/menu h-11 w-auto shrink-0 gap-1.5 rounded-full px-2 sm:h-10 sm:w-20"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             <span className="border-border bg-secondary text-secondary-foreground grid size-9 shrink-0 place-items-center rounded-full border text-sm font-bold">
@@ -74,7 +74,7 @@ export function AppMenu() {
                 <Link
                   href={href}
                   aria-current={current ? "page" : undefined}
-                  className={current ? "bg-secondary text-secondary-foreground" : undefined}
+                  className={current ? "bg-muted text-foreground" : undefined}
                 >
                   {label}
                 </Link>
@@ -86,7 +86,7 @@ export function AppMenu() {
               <Link
                 href="/admin"
                 aria-current={pathname === "/admin" || pathname.startsWith("/admin/") ? "page" : undefined}
-                className={pathname === "/admin" || pathname.startsWith("/admin/") ? "bg-secondary text-secondary-foreground" : undefined}
+                className={pathname === "/admin" || pathname.startsWith("/admin/") ? "bg-muted text-foreground" : undefined}
               >
                 Admin
               </Link>

@@ -17,7 +17,7 @@ function MoveSubmitButton({ direction, title, unavailable }: { direction: Direct
   return (
     <Button
       type="submit"
-      variant="outline"
+      variant="neutral"
       size="icon"
       className="size-11 rounded-md disabled:cursor-not-allowed disabled:opacity-35"
       disabled={unavailable || pending || saving}

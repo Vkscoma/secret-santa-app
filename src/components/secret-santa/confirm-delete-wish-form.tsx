@@ -40,7 +40,7 @@ export function ConfirmDeleteWishForm({
             <Button
               ref={keepButtonRef}
               type="button"
-              variant="outline"
+              variant="neutral"
               disabled={saving}
               className="h-11 rounded-md"
               onClick={() => setConfirming(false)}
@@ -58,9 +58,9 @@ export function ConfirmDeleteWishForm({
           ref={removeButtonRef}
           type="button"
           size="sm"
-          variant="ghost"
+          variant="destructive"
           disabled={saving}
-          className="h-11 justify-start rounded-md px-3 text-destructive hover:bg-destructive/5"
+          className="h-11 justify-start rounded-md px-3"
           onClick={() => setConfirming(true)}
         >
           <Trash2 className="size-4" aria-hidden="true" />

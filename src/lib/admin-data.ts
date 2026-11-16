@@ -17,7 +17,7 @@ export async function getUsersEligibleForExchange(exchangeId: string) {
 
   const ids = [...new Set([...allowedEntries.map(({ id }) => id), ...invitedEntries.map(({ id }) => id)])];
   if (!ids.length) return [];
-  return db.select({ id: user.id, name: user.name, email: user.email, role: user.role })
+  return db.select({ id: user.id, name: user.name, displayName: user.displayName, email: user.email, role: user.role })
     .from(user)
     .where(inArray(user.id, ids))
     .orderBy(user.name);

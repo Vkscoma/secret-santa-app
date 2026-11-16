@@ -141,7 +141,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             readOnly={previewing || Boolean(savedUrl)}
             className="h-12 min-w-0 flex-1 rounded-xl px-4 text-base"
           />
-          <Button type="button" onClick={pasteFromClipboard} disabled={pasting || previewing || Boolean(savedUrl)} className="h-12 w-full shrink-0 rounded-xl sm:w-auto sm:min-w-32">
+          <Button type="button" variant="neutral" onClick={pasteFromClipboard} disabled={pasting || previewing || Boolean(savedUrl)} className="h-12 w-full shrink-0 rounded-xl sm:w-auto sm:min-w-32">
             {previewing ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ClipboardPaste className="size-4" aria-hidden="true" />}
             {previewing ? "Adding…" : pasting ? "Pasting…" : "Paste link"}
           </Button>
@@ -157,9 +157,9 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
                 <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />
               </label>
             <fieldset className="space-y-2 text-sm font-medium"><legend>Priority (optional)</legend><div className="flex flex-wrap gap-2">
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="most_wanted" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Most wanted</span></label>
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="would_like" defaultChecked /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Would like</span></label>
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="nice_to_have" /><span className="inline-flex h-10 items-center rounded-xl border border-border px-4 transition peer-checked:border-secondary peer-checked:bg-secondary peer-checked:text-secondary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Nice to have</span></label>
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="most_wanted" /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Most wanted</span></label>
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="would_like" defaultChecked /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Would like</span></label>
+                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="nice_to_have" /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Nice to have</span></label>
               </div></fieldset>
             <label className="grid gap-1.5 text-sm font-medium">Price range (optional) <div className="flex gap-2">
                 <Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Min" className="h-12 rounded-xl px-4" />
@@ -168,9 +168,9 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
             <div className="sm:col-span-2"><WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} /></div>
           </div>
         </details>}
-        {!savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="submit" disabled={previewing} className="h-11 w-full min-w-44 rounded-xl sm:w-auto">{previewing ? "Saving…" : "Add to my list"} <ArrowUpRight className="size-4" /></Button>} />}
+        {!savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="submit" variant="affirmative" disabled={previewing} aria-busy={previewing} className="h-11 w-full min-w-44 rounded-xl sm:w-auto">{previewing ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : <>Add to my list <ArrowUpRight className="size-4" /></>}</Button>} />}
         {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
-        {savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="button" variant="outline" onClick={resetDraft} disabled={previewing} className="h-11 w-full rounded-xl sm:w-auto">Add another wish</Button>} />}
+        {savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="button" variant="neutral" onClick={resetDraft} disabled={previewing} className="h-11 w-full rounded-xl sm:w-auto">Add another wish</Button>} />}
       </form>
     </Card>
   );
