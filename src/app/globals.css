@@ -158,6 +158,14 @@
   .safe-top { padding-top: env(safe-area-inset-top); }
 }
 
+/* On phones, the fixed add-a-wish FAB sits over the end of the page. Reserve its height
+   (3.5rem), its bottom offset and a small gap under the footer so it never covers the footer text. */
+@media (width < 40rem) {
+  body:has([data-button-system-exception="mobile-fab"]) footer {
+    padding-bottom: calc(4.25rem + max(1.5rem, env(safe-area-inset-bottom)));
+  }
+}
+
 .string-lights span { animation: light-twinkle 3.2s ease-in-out infinite; }
 .dark .string-lights span { box-shadow: 0 0 9px currentColor; }
 .string-lights span:nth-child(2n) { animation-delay: 0.8s; }

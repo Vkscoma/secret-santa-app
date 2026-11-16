@@ -56,7 +56,7 @@ export function WishlistOwnerGiftCard({
           <h3 className="min-w-0 flex-1 leading-snug font-bold break-words">{title.title}</h3>
           <Badge variant="outline" className="shrink-0 px-2 py-0.5">
             {item.priority === "most_wanted" && (
-              <Star className="fill-gold text-gold size-3" aria-hidden="true" />
+              <Star className="fill-gold text-gold mr-1 size-3" aria-hidden="true" />
             )}
             {priorityLabels[item.priority] ?? "Would like"}
           </Badge>

@@ -393,8 +393,8 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
             {myAssignment &&
               exchange.year >= new Date().getFullYear() &&
               exchange.status !== "open" && (
-                <div className="flex justify-end">
-                  <Button asChild variant="neutral">
+                <div className="flex sm:justify-end">
+                  <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
                     <Link href={`/wishlists/${exchangeId}/recipient`}>
                       <Gift className="size-4" /> See {recipientFirstName ? possessive(recipientFirstName) : "my recipient’s"} list
                     </Link>
