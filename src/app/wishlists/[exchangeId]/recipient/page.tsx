@@ -2,23 +2,17 @@ import { notFound } from "next/navigation";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { Gift, Snowflake } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { requireExchangeMember } from "@/lib/authz";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { formatFirstName, possessive } from "@/lib/person-name";
 import { assignments, exchanges, itemClaims, wishlistItems, wishlists, user } from "@/lib/schema";
 
 type PageProps = { params: Promise<{ exchangeId: string }> };
-
-function formatBudget(minimum: number | null, maximum: number | null) {
-  if (minimum === null && maximum === null) return "Not set";
-  if (minimum === null) return `Up to $${maximum}`;
-  if (maximum === null) return minimum === 0 ? "No limit" : `At least $${minimum}`;
-  if (minimum === maximum) return `$${maximum}`;
-  return `$${minimum}–$${maximum}`;
-}
 
 export default async function RecipientWishlistPage({ params }: PageProps) {
   const { exchangeId } = await params;
@@ -42,7 +36,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
     .limit(1);
   if (!assignment) {
     return (
-      <div className="mx-auto max-w-4xl space-y-5 px-4 py-8 sm:px-6 sm:py-12">
+      <PageContainer maxWidth="4xl" className="space-y-5">
         <WishlistBreadcrumb
           items={[
             { label: "Home", href: "/" },
@@ -65,7 +59,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
             Names haven’t been drawn yet. Their gift ideas will show up here after the draw.
           </p>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -109,7 +103,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
     recipientName ? `${possessive(recipientName)} wish list` : "Your recipient’s wish list";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-10">
+    <PageContainer maxWidth="4xl" className="space-y-5 py-6 sm:py-10">
       <WishlistBreadcrumb
         items={[
           { label: "Home", href: "/" },
@@ -211,6 +205,6 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
           <p className="text-muted-foreground mt-1 text-sm">Check back later for updates.</p>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

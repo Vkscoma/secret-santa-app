@@ -4,12 +4,14 @@ import { and, asc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { FestiveIllustration, PageHeading, Snowfall } from "@/components/secret-santa/components";
 import { NudgeButton } from "@/components/secret-santa/nudge-button";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistOwnerGiftCard } from "@/components/secret-santa/wishlist-owner-gift-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import { isEmailAllowlisted } from "@/lib/auth-access";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { calendarDaysUntil } from "@/lib/exchange-countdown";
 import { shouldShowRecipientNudge } from "@/lib/nudge-visibility";
@@ -24,23 +26,18 @@ import {
   wishlists,
 } from "@/lib/schema";
 
-function formatBudget(minimum: number | null, maximum: number | null) {
-  if (minimum === maximum) return `$${maximum ?? "—"}`;
-  return `$${minimum ?? 0}–$${maximum ?? "—"}`;
-}
-
 export default async function Home() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !(await isEmailAllowlisted(session.user.email)))
     return (
-      <div className="mx-auto grid min-h-[calc(100svh-8rem)] max-w-6xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <PageContainer className="grid min-h-[calc(100svh-8rem)] items-center gap-8 py-12 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="mx-auto max-w-2xl space-y-7">
           <div className="border-gold/40 dark:border-gold/70 bg-gold/10 text-gold-foreground dark:text-gold inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold">
             <Sparkles className="size-3.5" /> A little holiday magic
           </div>
           <div className="space-y-4">
             <h1 className="max-w-xl text-4xl leading-[1.08] font-extrabold tracking-tight sm:text-6xl">
-              Family <span className="text-secondary">Secret Santa</span>
+              Family Secret<span className="text-cranberry"> Santa</span>
             </h1>
             <p className="text-muted-foreground max-w-xl text-base leading-7 sm:text-lg">
               Bring your favorite people together, share the little things you love, and keep every
@@ -53,7 +50,7 @@ export default async function Home() {
             </Link>
           </Button>
         </section>
-      </div>
+      </PageContainer>
     );
 
   const exchangeRows = await db
@@ -211,7 +208,7 @@ export default async function Home() {
   // eslint-disable-next-line react-hooks/purity
   const now = new Date(Date.now());
   return (
-    <div className="relative mx-auto w-full max-w-6xl overflow-x-clip px-4 py-8 sm:px-6 sm:py-11">
+    <PageContainer className="relative sm:py-11">
       <Snowfall />
       <div className="relative z-10 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="mx-auto w-full max-w-3xl min-w-0">
@@ -441,6 +438,6 @@ export default async function Home() {
           <FestiveIllustration />
         </aside>
       </div>
-    </div>
+    </PageContainer>
   );
 }

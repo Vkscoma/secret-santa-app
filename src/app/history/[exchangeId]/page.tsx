@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { and, asc, eq, lt } from "drizzle-orm";
 import { ArrowLeft, CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { isPastHistoryExchange, mayShowSantaIdentity } from "@/lib/history-policy";
 import { assignments, exchangeParticipants, exchanges, user, wishlistItems, wishlists } from "@/lib/schema";
@@ -67,15 +69,13 @@ export default async function HistoryExchangePage({ params }: PageProps) {
     priceBucket: wishlistItems.priceBucket,
   }).from(wishlistItems).where(eq(wishlistItems.wishlistId, recipientWishlist.id))
     .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.createdAt)) : [];
-  const budget = exchange.budgetMin === exchange.budgetMax
-    ? `$${exchange.budgetMax ?? "—"}`
-    : `$${exchange.budgetMin ?? 0}–$${exchange.budgetMax ?? "—"}`;
+  const budget = formatBudget(exchange.budgetMin, exchange.budgetMax);
 
-  return <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
+  return <PageContainer maxWidth="4xl" className="space-y-6">
     <Link href="/history" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground"><ArrowLeft className="size-4" /> Exchange history</Link>
     <PageHeading eyebrow={`${exchange.year} exchange`} title={exchange.name} description="Your saved, read-only gift ideas from that year." />
     <Card className="space-y-3 p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="size-4" />{new Intl.DateTimeFormat("en", { dateStyle: "full", timeZone: exchange.timeZone }).format(exchange.date)} · {budget} budget</p>
+      <p className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="size-4" />{new Intl.DateTimeFormat("en", { dateStyle: "full", timeZone: exchange.timeZone }).format(exchange.date)} · Budget: {budget}</p>
       {recipient ? <p className="text-lg font-bold">You gave to {recipient.name || recipient.fallbackName}</p> : <p className="text-sm text-muted-foreground">Your giver assignment is not available for this exchange.</p>}
       {santa ? <p className="text-sm">Your Secret Santa was <span className="font-semibold">{santa.name || santa.fallbackName}</span>.</p> : <p className="text-sm text-muted-foreground">Your Secret Santa’s identity is still secret.</p>}
     </Card>
@@ -104,5 +104,5 @@ export default async function HistoryExchangePage({ params }: PageProps) {
         }) : <div className="rounded-xl border border-dashed border-border p-5 text-center"><Gift className="mx-auto size-6 text-muted-foreground" /><p className="mt-2 text-sm text-muted-foreground">No gift ideas were saved for this list.</p></div>}
       </div>
     </Card>}
-  </div>;
+  </PageContainer>;
 }

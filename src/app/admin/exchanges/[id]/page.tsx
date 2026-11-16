@@ -7,6 +7,7 @@ import { z } from "zod";
 import { PairingCheckForm } from "@/app/admin/exchanges/[id]/pairing-check-form";
 import { InviteCreateForm } from "@/app/admin/invite-create-form";
 import { ExchangeStepTracker } from "@/components/admin/exchange-step-tracker";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -184,7 +185,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
   const currentAdminIsParticipant = participantIds.has(session.user.id);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
+    <PageContainer className="space-y-6 py-6 sm:py-10">
       <Link href="/admin" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" aria-hidden="true" /> Back to administration
       </Link>
@@ -280,7 +281,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
             const expired = Boolean(invite.expiresAt && invite.expiresAt <= new Date());
             const exhausted = invite.maxUses !== null && uses >= invite.maxUses;
             return <div key={invite.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
-              <div><p className="text-sm font-semibold">{invite.label || "Invite link"}</p><p className="text-sm text-muted-foreground">{invite.maxUses === null ? `${uses} ${uses === 1 ? "use" : "uses"} · unlimited` : `Used ${uses} of ${invite.maxUses} times`}</p><p className="text-xs text-muted-foreground">{invite.revokedAt ? "Revoked" : expired ? "Expired" : exhausted ? "Use limit reached" : "Active for future exchanges"}{invite.expiresAt ? ` · expires ${formatGiftDay(invite.expiresAt, exchange.timeZone)}` : " · no expiry"}</p></div>
+              <div className="min-w-0 wrap-break-word"><p className="text-sm font-semibold">{invite.label || "Invite link"}</p><p className="text-sm text-muted-foreground">{invite.maxUses === null ? `${uses} ${uses === 1 ? "use" : "uses"} · unlimited` : `Used ${uses} of ${invite.maxUses} times`}</p><p className="text-xs text-muted-foreground">{invite.revokedAt ? "Revoked" : expired ? "Expired" : exhausted ? "Use limit reached" : "Active for future exchanges"}{invite.expiresAt ? ` · expires ${formatGiftDay(invite.expiresAt, exchange.timeZone)}` : " · no expiry"}</p></div>
               {!invite.revokedAt && !expired && !exhausted && <form action={revokeExchangeInvite}><input type="hidden" name="inviteId" value={invite.id} /><Button size="sm" variant="destructive"><Ban className="size-4" aria-hidden="true" />Revoke</Button></form>}
             </div>;
           })}</div>
@@ -375,7 +376,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
             const expired = Boolean(invite.expiresAt && invite.expiresAt <= new Date());
             const exhausted = invite.maxUses !== null && uses >= invite.maxUses;
             return <div key={invite.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
-              <div><p className="text-sm font-semibold">{invite.label || "Invite link"}</p><p className="text-sm text-muted-foreground">{invite.maxUses === null ? `${uses} ${uses === 1 ? "use" : "uses"} · unlimited` : `Used ${uses} of ${invite.maxUses} times`}</p><p className="text-xs text-muted-foreground">{invite.revokedAt ? "Revoked" : expired ? "Expired" : exhausted ? "Use limit reached" : "Active"}{invite.expiresAt ? ` · expires ${formatGiftDay(invite.expiresAt, exchange.timeZone)}` : " · no expiry"}</p></div>
+              <div className="min-w-0 wrap-break-word"><p className="text-sm font-semibold">{invite.label || "Invite link"}</p><p className="text-sm text-muted-foreground">{invite.maxUses === null ? `${uses} ${uses === 1 ? "use" : "uses"} · unlimited` : `Used ${uses} of ${invite.maxUses} times`}</p><p className="text-xs text-muted-foreground">{invite.revokedAt ? "Revoked" : expired ? "Expired" : exhausted ? "Use limit reached" : "Active"}{invite.expiresAt ? ` · expires ${formatGiftDay(invite.expiresAt, exchange.timeZone)}` : " · no expiry"}</p></div>
               {!invite.revokedAt && !expired && !exhausted && <form action={revokeExchangeInvite}><input type="hidden" name="inviteId" value={invite.id} /><Button size="sm" variant="destructive"><Ban className="size-4" aria-hidden="true" />Revoke</Button></form>}
             </div>;
           })}</div> : <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">No invite links yet.</p>}
@@ -434,6 +435,6 @@ export default async function AdminExchangePage({ params }: PageProps) {
       </details>}
 
       {exchange.status === "revealed" && <p className="text-center text-xs text-muted-foreground">Email history is available on the administration page.</p>}
-    </div>
+    </PageContainer>
   );
 }

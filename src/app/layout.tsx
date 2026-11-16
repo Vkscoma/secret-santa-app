@@ -44,7 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${jakarta.variable} flex min-h-screen flex-col antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <SiteHeader />
-          <main id="main-content" className="relative flex-1">{children}</main>
+          <main id="main-content" className="relative min-w-0 flex-1">{children}</main>
           <SiteFooter />
           <InstallAppPrompt />
           <Toaster richColors position="top-right" />

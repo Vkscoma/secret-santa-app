@@ -2,12 +2,14 @@ import Link from "next/link";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { PageContainer } from "@/components/secret-santa/page-container";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { safeRecipientProductImageUrl } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
+import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { formatFirstName, possessive } from "@/lib/person-name";
 import {
@@ -18,14 +20,6 @@ import {
   wishlistItems,
   wishlists,
 } from "@/lib/schema";
-
-function formatBudget(minimum: number | null, maximum: number | null) {
-  if (minimum === null && maximum === null) return "Not set";
-  if (minimum === null) return `Up to $${maximum}`;
-  if (maximum === null) return minimum === 0 ? "No limit" : `At least $${minimum}`;
-  if (minimum === maximum) return `$${maximum}`;
-  return `$${minimum}–$${maximum}`;
-}
 
 function statusLabel(status: string) {
   if (status === "drawn" || status === "revealed") return "Names drawn";
@@ -109,7 +103,7 @@ export default async function WishlistsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-5xl space-y-7 px-4 py-8 sm:px-6 sm:py-12">
+    <PageContainer maxWidth="5xl" className="space-y-7">
       <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists" }]} />
       <PageHeading
         eyebrow={`${currentYear} holiday exchanges`}
@@ -281,6 +275,6 @@ export default async function WishlistsPage() {
           </Button>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

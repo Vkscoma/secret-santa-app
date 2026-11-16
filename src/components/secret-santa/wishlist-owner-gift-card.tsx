@@ -64,7 +64,7 @@ export function WishlistOwnerGiftCard({
         <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
           {!title.isFallback && store !== "Gift idea" && (
             <>
-              <span>{store}</span>
+              <span className="min-w-0 wrap-anywhere">{store}</span>
               {item.priceMin !== null || item.priceMax !== null ? (
                 <span aria-hidden="true">·</span>
               ) : null}
@@ -79,7 +79,7 @@ export function WishlistOwnerGiftCard({
           />
         </div>
         {!compact && item.notes && (
-          <p className="text-muted-foreground mt-2 text-sm leading-5 whitespace-pre-wrap">
+          <p className="text-muted-foreground mt-2 text-sm leading-5 whitespace-pre-wrap wrap-break-word">
             {item.notes}
           </p>
         )}
