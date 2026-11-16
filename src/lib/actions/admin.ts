@@ -32,6 +32,8 @@ import {
 } from "@/lib/schema";
 
 const idSchema = z.string().uuid();
+// Account ids come from BetterAuth and are not UUIDs.
+const userIdSchema = z.string().min(1).max(160);
 const exchangeSchema = z.object({
   name: z.string().trim().min(2).max(100),
   year: z.coerce.number().int().min(2020).max(2200),
@@ -155,7 +157,7 @@ export async function setExchangeParticipants(formData: FormData) {
   const session = await requireAdmin();
   const exchangeId = idSchema.parse(field(formData, "exchangeId"));
   const participantIds = [...new Set(formData.getAll("participantId").filter((value): value is string => typeof value === "string"))];
-  if (participantIds.some((id) => !idSchema.safeParse(id).success)) throw new Error("Invalid participant selection.");
+  if (participantIds.some((id) => !userIdSchema.safeParse(id).success)) throw new Error("Invalid participant selection.");
   const eligibleIds = await getEligibleUserIdsForExchange(exchangeId, participantIds);
   if (eligibleIds.size !== participantIds.length) throw new Error("Participants must have an eligible account for this exchange.");
 
