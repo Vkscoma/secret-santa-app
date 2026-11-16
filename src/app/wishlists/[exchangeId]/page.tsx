@@ -5,11 +5,11 @@ import { Gift, Settings2, Sparkles } from "lucide-react";
 import { PageHeading, ProgressNudge, StringLights } from "@/components/secret-santa/components";
 import { ConfirmDeleteWishForm } from "@/components/secret-santa/confirm-delete-wish-form";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
+import { WishFields } from "@/components/secret-santa/wish-fields";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { WishlistComposerSheet } from "@/components/secret-santa/wishlist-composer-sheet";
-import { WishlistEditForm, WishlistTitleInput } from "@/components/secret-santa/wishlist-edit-form";
+import { WishlistEditForm } from "@/components/secret-santa/wishlist-edit-form";
 import { WishlistEditSection } from "@/components/secret-santa/wishlist-edit-section";
-import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
 import { WishlistMoveActions } from "@/components/secret-santa/wishlist-move-actions";
 import { WishlistOwnerGiftCard } from "@/components/secret-santa/wishlist-owner-gift-card";
 import {
@@ -225,83 +225,28 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                               >
                                 <input type="hidden" name="exchangeId" value={exchangeId} />
                                 <input type="hidden" name="itemId" value={item.id} />
-                                <WishlistTitleInput initialTitle={item.title} />
-                                <label className="grid gap-1 text-sm font-medium">
-                                  Product link
-                                  <input
-                                    name="url"
-                                    type="url"
-                                    maxLength={2000}
-                                    defaultValue={item.url ?? ""}
-                                    className="border-input bg-background h-10 rounded-md border px-3"
-                                  />
-                                </label>
-                                {item.url && (
-                                  <RefreshWishlistImage exchangeId={exchangeId} itemId={item.id} />
-                                )}
-                                <label className="grid gap-1 text-sm font-medium">
-                                  Store
-                                  <input
-                                    name="storeName"
-                                    maxLength={100}
-                                    defaultValue={item.storeName ?? ""}
-                                    className="border-input bg-background h-10 rounded-md border px-3"
-                                  />
-                                </label>
-                                <WishlistImagePicker
-                                  key={item.imageUrl ?? ""}
+                                <WishFields
                                   exchangeId={exchangeId}
                                   itemId={item.id}
-                                  imageUrl={item.imageUrl ?? ""}
+                                  showTitle
+                                  titleRequired
+                                  showUrl
+                                  urlActions={
+                                    item.url ? (
+                                      <RefreshWishlistImage exchangeId={exchangeId} itemId={item.id} />
+                                    ) : null
+                                  }
+                                  defaults={{
+                                    title: item.title,
+                                    url: item.url ?? "",
+                                    storeName: item.storeName ?? "",
+                                    priceMin: item.priceMin,
+                                    priceMax: item.priceMax,
+                                    priority: item.priority,
+                                    notes: item.notes ?? "",
+                                    imageUrl: item.imageUrl ?? "",
+                                  }}
                                 />
-                                <div className="grid gap-3 sm:grid-cols-3">
-                                  <label className="grid gap-1 text-sm font-medium">
-                                    Priority
-                                    <select
-                                      name="priority"
-                                      defaultValue={item.priority}
-                                      className="border-input bg-background h-10 rounded-md border px-3"
-                                    >
-                                      <option value="most_wanted">Most wanted</option>
-                                      <option value="would_like">Would like</option>
-                                      <option value="nice_to_have">Nice to have</option>
-                                    </select>
-                                  </label>
-                                  <label className="grid gap-1 text-sm font-medium">
-                                    Price from
-                                    <input
-                                      name="priceMin"
-                                      type="number"
-                                      min="0"
-                                      max="1000000"
-                                      step="1"
-                                      defaultValue={item.priceMin ?? ""}
-                                      className="border-input bg-background h-10 rounded-md border px-3"
-                                    />
-                                  </label>
-                                  <label className="grid gap-1 text-sm font-medium">
-                                    Price up to
-                                    <input
-                                      name="priceMax"
-                                      type="number"
-                                      min="0"
-                                      max="1000000"
-                                      step="1"
-                                      defaultValue={item.priceMax ?? ""}
-                                      className="border-input bg-background h-10 rounded-md border px-3"
-                                    />
-                                  </label>
-                                </div>
-                                <label className="grid gap-1 text-sm font-medium">
-                                  Notes
-                                  <textarea
-                                    name="notes"
-                                    maxLength={1000}
-                                    rows={2}
-                                    defaultValue={item.notes ?? ""}
-                                    className="border-input bg-background rounded-md border px-3 py-2"
-                                  />
-                                </label>
                               </WishlistEditForm>
                             </WishlistEditSection>
                           )}

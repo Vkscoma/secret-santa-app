@@ -33,7 +33,7 @@ export function ConfirmDeleteWishForm({
       <input type="hidden" name="itemId" value={itemId} />
       {confirming ? (
         <div role="group" aria-label={`Confirm removal of ${title}`} className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Remove “{title}” from your list? This can’t be undone.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -47,7 +47,12 @@ export function ConfirmDeleteWishForm({
             >
               Keep wish
             </Button>
-            <Button type="submit" variant="destructive" disabled={saving} className="h-11 rounded-md">
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={saving}
+              className="h-11 rounded-md"
+            >
               <Trash2 className="size-4" aria-hidden="true" />
               Remove wish
             </Button>
@@ -60,10 +65,10 @@ export function ConfirmDeleteWishForm({
           size="sm"
           variant="destructive"
           disabled={saving}
-          className="h-11 justify-start rounded-md px-3"
+          className="h-11 w-full rounded-md px-3 md:w-auto"
           onClick={() => setConfirming(true)}
         >
-          <Trash2 className="size-4" aria-hidden="true" />
+          <Trash2 className="size-4 text-center" aria-hidden="true" />
           Remove
         </Button>
       )}

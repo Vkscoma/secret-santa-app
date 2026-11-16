@@ -2,44 +2,55 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPaste, Gift, LoaderCircle, ArrowUpRight } from "lucide-react";
-import { WishlistImagePicker } from "@/components/secret-santa/wishlist-image-picker";
+import { ArrowUpRight, ChevronDown, ClipboardPaste, Gift, LoaderCircle } from "lucide-react";
+import { WishFields } from "@/components/secret-santa/wish-fields";
 import { useWishlistPaste } from "@/components/secret-santa/wishlist-paste-provider";
 import { createPasteSession, singlePastedUrl } from "@/components/secret-santa/wishlist-paste-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FormActionRow } from "@/components/ui/form-action-row";
 import { Input } from "@/components/ui/input";
 import { createWishlistItem, createPastedWishlistItem } from "@/lib/actions/wishlists";
 import { prepareWishlistImage } from "@/lib/prepare-wishlist-image";
+import { cn } from "@/lib/utils";
 
 export type WishlistComposerProps = {
   exchangeId: string; initialUrl?: string; initialTitle?: string; initialImageUrl?: string; initialPrice?: string; initialStoreName?: string;
   /** Called once a wish has been saved, e.g. so a mobile sheet can close and reveal the list. */
   onSaved?: () => void;
+  /**
+   * `sheet` fills a height-limited bottom sheet: the fields scroll inside it and the
+   * action stays pinned at the bottom. `inline` flows with the page.
+   */
+  layout?: "inline" | "sheet";
 };
 
-export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "", initialImageUrl = "", initialPrice = "", initialStoreName = "", onSaved }: WishlistComposerProps) {
+function price(details: FormData, name: string) {
+  const value = details.get(name);
+  return value ? Math.round(Number(value)) : null;
+}
+
+export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "", initialImageUrl = "", initialPrice = "", initialStoreName = "", onSaved, layout = "inline" }: WishlistComposerProps) {
   const router = useRouter();
   const pasteContext = useWishlistPaste();
   const session = useRef(createPasteSession(() => crypto.randomUUID()));
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState(initialUrl || initialTitle);
   const [url, setUrl] = useState(initialUrl);
-  const [title, setTitle] = useState(initialTitle);
-  const [imageUrl, setImageUrl] = useState(initialImageUrl);
-  const [storeName, setStoreName] = useState(initialStoreName);
-  const [priceMin, setPriceMin] = useState(initialPrice);
-  const [priceMax, setPriceMax] = useState(initialPrice);
+  // The detail fields are uncontrolled; a new key clears them after a save.
+  const [fieldsKey, setFieldsKey] = useState(0);
+  const [prefilled, setPrefilled] = useState(true);
   const [previewing, setPreviewing] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
   const [pasting, setPasting] = useState(false);
   const [savedUrl, setSavedUrl] = useState("");
   const activeItemId = useRef<string | null>(null);
+  const sheet = layout === "sheet";
+  const draftIsLink = Boolean(url);
 
   function resetDraft() {
     if (activeItemId.current && !savedUrl) pasteContext?.removePending(activeItemId.current);
-    activeItemId.current = null; session.current.reset(); setDraft(""); setUrl(""); setTitle(""); setImageUrl(""); setStoreName(""); setPriceMin(""); setPriceMax(""); setSavedUrl(""); setPreviewMessage("");
+    activeItemId.current = null; session.current.reset(); setDraft(""); setUrl(""); setSavedUrl(""); setPreviewMessage("");
+    setPrefilled(false); setFieldsKey((key) => key + 1);
   }
 
   async function savePasted(link: string, details?: FormData) {
@@ -57,7 +68,8 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
           if (details) await prepareWishlistImage(details);
           const result = await createPastedWishlistItem({ exchangeId, itemId, url: originalUrl, ...(details ? { details: {
             title: String(details.get("title") ?? ""), imageUrl: String(details.get("imageUrl") ?? ""), storeName: String(details.get("storeName") ?? ""),
-            priceMin: details.get("priceMin") ? Number(details.get("priceMin")) : null, priceMax: details.get("priceMax") ? Number(details.get("priceMax")) : null,
+            notes: String(details.get("notes") ?? ""),
+            priceMin: price(details, "priceMin"), priceMax: price(details, "priceMax"),
             priority: String(details.get("priority") ?? "would_like") as "most_wanted" | "would_like" | "nice_to_have",
           } } : {}) });
           if (!result.ok) throw new Error(result.error || "Could not save your wish. Try again.");
@@ -90,9 +102,7 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
     if (activeItemId.current && !savedUrl) pasteContext?.removePending(activeItemId.current);
     activeItemId.current = null;
     session.current.reset(); setSavedUrl(""); setDraft(value); setPreviewMessage("");
-    const link = singlePastedUrl(value);
-    setUrl(link ?? "");
-    if (!link) setTitle(value);
+    setUrl(singlePastedUrl(value) ?? "");
   }
 
   async function submitWish(formData: FormData) {
@@ -117,60 +127,61 @@ export function WishlistComposer({ exchangeId, initialUrl = "", initialTitle = "
   }
 
   return (
-    <Card className="overflow-hidden border-border/80 p-5 shadow-sm sm:p-6">
-      <div className="mb-5 flex items-start gap-3">
+    <Card className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", sheet ? "rounded-none border-0 bg-transparent shadow-none" : "border-border/80 p-5 shadow-sm sm:p-6")}>
+      <div className={cn("flex shrink-0 items-start gap-3", sheet ? "px-5 pt-5 pr-14 pb-3" : "mb-5")}>
         <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground"><Gift className="size-5" aria-hidden="true" /></div>
         <div className="min-w-0">
           <h2 className="text-xl font-bold">Add a wish</h2>
           <p className="mt-1 text-sm text-muted-foreground">Type a gift name or paste a link. You can add details later.</p>
         </div>
       </div>
-      <form ref={formRef} action={submitWish} className="grid gap-4">
-        <input type="hidden" name="exchangeId" value={exchangeId} />
-        <input type="hidden" name="url" value={url} />
-        <label htmlFor="wishlist-wish-draft" className="sr-only">Gift idea or product link</label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            id="wishlist-wish-draft"
-            value={draft}
-            onChange={(event) => updateDraft(event.target.value)}
-            onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted, formRef.current ? new FormData(formRef.current) : undefined); } }}
-            placeholder="Type a gift or paste a link"
-            autoComplete="off"
-            required
-            readOnly={previewing || Boolean(savedUrl)}
-            className="h-12 min-w-0 flex-1 rounded-xl px-4 text-base"
-          />
-          <Button type="button" variant="neutral" onClick={pasteFromClipboard} disabled={pasting || previewing || Boolean(savedUrl)} className="h-12 w-full shrink-0 rounded-xl sm:w-auto sm:min-w-32">
-            {previewing ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ClipboardPaste className="size-4" aria-hidden="true" />}
-            {previewing ? "Adding…" : pasting ? "Pasting…" : "Paste link"}
-          </Button>
-        </div>
-        {previewing && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />Saving your wish…</p>}
-        {!savedUrl && <details className="group mt-2 border-t pt-4">
-          <summary className="list-none cursor-pointer text-sm font-semibold marker:hidden">More details (optional) <span className="float-right text-muted-foreground transition group-open:rotate-180">⌄</span></summary>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-sm font-medium">Gift name (optional)
-              <Input name="title" maxLength={200} value={title} onChange={(event) => { setTitle(event.target.value); }} placeholder="For example, a blue wool scarf" className="h-12 rounded-xl px-4 sm:col-span-2" />
-            </label>
-            <label className="grid gap-1.5 text-sm font-medium">Store or website (optional)
-                <Input name="storeName" maxLength={100} value={storeName} onChange={(event) => { setStoreName(event.target.value); }} placeholder="Optional" className="h-12 rounded-xl px-4" />
-              </label>
-            <fieldset className="space-y-2 text-sm font-medium"><legend>Priority (optional)</legend><div className="flex flex-wrap gap-2">
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="most_wanted" /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Most wanted</span></label>
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="would_like" defaultChecked /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Would like</span></label>
-                <label className="cursor-pointer"><input className="peer sr-only" type="radio" name="priority" value="nice_to_have" /><span className="inline-flex h-10 items-center rounded-xl border border-neutral-border bg-transparent px-4 transition hover:border-foreground/60 peer-checked:border-2 peer-checked:border-foreground peer-checked:font-semibold peer-focus-visible:ring-2 peer-focus-visible:ring-ring">Nice to have</span></label>
-              </div></fieldset>
-            <label className="grid gap-1.5 text-sm font-medium">Price range (optional) <div className="flex gap-2">
-                <Input name="priceMin" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMin} onChange={(event) => { setPriceMin(event.target.value); }} placeholder="Min" className="h-12 rounded-xl px-4" />
-                <Input name="priceMax" type="number" inputMode="numeric" min="0" max="1000000" step="1" value={priceMax} onChange={(event) => { setPriceMax(event.target.value); }} placeholder="Max" className="h-12 rounded-xl px-4" />
-              </div></label>
-            <div className="sm:col-span-2"><WishlistImagePicker exchangeId={exchangeId} imageUrl={imageUrl} onChange={(value) => { setImageUrl(value); }} /></div>
+      <form ref={formRef} action={submitWish} className="flex min-h-0 flex-1 flex-col">
+        {/* pt-1 leaves room for the focus ring, which a scroll container would otherwise clip. */}
+        <div data-wish-scroll className={cn("grid min-h-0 flex-1 content-start gap-4", sheet && "overflow-y-auto overscroll-contain px-5 pt-1 pb-4")}>
+          <input type="hidden" name="exchangeId" value={exchangeId} />
+          <input type="hidden" name="url" value={url} />
+          {/* The main field is the gift name unless it holds a link; then "Gift name" in More details is the title. */}
+          {!draftIsLink && <input type="hidden" name="title" value={draft} />}
+          <label htmlFor="wishlist-wish-draft" className="sr-only">Gift idea or product link</label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="wishlist-wish-draft"
+              value={draft}
+              onChange={(event) => updateDraft(event.target.value)}
+              onPaste={(event) => { const pasted = singlePastedUrl(event.clipboardData.getData("text")); if (pasted) { event.preventDefault(); setDraft(pasted); setUrl(pasted); void savePasted(pasted, formRef.current ? new FormData(formRef.current) : undefined); } }}
+              placeholder="Type a gift or paste a link"
+              autoComplete="off"
+              required
+              readOnly={previewing || Boolean(savedUrl)}
+              className="h-12 w-full min-w-0 rounded-xl px-4 text-base sm:w-auto sm:flex-1"
+            />
+            <Button type="button" variant="neutral" onClick={pasteFromClipboard} disabled={pasting || previewing || Boolean(savedUrl)} className="h-12 w-full shrink-0 rounded-xl sm:w-auto sm:min-w-32">
+              {previewing ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ClipboardPaste className="size-4" aria-hidden="true" />}
+              {previewing ? "Adding…" : pasting ? "Pasting…" : "Paste link"}
+            </Button>
           </div>
-        </details>}
-        {!savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="submit" variant="affirmative" disabled={previewing} aria-busy={previewing} className="h-11 w-full min-w-44 rounded-xl sm:w-auto">{previewing ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : <>Add to my list <ArrowUpRight className="size-4" /></>}</Button>} />}
-        {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
-        {savedUrl && <FormActionRow className="border-t border-border pt-4" primary={<Button type="button" variant="neutral" onClick={resetDraft} disabled={previewing} className="h-11 w-full rounded-xl sm:w-auto">Add another wish</Button>} />}
+          {previewing && <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />Saving your wish…</p>}
+          {!savedUrl && <details className="group border-t border-border pt-2">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-sm font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
+              More details (optional)
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+            </summary>
+            <div className="pt-3 pb-1">
+              <WishFields
+                key={fieldsKey}
+                exchangeId={exchangeId}
+                showTitle={draftIsLink}
+                defaults={prefilled ? { title: initialTitle, storeName: initialStoreName, priceMin: initialPrice, priceMax: initialPrice, imageUrl: initialImageUrl } : {}}
+              />
+            </div>
+          </details>}
+        </div>
+        <div className={cn("grid shrink-0 gap-3 border-t border-border", sheet ? "px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]" : "mt-4 pt-4")}>
+          {previewMessage && <p role="status" className="text-sm text-muted-foreground">{previewMessage}</p>}
+          {savedUrl
+            ? <Button type="button" variant="neutral" onClick={resetDraft} disabled={previewing} className="h-12 w-full rounded-xl sm:ml-auto sm:w-auto">Add another wish</Button>
+            : <Button type="submit" variant="affirmative" disabled={previewing} aria-busy={previewing} className="h-12 w-full min-w-44 rounded-xl sm:ml-auto sm:w-auto">{previewing ? <><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving…</> : <>Add to my list <ArrowUpRight className="size-4" aria-hidden="true" /></>}</Button>}
+        </div>
       </form>
     </Card>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { ImagePlus } from "lucide-react";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,8 @@ export function WishlistImagePicker({ exchangeId, itemId, imageUrl, onChange }: 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
+  const [showLink, setShowLink] = useState(false);
+  const linkRegionId = useId();
   const displayedImageUrl = onChange ? imageUrl : currentImageUrl;
   function changeImage(url: string) { setCurrentImageUrl(url); onChange?.(url); }
 
@@ -64,13 +67,19 @@ export function WishlistImagePicker({ exchangeId, itemId, imageUrl, onChange }: 
   }}>
     <input type="hidden" name="imageUrl" value={displayedImageUrl} />
     {displayedImageUrl && <ProductImage src={displayedImageUrl} alt="Gift photo" className="size-24" />}
-    <div className="flex min-w-0 flex-wrap gap-2">
-      <input ref={inputRef} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Choose a gift image" onChange={(event) => void upload(event.target.files?.[0])} />
-      <Button type="button" variant="neutral" disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Adding image…" : "Add photo or screenshot"}</Button>
-      <label className="sr-only" htmlFor={`wishlist-image-url-${itemId ?? "new"}`}>Paste image link</label>
-      <Input id={`wishlist-image-url-${itemId ?? "new"}`} type="url" value={displayedImageUrl} onChange={(event) => changeImage(event.target.value)} placeholder="Or paste an image link" className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-[14rem]" />
+    {/* No `capture` attribute: phones then offer the photo library (for screenshots) as well as the camera. */}
+    <input ref={inputRef} className="sr-only" type="file" accept="image/*" aria-label="Choose a gift image" onChange={(event) => void upload(event.target.files?.[0])} />
+    <Button type="button" variant="neutral" disabled={busy} className="h-12 w-full rounded-xl" onClick={() => inputRef.current?.click()}>
+      {busy ? "Adding image…" : <><ImagePlus className="size-4" aria-hidden="true" />Add photo or screenshot</>}
+    </Button>
+    <button type="button" aria-expanded={showLink} aria-controls={linkRegionId} onClick={() => setShowLink((value) => !value)} className="text-muted-foreground hover:text-foreground min-h-11 justify-self-start rounded-md text-sm underline underline-offset-4">
+      Use an image link instead
+    </button>
+    <div id={linkRegionId} hidden={!showLink}>
+      <label className="sr-only" htmlFor={`wishlist-image-url-${itemId ?? "new"}`}>Image link</label>
+      <Input id={`wishlist-image-url-${itemId ?? "new"}`} type="url" inputMode="url" value={displayedImageUrl} onChange={(event) => changeImage(event.target.value)} placeholder="https://" className="h-12 w-full min-w-0 rounded-xl px-4" />
     </div>
-    <p role="status" className="text-xs text-muted-foreground">You can also paste a copied image here.</p>
+    <p className="text-xs text-muted-foreground">Tip: you can also paste a copied image.</p>
     {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
   </div>;
 }
