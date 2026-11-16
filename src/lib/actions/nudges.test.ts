@@ -25,9 +25,9 @@ describe("wishlist email nudge", () => {
   });
 
   it("sends an anonymous email to the assigned recipient with a wishlist link", async () => {
-    setup({ recipientEmail: "recipient@example.test", exchangeName: "Holiday 2026", status: "drawn", hasWishlistItems: false });
+    setup({ recipientEmail: "recipient@example.test", recipientDisplayName: null, recipientName: "Michelle Scoma", exchangeName: "Holiday 2026", status: "drawn", hasWishlistItems: false });
     const result = await nudgeRecipient("11111111-1111-4111-8111-111111111111");
-    expect(result).toEqual({ ok: true, message: "Your recipient has been nudged by email." });
+    expect(result).toEqual({ ok: true, message: "Michelle has been nudged by email." });
     expect(sendEmail).toHaveBeenCalledWith({
       to: "recipient@example.test",
       kind: "manual-nudge",
@@ -47,9 +47,9 @@ describe("wishlist email nudge", () => {
   });
 
   it("does not nudge a recipient who already has gift ideas", async () => {
-    setup({ recipientEmail: "recipient@example.test", exchangeName: "Holiday 2026", status: "drawn", hasWishlistItems: true });
+    setup({ recipientEmail: "recipient@example.test", recipientDisplayName: null, recipientName: "Michellescoma", exchangeName: "Holiday 2026", status: "drawn", hasWishlistItems: true });
     const result = await nudgeRecipient("11111111-1111-4111-8111-111111111111");
-    expect(result).toEqual({ ok: false, message: "Your recipient has added gift ideas already." });
+    expect(result).toEqual({ ok: false, message: "Michellescoma has added gift ideas already." });
     expect(consumeLimit).not.toHaveBeenCalled();
     expect(sendEmail).not.toHaveBeenCalled();
   });

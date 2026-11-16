@@ -23,10 +23,12 @@ import { Card } from "@/components/ui/card";
 import { copyPreviousWishlist } from "@/lib/actions/wishlists";
 import { requireExchangeMember } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { formatFirstName, possessive } from "@/lib/person-name";
 import {
   assignments,
   exchangeParticipants,
   exchanges,
+  user,
   wishlistItems,
   wishlists,
 } from "@/lib/schema";
@@ -73,10 +75,23 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
     .orderBy(desc(exchanges.year))
     .limit(1);
   const [myAssignment] = await db
-    .select({ id: assignments.id })
+    .select({
+      id: assignments.id,
+      recipientDisplayName: user.displayName,
+      recipientName: user.name,
+      recipientEmail: user.email,
+    })
     .from(assignments)
+    .innerJoin(user, eq(assignments.receiverId, user.id))
     .where(and(eq(assignments.exchangeId, exchangeId), eq(assignments.giverId, session.user.id)))
     .limit(1);
+  const recipientFirstName = myAssignment
+    ? formatFirstName(
+        myAssignment.recipientDisplayName,
+        myAssignment.recipientName,
+        myAssignment.recipientEmail
+      )
+    : null;
   const editable = exchange.year >= new Date().getFullYear() && exchange.status !== "closed";
 
   const budget =
@@ -381,7 +396,7 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 <div className="flex justify-end">
                   <Button asChild variant="neutral">
                     <Link href={`/wishlists/${exchangeId}/recipient`}>
-                      <Gift className="size-4" /> See my recipient’s list
+                      <Gift className="size-4" /> See {recipientFirstName ? possessive(recipientFirstName) : "my recipient’s"} list
                     </Link>
                   </Button>
                 </div>

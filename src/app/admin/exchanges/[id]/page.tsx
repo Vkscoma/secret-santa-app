@@ -7,7 +7,6 @@ import { z } from "zod";
 import { PairingCheckForm } from "@/app/admin/exchanges/[id]/pairing-check-form";
 import { InviteCreateForm } from "@/app/admin/invite-create-form";
 import { ExchangeStepTracker } from "@/components/admin/exchange-step-tracker";
-import { formatRecipientFirstName } from "@/components/secret-santa/recipient-gift-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +30,7 @@ import { isSuperAdminEmail } from "@/lib/auth-access";
 import { requireAdmin } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { utcToLocalInput } from "@/lib/exchange-time";
+import { formatFirstName } from "@/lib/person-name";
 import {
   assignments,
   auditLog,
@@ -63,7 +63,7 @@ function formatGiftDay(date: Date, timeZone: string) {
 }
 
 function personName(displayName: string | null, fullName: string | null) {
-  return formatRecipientFirstName(displayName, fullName) ?? (displayName?.trim() || "Participant");
+  return formatFirstName(displayName, fullName) ?? "Participant";
 }
 
 function budgetLabel(min: number | null, max: number | null) {

@@ -3,15 +3,13 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
 import { ProductImage } from "@/components/secret-santa/product-image";
-import {
-  formatRecipientFirstName,
-  safeRecipientProductImageUrl,
-} from "@/components/secret-santa/recipient-gift-card";
+import { safeRecipientProductImageUrl } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAllowlisted } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { formatFirstName, possessive } from "@/lib/person-name";
 import {
   assignments,
   exchangeParticipants,
@@ -84,6 +82,7 @@ export default async function WishlistsPage() {
             exchangeId: assignments.exchangeId,
             displayName: user.displayName,
             fullName: user.name,
+            email: user.email,
           })
           .from(assignments)
           .innerJoin(user, eq(assignments.receiverId, user.id))
@@ -105,7 +104,7 @@ export default async function WishlistsPage() {
   const recipientsByExchange = new Map(
     recipientRows.map((recipient) => [
       recipient.exchangeId,
-      formatRecipientFirstName(recipient.displayName, recipient.fullName),
+      formatFirstName(recipient.displayName, recipient.fullName, recipient.email),
     ])
   );
 
@@ -227,7 +226,7 @@ export default async function WishlistsPage() {
                   </p>
                   <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
                     <Link href={`/wishlists/${exchange.id}/recipient`}>
-                      View {recipientName ? `${recipientName}’s` : "your recipient’s"} list
+                      View {recipientName ? possessive(recipientName) : "your recipient’s"} list
                     </Link>
                   </Button>
                 </div>

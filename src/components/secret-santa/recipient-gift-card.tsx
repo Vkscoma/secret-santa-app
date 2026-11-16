@@ -98,14 +98,6 @@ export function formatRecipientGiftTitle(
   };
 }
 
-export function formatRecipientFirstName(displayName: string | null, fullName: string | null) {
-  const full = fullName?.trim() ?? "";
-  const display = displayName?.trim() ?? "";
-  if (display) return display.split(/\s+/)[0] || null;
-  if (full.includes(" ")) return full.split(/\s+/)[0] || display || null;
-  return null;
-}
-
 export function RecipientGiftCard({
   item,
   exchangeId,

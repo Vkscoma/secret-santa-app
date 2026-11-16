@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Calendar, User, Shield, ArrowLeft, Lock, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { saveNotificationPreferences } from "@/app/actions/notification-settings";
+import { saveDisplayName } from "@/app/actions/profile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,14 +27,17 @@ import { FormActionRow } from "@/components/ui/form-action-row";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/lib/auth-client";
 
 type NotificationPreferences = { reminders: boolean; nudges: boolean; digests: boolean };
 
-export default function ProfilePage({ initialNotificationPrefs }: { initialNotificationPrefs: Record<string, boolean> }) {
+export default function ProfilePage({ initialNotificationPrefs, initialDisplayName }: { initialNotificationPrefs: Record<string, boolean>; initialDisplayName: string | null }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [emailPrefsOpen, setEmailPrefsOpen] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
@@ -72,11 +76,22 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
       })
     : null;
 
-  const handleEditProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const shownName = displayName || user.name;
+
+  const handleEditProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // In a real app, this would call an API to update the user profile
-    toast.info("Profile updates require backend implementation");
-    setEditProfileOpen(false);
+    const formData = new FormData(e.currentTarget);
+    setSavingProfile(true);
+    try {
+      const result = await saveDisplayName(formData);
+      setDisplayName(result.displayName);
+      toast.success("Display name saved.");
+      setEditProfileOpen(false);
+    } catch {
+      toast.error("Couldn’t save your display name. Please try again.");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handleNotificationPreferences = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -115,15 +130,15 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
               <Avatar className="h-20 w-20">
                 <AvatarImage
                   src={user.image || ""}
-                  alt={user.name || "User"}
+                  alt={shownName || "User"}
                   referrerPolicy="no-referrer"
                 />
                 <AvatarFallback className="text-lg">
-                  {(user.name?.[0] || user.email?.[0] || "U").toUpperCase()}
+                  {(shownName?.[0] || user.email?.[0] || "U").toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">{user.name}</h2>
+                <h2 className="text-2xl font-semibold">{shownName}</h2>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
                   <span>{user.email}</span>
@@ -158,10 +173,10 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Full Name
+                  Display name
                 </label>
                 <div className="p-3 border rounded-md bg-muted/10">
-                  {user.name || "Not provided"}
+                  {shownName || "Not provided"}
                 </div>
               </div>
               <div className="space-y-2">
@@ -307,12 +322,18 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
           </DialogHeader>
           <form onSubmit={handleEditProfileSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="displayName">Display name</Label>
               <Input
-                id="name"
-                defaultValue={user.name || ""}
-                placeholder="Enter your name"
+                id="displayName"
+                name="displayName"
+                defaultValue={shownName || ""}
+                maxLength={100}
+                autoComplete="name"
+                aria-describedby="displayName-help"
               />
+              <p id="displayName-help" className="text-xs text-muted-foreground">
+                Your Secret Santa sees the first name you enter here.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -330,7 +351,7 @@ export default function ProfilePage({ initialNotificationPrefs }: { initialNotif
             <FormActionRow
               className="pt-4"
               secondary={<Button type="button" variant="neutral" className="h-11 w-full sm:w-auto" onClick={() => setEditProfileOpen(false)}>Cancel</Button>}
-              primary={<Button type="submit" variant="affirmative" className="h-11 w-full sm:w-auto">Save Changes</Button>}
+              primary={<Button type="submit" variant="affirmative" className="h-11 w-full sm:w-auto" disabled={savingProfile}>{savingProfile ? <><Spinner size="sm" className="text-current" />Saving…</> : "Save Changes"}</Button>}
             />
           </form>
         </DialogContent>

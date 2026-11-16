@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { Gift, Snowflake } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
-import { formatRecipientFirstName, RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
+import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
 import { Card } from "@/components/ui/card";
 import { requireExchangeMember } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { formatFirstName, possessive } from "@/lib/person-name";
 import { assignments, exchanges, itemClaims, wishlistItems, wishlists, user } from "@/lib/schema";
 
 type PageProps = { params: Promise<{ exchangeId: string }> };
@@ -31,6 +32,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
       recipientId: assignments.receiverId,
       recipientName: user.displayName,
       name: user.name,
+      email: user.email,
       sizes: user.sizes,
       shippingAddress: user.shippingAddress,
     })
@@ -67,7 +69,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
     );
   }
 
-  const recipientName = formatRecipientFirstName(assignment.recipientName, assignment.name) || "Your recipient";
+  const recipientName = formatFirstName(assignment.recipientName, assignment.name, assignment.email);
   const [recipientList] = await db
     .select({ id: wishlists.id, surpriseMe: wishlists.surpriseMe, likes: wishlists.likes })
     .from(wishlists)
@@ -104,9 +106,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
   const claimedItems = items.filter(({ id }) => claimedIds.has(id));
   const availableItems = items.filter(({ id }) => !claimedIds.has(id));
   const title =
-    recipientName === "Your recipient"
-      ? "Your recipient’s wish list"
-      : `${recipientName}’s wish list`;
+    recipientName ? `${possessive(recipientName)} wish list` : "Your recipient’s wish list";
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-10">

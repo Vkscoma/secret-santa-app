@@ -5,7 +5,6 @@ import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { FestiveIllustration, PageHeading, Snowfall } from "@/components/secret-santa/components";
 import { NudgeButton } from "@/components/secret-santa/nudge-button";
 import {
-  formatRecipientFirstName,
   RecipientGiftCard,
 } from "@/components/secret-santa/recipient-gift-card";
 import { WishlistOwnerGiftCard } from "@/components/secret-santa/wishlist-owner-gift-card";
@@ -16,6 +15,7 @@ import { isEmailAllowlisted } from "@/lib/auth-access";
 import { db } from "@/lib/db";
 import { calendarDaysUntil } from "@/lib/exchange-countdown";
 import { shouldShowRecipientNudge } from "@/lib/nudge-visibility";
+import { formatFirstName, possessive } from "@/lib/person-name";
 import {
   assignments,
   exchangeParticipants,
@@ -115,6 +115,7 @@ export default async function Home() {
           recipientId: assignments.receiverId,
           recipientName: user.displayName,
           recipientFullName: user.name,
+          recipientEmail: user.email,
           notificationPrefs: user.notificationPrefs,
           recipientItemCount: sql<number>`(select count(*)::int from ${wishlistItems} inner join ${wishlists} on ${wishlistItems.wishlistId} = ${wishlists.id} where ${wishlists.exchangeId} = ${assignments.exchangeId} and ${wishlists.userId} = ${assignments.receiverId})`,
         })
@@ -232,7 +233,7 @@ export default async function Home() {
               {exchangeRows.map((exchange) => {
                 const giving = assignmentsMap.get(exchange.id);
                 const recipient = giving
-                  ? formatRecipientFirstName(giving.recipientName, giving.recipientFullName)
+                  ? formatFirstName(giving.recipientName, giving.recipientFullName, giving.recipientEmail)
                   : null;
                 const recipientItems = previewsByExchange.get(exchange.id) ?? [];
                 const ownItems = exchangeRows[0]?.id === exchange.id ? ownPreviewItems : [];
@@ -416,7 +417,7 @@ export default async function Home() {
                               className="min-h-11 max-w-full text-center leading-5 whitespace-normal"
                             >
                               <Link href={`/wishlists/${exchange.id}/recipient`}>
-                                See all of {recipient ? `${recipient}’s` : "your recipient’s"} list
+                                See all of {recipient ? possessive(recipient) : "your recipient’s"} list
                               </Link>
                             </Button>
                           </div>

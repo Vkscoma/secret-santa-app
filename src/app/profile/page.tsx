@@ -6,6 +6,6 @@ import ProfileClient from "./profile-client";
 
 export default async function ProfilePage() {
   const session = await requireAllowlisted();
-  const [profile] = await db.select({ notificationPrefs: user.notificationPrefs }).from(user).where(eq(user.id, session.user.id)).limit(1);
-  return <ProfileClient initialNotificationPrefs={profile?.notificationPrefs ?? {}} />;
+  const [profile] = await db.select({ notificationPrefs: user.notificationPrefs, displayName: user.displayName }).from(user).where(eq(user.id, session.user.id)).limit(1);
+  return <ProfileClient initialNotificationPrefs={profile?.notificationPrefs ?? {}} initialDisplayName={profile?.displayName ?? null} />;
 }
