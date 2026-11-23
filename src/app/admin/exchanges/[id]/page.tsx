@@ -380,7 +380,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
         </Card>
 
         <Card className="space-y-4 p-5 sm:p-6" id="draw-names">
-          <div><h2 className="text-xl font-bold">Draw names</h2><p className="text-sm text-muted-foreground">Once at least two people have joined, make the Secret Santa pairings.</p></div>
+          <div><h2 className="text-xl font-bold">Draw names</h2><p className="text-sm text-muted-foreground">Once at least two people have joined, make the Secret Santa pairings. Drawing names clears any gifts people have already claimed.</p></div>
           <form action={drawExchange}><input type="hidden" name="exchangeId" value={id} /><Button type="submit" variant="affirmative" disabled={!canDraw}><Gift className="size-4" aria-hidden="true" />{canDraw ? "Draw names" : "Waiting for at least two people"}</Button></form>
         </Card>
       </>}
@@ -412,7 +412,7 @@ export default async function AdminExchangePage({ params }: PageProps) {
           </>}
           {canRedraw && <div className="rounded-xl border border-destructive/50 p-4">
             <h2 className="font-bold text-destructive">Redraw names</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Everyone gets a new person to shop for, and gifts they’ve marked will be cleared.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Everyone gets a new person to shop for, and all gift claims will be cleared.</p>
             <form action={redrawExchange} className="mt-3 grid gap-3">
               <input type="hidden" name="exchangeId" value={id} />
               <label className="grid gap-1 text-sm">Type <strong>{exchange.name}</strong> to confirm<Input name="confirmExchangeName" required autoComplete="off" /></label>

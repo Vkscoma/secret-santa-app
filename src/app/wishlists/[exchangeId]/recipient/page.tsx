@@ -1,16 +1,20 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { Gift, Snowflake } from "lucide-react";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { ArrowRight, Gift, Snowflake } from "lucide-react";
+import { ClaimsAutoRefresh } from "@/components/secret-santa/claims-auto-refresh";
 import { PageHeading } from "@/components/secret-santa/components";
 import { PageContainer } from "@/components/secret-santa/page-container";
 import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
-import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
+import { WishlistBackLink } from "@/components/secret-santa/wishlist-back-link";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireExchangeMember } from "@/lib/authz";
 import { formatBudget } from "@/lib/budget";
 import { db } from "@/lib/db";
 import { formatFirstName, possessive } from "@/lib/person-name";
-import { assignments, exchanges, itemClaims, wishlistItems, wishlists, user } from "@/lib/schema";
+import { assignments, exchanges, wishlistItems, wishlists, user } from "@/lib/schema";
+import { getClaimStates, getClaimsVersion } from "@/lib/wishlist-browse";
 
 type PageProps = { params: Promise<{ exchangeId: string }> };
 
@@ -37,33 +41,30 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
   if (!assignment) {
     return (
       <PageContainer maxWidth="4xl" className="space-y-5">
-        <WishlistBreadcrumb
-          items={[
-            { label: "Home", href: "/" },
-            { label: "My Wishlists", href: "/wishlists" },
-            {
-              label: `My List · ${exchange.name} (${exchange.year})`,
-              href: `/wishlists/${exchangeId}`,
-            },
-            { label: "Recipient’s List" },
-          ]}
-        />
-        <PageHeading
-          eyebrow={`${exchange.year} exchange`}
-          title="Your recipient’s list"
-          description="After names are drawn, their gift ideas will show up here."
-        />
+        <WishlistBackLink href="/wishlists" />
+        <PageHeading title="Your person’s gift list" />
         <Card className="flex items-center gap-3 p-4">
           <Snowflake className="text-primary size-6 shrink-0" aria-hidden="true" />
           <p className="font-semibold">
-            Names haven’t been drawn yet. Their gift ideas will show up here after the draw.
+            We haven’t picked your person yet. Their gift ideas will show here once we have.
           </p>
         </Card>
+        <div className="border-border border-t pt-4">
+          <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
+            <Link href={`/wishlists/${exchangeId}/people`}>
+              See everyone’s wishlists <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       </PageContainer>
     );
   }
 
-  const recipientName = formatFirstName(assignment.recipientName, assignment.name, assignment.email);
+  const recipientName = formatFirstName(
+    assignment.recipientName,
+    assignment.name,
+    assignment.email
+  );
   const [recipientList] = await db
     .select({ id: wishlists.id, surpriseMe: wishlists.surpriseMe, likes: wishlists.likes })
     .from(wishlists)
@@ -82,47 +83,41 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
           asc(wishlistItems.createdAt)
         )
     : [];
-  const claimRows = items.length
-    ? await db
-        .select({ itemId: itemClaims.itemId })
-        .from(itemClaims)
-        .where(
-          and(
-            eq(itemClaims.giverId, session.user.id),
-            inArray(
-              itemClaims.itemId,
-              items.map(({ id }) => id)
-            )
-          )
-        )
-    : [];
-  const claimedIds = new Set(claimRows.map(({ itemId }) => itemId));
-  const claimedItems = items.filter(({ id }) => claimedIds.has(id));
-  const availableItems = items.filter(({ id }) => !claimedIds.has(id));
-  const title =
-    recipientName ? `${possessive(recipientName)} wish list` : "Your recipient’s wish list";
+  // Same rule as the participant list page and the claim action: closed or past exchanges are read-only.
+  const editable = exchange.year >= new Date().getFullYear() && exchange.status !== "closed";
+  const [claimStates, claimsVersion] = await Promise.all([
+    getClaimStates(
+      session.user.id,
+      items.map(({ id }) => id)
+    ),
+    editable ? getClaimsVersion(exchangeId, assignment.recipientId) : null,
+  ]);
+  const claimedItems = items.filter(({ id }) => (claimStates.get(id) ?? "available") === "mine");
+  const takenItems = items.filter(({ id }) => (claimStates.get(id) ?? "available") === "taken");
+  const availableItems = items.filter(
+    ({ id }) => (claimStates.get(id) ?? "available") === "available"
+  );
+  const title = recipientName
+    ? `${possessive(recipientName)} wish list`
+    : "Your person’s gift list";
 
   return (
     <PageContainer maxWidth="4xl" className="space-y-5 py-6 sm:py-10">
-      <WishlistBreadcrumb
-        items={[
-          { label: "Home", href: "/" },
-          { label: "My Wishlists", href: "/wishlists" },
-          {
-            label: `My List · ${exchange.name} (${exchange.year})`,
-            href: `/wishlists/${exchangeId}`,
-          },
-          { label: "Recipient’s List" },
-        ]}
-      />
+      {claimsVersion !== null && (
+        <ClaimsAutoRefresh
+          exchangeId={exchangeId}
+          ownerId={assignment.recipientId}
+          initialVersion={claimsVersion}
+        />
+      )}
+      <WishlistBackLink href="/wishlists" />
       <PageHeading
-        eyebrow={`${exchange.year} exchange`}
         title={title}
-        description="Only you can see what you’ve claimed. Mark gifts you’re getting so you don’t forget."
+        description="Pick a gift with “I’ll get this.” Everyone can see it’s taken, but no one can see who picked it."
       />
       <div
         className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
-        aria-label="Exchange details"
+        aria-label="Gift details"
       >
         <span className="font-semibold">
           Gift budget: {formatBudget(exchange.budgetMin, exchange.budgetMax)}
@@ -177,7 +172,7 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
               key={item.id}
               item={item}
               exchangeId={exchangeId}
-              claimed
+              claimState="mine"
               budgetMax={exchangeBudgetMax}
             />
           ))}
@@ -193,7 +188,23 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
               key={item.id}
               item={item}
               exchangeId={exchangeId}
-              claimed={false}
+              claimState="available"
+              budgetMax={exchangeBudgetMax}
+            />
+          ))}
+        </section>
+      )}
+      {takenItems.length > 0 && (
+        <section aria-labelledby="taken-heading" className="space-y-2.5">
+          <h2 id="taken-heading" className="text-lg font-bold">
+            Someone else picked these
+          </h2>
+          {takenItems.map((item) => (
+            <RecipientGiftCard
+              key={item.id}
+              item={item}
+              exchangeId={exchangeId}
+              claimState="taken"
               budgetMax={exchangeBudgetMax}
             />
           ))}
@@ -205,6 +216,13 @@ export default async function RecipientWishlistPage({ params }: PageProps) {
           <p className="text-muted-foreground mt-1 text-sm">Check back later for updates.</p>
         </Card>
       )}
+      <div className="border-border border-t pt-4">
+        <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
+          <Link href={`/wishlists/${exchangeId}/people`}>
+            See everyone’s wishlists <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </Button>
+      </div>
     </PageContainer>
   );
 }

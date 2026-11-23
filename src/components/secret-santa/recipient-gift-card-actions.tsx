@@ -2,15 +2,20 @@
 
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { ClaimStatus, ClaimToggleForm } from "@/components/secret-santa/claim-toggle-form";
+import {
+  ClaimedStatus,
+  ClaimStatus,
+  ClaimToggleForm,
+} from "@/components/secret-santa/claim-toggle-form";
 import { Button } from "@/components/ui/button";
+import type { ClaimState } from "@/lib/wishlist-browse";
 
 type Props = {
   exchangeId: string;
   itemId: string;
   title: string;
   productUrl: string | null;
-  claimed: boolean;
+  claimState: ClaimState;
   claimable?: boolean;
   previewMode?: boolean;
 };
@@ -35,38 +40,49 @@ export function RecipientGiftCardActions({
   itemId,
   title,
   productUrl,
-  claimed,
+  claimState,
   claimable = true,
   previewMode = false,
 }: Props) {
-  const [previewClaimed, setPreviewClaimed] = useState(claimed);
-  const currentClaimed = previewMode ? previewClaimed : claimed;
+  const [previewState, setPreviewState] = useState(claimState);
+  const currentState = previewMode ? previewState : claimState;
 
   if (!claimable && !previewMode) {
     return (
-      <div className="pt-3">
-        {currentClaimed ? (
+      <div>
+        {currentState === "mine" ? (
           <ClaimStatus />
+        ) : currentState === "taken" ? (
+          <ClaimedStatus />
         ) : (
-          <p className="text-muted-foreground text-sm">Claiming is unavailable</p>
+          <p className="text-muted-foreground text-sm">Gift picks aren’t available right now.</p>
         )}
       </div>
     );
   }
 
-  if (currentClaimed) {
+  if (currentState === "taken") {
     return (
-      <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-end gap-2">
+        {productUrl && <ViewItem title={title} productUrl={productUrl} />}
+        <ClaimedStatus />
+      </div>
+    );
+  }
+
+  if (currentState === "mine") {
+    return (
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <ClaimStatus />
         <div className="flex items-center gap-2">
           {productUrl && <ViewItem title={title} productUrl={productUrl} />}
           <ClaimToggleForm
             exchangeId={exchangeId}
             itemId={itemId}
-            claimed
+            claimState="mine"
             showClaimStatus={false}
             previewMode={previewMode}
-            onPreviewClaimChange={setPreviewClaimed}
+            onPreviewClaimChange={setPreviewState}
             className="flex-1 sm:flex-none"
           />
         </div>
@@ -75,15 +91,15 @@ export function RecipientGiftCardActions({
   }
 
   return (
-    <div className="flex items-center justify-end gap-2 pt-3">
+    <div className={`flex items-center gap-2 ${productUrl ? "justify-end" : "w-full"}`}>
       {productUrl && <ViewItem title={title} productUrl={productUrl} />}
       <ClaimToggleForm
         exchangeId={exchangeId}
         itemId={itemId}
-        claimed={false}
+        claimState="available"
         previewMode={previewMode}
-        onPreviewClaimChange={setPreviewClaimed}
-        className="flex-1 sm:flex-none"
+        onPreviewClaimChange={setPreviewState}
+        className={productUrl ? "flex-1 sm:flex-none" : "w-full"}
       />
     </div>
   );

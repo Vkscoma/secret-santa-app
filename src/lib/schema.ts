@@ -350,7 +350,7 @@ export const itemClaims = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("item_claim_item_giver_unique").on(table.itemId, table.giverId),
+    uniqueIndex("item_claim_item_unique").on(table.itemId),
     index("item_claim_giver_idx").on(table.giverId),
   ]
 );

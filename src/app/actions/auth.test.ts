@@ -46,7 +46,7 @@ describe("requestMagicLink", () => {
         callbackURL: "/wishlists",
       },
     }));
-    expect(result.message).toMatch(/If this email is approved/);
+    expect(result.message).toMatch(/If you can sign in with this email/);
   });
 
   it("uses the invite completion callback when a valid pending invite exists", async () => {

@@ -5,6 +5,7 @@ import { WishlistPrice } from "@/components/secret-santa/wishlist-price";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { normalizeUnfurlUrl } from "@/lib/url-safety";
+import type { ClaimState } from "@/lib/wishlist-browse";
 
 export type RecipientGiftItem = {
   id: string;
@@ -101,7 +102,7 @@ export function formatRecipientGiftTitle(
 export function RecipientGiftCard({
   item,
   exchangeId,
-  claimed,
+  claimState,
   budgetMax = null,
   claimable = true,
   compact = false,
@@ -109,7 +110,7 @@ export function RecipientGiftCard({
 }: {
   item: RecipientGiftItem;
   exchangeId: string;
-  claimed: boolean;
+  claimState: ClaimState;
   budgetMax?: number | null;
   claimable?: boolean;
   compact?: boolean;
@@ -203,7 +204,7 @@ export function RecipientGiftCard({
             )}
           </div>
           {!compact && item.notes && (
-            <p className="text-muted-foreground mt-2 text-sm leading-5 whitespace-pre-wrap wrap-break-word">
+            <p className="text-muted-foreground mt-2 text-sm leading-5 wrap-break-word whitespace-pre-wrap">
               {item.notes}
             </p>
           )}
@@ -214,7 +215,7 @@ export function RecipientGiftCard({
         itemId={item.id}
         title={titleResult.title}
         productUrl={productUrl}
-        claimed={claimed}
+        claimState={claimState}
         claimable={claimable}
         previewMode={previewMode}
       />

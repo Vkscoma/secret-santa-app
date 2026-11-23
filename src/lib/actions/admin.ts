@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, count, eq, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, like, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getEligibleUserIdsForExchange } from "@/lib/admin-data";
 import { isSuperAdminEmail } from "@/lib/auth-access";
@@ -169,9 +169,19 @@ export async function setExchangeParticipants(formData: FormData) {
     if (participantIds.length) {
       await tx.insert(exchangeParticipants).values(participantIds.map((userId) => ({ exchangeId, userId })));
     }
+    const exchangeWishlistItems = tx.select({ id: wishlistItems.id })
+      .from(wishlistItems)
+      .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
+      .where(eq(wishlists.exchangeId, exchangeId));
+    if (participantIds.length) {
+      await tx.delete(itemClaims).where(and(inArray(itemClaims.itemId, exchangeWishlistItems), notInArray(itemClaims.giverId, participantIds)));
+    } else {
+      await tx.delete(itemClaims).where(inArray(itemClaims.itemId, exchangeWishlistItems));
+    }
     await tx.insert(auditLog).values(auditValues({ actorId: session.user.id, action: "exchange.participants_updated", targetType: "exchange", targetId: exchangeId, metadata: { count: participantIds.length } }));
   });
   revalidatePath(`/admin/exchanges/${exchangeId}`);
+  revalidatePath(`/wishlists/${exchangeId}/people`);
 }
 
 export async function setExchangeExclusions(formData: FormData) {
@@ -227,6 +237,11 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean, 
       .where(and(sql`${exchanges.year} between ${exchange.year - 2} and ${exchange.year - 1}`, inArray(assignments.giverId, participantIds), inArray(assignments.receiverId, participantIds)));
     const result = drawSecretSanta({ participantIds, exclusions: excluded, previousPairs: prior });
 
+    const exchangeWishlistItems = tx.select({ id: wishlistItems.id })
+      .from(wishlistItems)
+      .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
+      .where(eq(wishlists.exchangeId, exchangeId));
+    await tx.delete(itemClaims).where(inArray(itemClaims.itemId, exchangeWishlistItems));
     if (redraw) {
       const [existingMessages] = await tx.select({ count: count() })
         .from(messages)
@@ -235,11 +250,6 @@ async function createDraw(exchangeId: string, actorId: string, redraw: boolean, 
       if (hasLegacyMessageRows(Number(existingMessages?.count ?? 0))) {
         throw new Error("This exchange has historical message records. Redraw is blocked to preserve them until they can be archived safely.");
       }
-      const exchangeWishlistItems = tx.select({ id: wishlistItems.id })
-        .from(wishlistItems)
-        .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
-        .where(eq(wishlists.exchangeId, exchangeId));
-      await tx.delete(itemClaims).where(inArray(itemClaims.itemId, exchangeWishlistItems));
       // Assignment-linked participant data is removed with the assignment.
       await tx.delete(assignments).where(eq(assignments.exchangeId, exchangeId));
     }
