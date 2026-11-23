@@ -19,41 +19,40 @@ Fresh Snow is crisp, calm, and warm. Use open whitespace, soft white cards, pine
 
 Tokens live in `:root` and `.dark`, bridged through `@theme inline`. The values below are the approved starting palette. Keep body text contrast at WCAG AA (4.5:1) and large text/UI boundaries at least 3:1; adjust lightness if needed.
 
-| Token | Fresh Snow | Christmas Eve | Use |
-|---|---|---|---|
-| `background` | `oklch(0.985 0.004 200)` | `oklch(0.17 0.03 175)` | Frosty page / evergreen night |
-| `foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Main copy |
-| `card`, `popover` | `oklch(1 0 0)` | `oklch(0.22 0.035 168)` | Raised surfaces |
-| `card-foreground`, `popover-foreground` | `oklch(0.22 0.03 165)` | `oklch(0.96 0.01 90)` | Surface copy |
-| `primary` | `var(--pine)` → `oklch(0.36 0.09 158)` | Pine border green `oklch(0.62 0.10 155)` | Affirmative outline border and hover tint |
-| `primary-foreground` | `var(--pine-foreground)` → `oklch(0.99 0.005 90)` | Pine-ink `oklch(0.14 0.04 155)` | Copy on decorative pine fills; not used on Button surfaces |
-| `affirmative-text` | `var(--primary)` → `oklch(0.36 0.09 158)` | `oklch(0.72 0.10 155)` | Pine label text on affirmative outlines |
-| `cranberry` | `oklch(0.44 0.17 25)` | `oklch(0.67 0.17 25)` | Logo and decorative brand accents only |
-| `cranberry-foreground` | `oklch(0.997 0 0)` | `oklch(0.12 0.06 25)` | Contrast on cranberry decoration |
-| `secondary` | `oklch(0.95 0.025 155)` | `oklch(0.59 0.10 155)` | Pine-tinted controls/chips |
-| `secondary-foreground` | `oklch(0.31 0.07 158)` | `oklch(0.12 0.05 155)` | Text on secondary |
-| `muted` | `oklch(0.965 0.006 160)` | `oklch(0.25 0.03 170)` | Quiet surfaces |
-| `muted-foreground` | `oklch(0.46 0.02 160)` | `oklch(0.76 0.025 155)` | Helper/store text |
-| `accent` | `oklch(0.96 0.025 25)` | `oklch(0.62 0.11 25)` | Blush/warm hover |
-| `accent-foreground` | `oklch(0.34 0.13 25)` | `oklch(0.12 0.08 25)` | Text on accent |
-| `border`, `input` | `oklch(0.91 0.01 170)` | `oklch(0.58 0.035 168)` | Edges and form controls |
-| `neutral-border` | `oklch(0.62 0.008 170)` | `oklch(0.54 0.008 165)` | Muted gray neutral button outlines on page and card surfaces; contrast ≥3:1 |
-| `neutral-panel-border` | `oklch(0.65 0.008 170)` | `oklch(0.72 0.008 165)` | Muted gray neutral button outlines on pine panels; contrast ≥3:1 |
-| `ring` | `oklch(0.48 0.10 195)` | `oklch(0.54 0.10 195)` | Teal winter keyboard focus |
-| `destructive` | `oklch(0.48 0.19 30)` | `oklch(0.68 0.19 28)` | Destructive actions |
-| `destructive-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.18 0.06 28)` | Copy on decorative error fills |
-| `destructive-text` | `var(--destructive)` → `oklch(0.48 0.19 30)` | `oklch(0.72 0.19 28)` | Destructive button label and border |
-| `pine` | `oklch(0.36 0.09 158)` | `oklch(0.42 0.10 155)` | Panel headers and brand |
-| `pine-foreground` | `oklch(0.99 0.005 90)` | `oklch(0.99 0.005 90)` | Pine header copy |
-| `gold` | `oklch(0.80 0.13 82)` | `oklch(0.85 0.14 85)` | Progress, stars, ribbons |
-| `gold-foreground` | `oklch(0.28 0.05 70)` | `oklch(0.22 0.04 70)` | Copy on gold |
-| `snow` | `oklch(0.97 0.01 230)` | `oklch(0.95 0.015 230)` | Decorations |
-| `success` | `oklch(0.52 0.17 150)` | `oklch(0.75 0.15 150)` | Success indicators |
+| Token                                   | Fresh Snow                                        | Christmas Eve                            | Use                                                                         |
+| --------------------------------------- | ------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
+| `background`                            | `oklch(0.985 0.004 200)`                          | `oklch(0.17 0.03 175)`                   | Frosty page / evergreen night                                               |
+| `foreground`                            | `oklch(0.22 0.03 165)`                            | `oklch(0.96 0.01 90)`                    | Main copy                                                                   |
+| `card`, `popover`                       | `oklch(1 0 0)`                                    | `oklch(0.22 0.035 168)`                  | Raised surfaces                                                             |
+| `card-foreground`, `popover-foreground` | `oklch(0.22 0.03 165)`                            | `oklch(0.96 0.01 90)`                    | Surface copy                                                                |
+| `primary`                               | `var(--pine)` → `oklch(0.36 0.09 158)`            | Pine border green `oklch(0.62 0.10 155)` | Affirmative outline border and hover tint                                   |
+| `primary-foreground`                    | `var(--pine-foreground)` → `oklch(0.99 0.005 90)` | Pine-ink `oklch(0.14 0.04 155)`          | Copy on decorative pine fills; not used on Button surfaces                  |
+| `affirmative-text`                      | `var(--primary)` → `oklch(0.36 0.09 158)`         | `oklch(0.72 0.10 155)`                   | Pine label text on affirmative outlines                                     |
+| `cranberry`                             | `oklch(0.44 0.17 25)`                             | `oklch(0.67 0.17 25)`                    | Logo and decorative brand accents only                                      |
+| `cranberry-foreground`                  | `oklch(0.997 0 0)`                                | `oklch(0.12 0.06 25)`                    | Contrast on cranberry decoration                                            |
+| `secondary`                             | `oklch(0.95 0.025 155)`                           | `oklch(0.59 0.10 155)`                   | Pine-tinted controls/chips                                                  |
+| `secondary-foreground`                  | `oklch(0.31 0.07 158)`                            | `oklch(0.12 0.05 155)`                   | Text on secondary                                                           |
+| `muted`                                 | `oklch(0.965 0.006 160)`                          | `oklch(0.25 0.03 170)`                   | Quiet surfaces                                                              |
+| `muted-foreground`                      | `oklch(0.46 0.02 160)`                            | `oklch(0.76 0.025 155)`                  | Helper/store text                                                           |
+| `accent`                                | `oklch(0.96 0.025 25)`                            | `oklch(0.62 0.11 25)`                    | Blush/warm hover                                                            |
+| `accent-foreground`                     | `oklch(0.34 0.13 25)`                             | `oklch(0.12 0.08 25)`                    | Text on accent                                                              |
+| `border`, `input`                       | `oklch(0.91 0.01 170)`                            | `oklch(0.58 0.035 168)`                  | Edges and form controls                                                     |
+| `neutral-border`                        | `oklch(0.62 0.008 170)`                           | `oklch(0.54 0.008 165)`                  | Muted gray neutral button outlines on page and card surfaces; contrast ≥3:1 |
+| `neutral-panel-border`                  | `oklch(0.65 0.008 170)`                           | `oklch(0.72 0.008 165)`                  | Muted gray neutral button outlines on pine panels; contrast ≥3:1            |
+| `ring`                                  | `oklch(0.48 0.10 195)`                            | `oklch(0.54 0.10 195)`                   | Teal winter keyboard focus                                                  |
+| `destructive`                           | `oklch(0.48 0.19 30)`                             | `oklch(0.68 0.19 28)`                    | Destructive actions                                                         |
+| `destructive-foreground`                | `oklch(0.99 0.005 90)`                            | `oklch(0.18 0.06 28)`                    | Copy on decorative error fills                                              |
+| `destructive-text`                      | `var(--destructive)` → `oklch(0.48 0.19 30)`      | `oklch(0.72 0.19 28)`                    | Destructive button label and border                                         |
+| `pine`                                  | `oklch(0.36 0.09 158)`                            | `oklch(0.42 0.10 155)`                   | Panel headers and brand                                                     |
+| `pine-foreground`                       | `oklch(0.99 0.005 90)`                            | `oklch(0.99 0.005 90)`                   | Pine header copy                                                            |
+| `gold`                                  | `oklch(0.80 0.13 82)`                             | `oklch(0.85 0.14 85)`                    | Progress, stars, ribbons                                                    |
+| `gold-foreground`                       | `oklch(0.28 0.05 70)`                             | `oklch(0.22 0.04 70)`                    | Copy on gold                                                                |
+| `snow`                                  | `oklch(0.97 0.01 230)`                            | `oklch(0.95 0.015 230)`                  | Decorations                                                                 |
+| `success`                               | `oklch(0.52 0.17 150)`                            | `oklch(0.75 0.15 150)`                   | Success indicators                                                          |
 
 Set `--radius` to `0.75rem`. Surface and foreground pairs must retain readable contrast in both themes.
 
 Use a teal winter focus ring in both themes. Validation errors and destructive actions use destructive red. Destructive controls have no fill, use red text and a matching icon, and keep a red outline. Button surfaces are transparent at rest; hover and pressed states may use a subtle tint of the action color.
-
 
 ## Button intent
 
@@ -67,42 +66,42 @@ Radio option controls are not action buttons. The gift priority control is a one
 
 Use `src/components/ui/button.tsx` as the only app button style source. Every new app button must use one of its intent variants: `affirmative`, `neutral`, `neutral-inverse` for neutral controls on pine panels, `destructive`, or `ghost`. There is no link-style Button variant; use a plain navigation link or the shared `neutral` variant. Do not add color utilities or hex colors to Button call sites. Email-rendered CTAs use the shared filled `EmailButton` (the documented email exception above) because email clients cannot render the app component. Pending states keep the selected outline variant, disable the control, and show a spinner and concise pending copy. Disabled controls use reduced opacity and cannot be focused or clicked. Focus rings use the non-red theme ring.
 
-| Location | Action | Variant |
-|---|---|---|
-| Sign-in and invite join | Continue with Google, Join | `affirmative` |
-| Header/profile | Sign in, Sign up | `affirmative` |
-| Sign-in and invite join | Email sign-in, Cancel | `neutral` |
-| Wishlist composer and picker | Add wish, Add here | `affirmative` |
-| Mobile wishlist | Floating “Add a wish” FAB | `MobileAddWishButton` (intentional filled-cranberry exception) |
-| Wishlist composer and picker | Paste, Add photo, Add another wish | `neutral` |
-| Wishlist editor and preferences | Save changes, Save preferences | `affirmative` |
-| Wishlist editor and preferences | Edit/Close, Cancel, Open product link, Refresh, reorder | `neutral` |
-| Wishlist editor and preferences | Remove | `destructive` |
-| Recipient gift cards | I’ll get this | `affirmative` |
-| Recipient gift cards | View item, Undo | `neutral` |
-| Profile | Save profile/preferences | `affirmative` |
-| Profile and preferences | Back, edit/settings, close | `neutral` |
-| Admin forms | Create, Add, Save, Draw, Reveal, reminders | `affirmative` |
-| Admin exchange/account actions | View, Close | `neutral` |
-| Admin exchange/account actions | Remove, Revoke, Redraw/Delete in the collapsed Danger zone | `destructive` |
-| Menus, navigation, dismiss controls | Menu items, theme, close icons | `neutral` or `ghost` |
-| Pine panels | Settings, share, nudge | `neutral-inverse` |
-| History and help | View saved list, Back home, external/help links | `neutral` or plain navigation link |
-| Email notifications | Sign in to Secret Santa, Open Secret Santa, Open your wish list | `EmailButton` (intentional filled-cranberry exception) |
+| Location                            | Action                                                          | Variant                                                        |
+| ----------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| Sign-in and invite join             | Continue with Google, Join                                      | `affirmative`                                                  |
+| Header/profile                      | Sign in, Sign up                                                | `affirmative`                                                  |
+| Sign-in and invite join             | Email sign-in, Cancel                                           | `neutral`                                                      |
+| Wishlist composer and picker        | Add wish, Add here                                              | `affirmative`                                                  |
+| Mobile wishlist                     | Floating “Add a wish” FAB                                       | `MobileAddWishButton` (intentional filled-cranberry exception) |
+| Wishlist composer and picker        | Paste, Add photo, Add another wish                              | `neutral`                                                      |
+| Wishlist editor and preferences     | Save changes, Save preferences                                  | `affirmative`                                                  |
+| Wishlist editor and preferences     | Edit/Close, Cancel, Open product link, Refresh, reorder         | `neutral`                                                      |
+| Wishlist editor and preferences     | Remove                                                          | `destructive`                                                  |
+| Recipient gift cards                | I’ll get this                                                   | `affirmative`                                                  |
+| Recipient gift cards                | View item, Undo                                                 | `neutral`                                                      |
+| Profile                             | Save profile/preferences                                        | `affirmative`                                                  |
+| Profile and preferences             | Back, edit/settings, close                                      | `neutral`                                                      |
+| Admin forms                         | Create, Add, Save, Draw, Reveal, reminders                      | `affirmative`                                                  |
+| Admin exchange/account actions      | View, Close                                                     | `neutral`                                                      |
+| Admin exchange/account actions      | Remove, Revoke, Redraw/Delete in the collapsed Danger zone      | `destructive`                                                  |
+| Menus, navigation, dismiss controls | Menu items, theme, close icons                                  | `neutral` or `ghost`                                           |
+| Pine panels                         | Settings, share, nudge                                          | `neutral-inverse`                                              |
+| History and help                    | View saved list, Back home, external/help links                 | `neutral` or plain navigation link                             |
+| Email notifications                 | Sign in to Secret Santa, Open Secret Santa, Open your wish list | `EmailButton` (intentional filled-cranberry exception)         |
 
 ### Button contrast ratios
 
 Ratios are computed from the current OKLCH tokens against the page, card, and muted surfaces, including hover/pressed tint states. `neutral-inverse` is measured on pine panels. Borderless ghost buttons have no component border; focus uses the shared non-red `ring` token.
 
-| Variant | Fresh Snow text | Fresh Snow border | Christmas Eve text | Christmas Eve border | Result |
-|---|---:|---:|---:|---:|---|
-| Affirmative (pine; including tint states) | 7.63:1 | 7.63:1 | 5.87:1 | 4.02:1 | Pass |
-| Neutral (muted gray) | 15.54:1 | 3.28:1 | 14.09:1 | 3.14:1 | Pass |
-| Destructive (red; including tint states) | 5.26:1 | 5.26:1 | 5.22:1 | 5.22:1 | Pass |
-| Neutral-inverse (on pine panels) | 10.05:1 | 3.21:1 | 7.83:1 | 3.26:1 | Pass |
-| Ghost (muted text, hover foreground) | 6.38:1 | N/A | 7.45:1 | N/A | Pass |
+| Variant                                   | Fresh Snow text | Fresh Snow border | Christmas Eve text | Christmas Eve border | Result |
+| ----------------------------------------- | --------------: | ----------------: | -----------------: | -------------------: | ------ |
+| Affirmative (pine; including tint states) |          7.63:1 |            7.63:1 |             5.87:1 |               4.02:1 | Pass   |
+| Neutral (muted gray)                      |         15.54:1 |            3.28:1 |            14.09:1 |               3.14:1 | Pass   |
+| Destructive (red; including tint states)  |          5.26:1 |            5.26:1 |             5.22:1 |               5.22:1 | Pass   |
+| Neutral-inverse (on pine panels)          |         10.05:1 |            3.21:1 |             7.83:1 |               3.26:1 | Pass   |
+| Ghost (muted text, hover foreground)      |          6.38:1 |               N/A |             7.45:1 |                  N/A | Pass   |
 
-Status chips such as “Would like,” “Most wanted,” and “You’re getting this” are non-interactive labels: use a small rounded-rectangle shape, soft tinted background, no border, smaller text, and no hover state. Success chips use the soft `success` tint and remain distinct from affirmative buttons.
+Status chips such as “Would like,” “Most wanted,” “You’re getting this,” and “Claimed” are non-interactive labels: use a small rounded-rectangle shape, soft tinted background, no border, smaller text, and no hover state. Success chips use the soft `success` tint; “Claimed” uses a muted surface and muted foreground, remaining distinct from affirmative buttons.
 
 ## Typography
 
@@ -113,7 +112,7 @@ Status chips such as “Would like,” “Most wanted,” and “You’re gettin
 
 ## Layout and spacing
 
-- Sticky translucent header with subtle lower border/shadow; app content centered at about 960px (up to `max-w-6xl` when an illustration is present).
+- Sticky header uses an opaque `bg-card` surface, a subtle lower border/shadow, `top-0`, and a z-index above page content so scrolling text never shows through. Apply `env(safe-area-inset-top)` once as padding on the header; do not add the same top inset to `body` or page content. Page content remains in normal flow below the header with its regular top spacing.
 - Phone layouts use full width with 16px gutters. Desktop uses one main column with a small right-side illustration only when space permits.
 - Standard content: `mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12`.
 - Cards use 12px corners, thin borders, generous padding and a soft shadow. Keep 16–24px between sections.
@@ -122,11 +121,13 @@ Status chips such as “Would like,” “Most wanted,” and “You’re gettin
 - Admin exchange detail uses the shared five-step progress tracker (`Created` → `People invited` → `Wishlists in progress` → `Names drawn` → `Revealed / gift day`) on both the admin list and exchange detail. Show one next action near the top; after the draw, replace editable setup panels with one read-only setup summary and keep redraw/delete in a collapsed Danger zone with exact-name confirmation.
 - Before public reveal, only the Super Admin may check or privately view pairings. Pairing checks return aggregate rule results without names. A private view requires an explicit warning confirmation, is served as a no-store response, and records an activity event without pairing data; it never changes the public reveal state.
 - Always label and display the configured exchange date/time as **Gift day**, including the exchange time zone. Do not change its stored value, default, or calculation as part of display refinements.
+- **Wishlist back links:** at the top of a user's list, recipient list, and participant list, use one visible neutral button link with an arrow icon and a plain destination label: “Back to My Wishlists” for the user's list and recipient list; “Back to everyone’s lists” for a participant list. Keep it visible at every width and at least 44px tall. Use the same component and wording across these routes. The browse index has no back button. On the recipient list, add a bottom “See everyone’s wishlists” link to the browse index.
 
 ## Components
 
 - **Panel header:** pine, subtle diagonal gradient and faint snowflake pattern; white title/subtitle; small settings/share actions with pine-foreground icons on a 12% pine-foreground surface and a full pine-foreground outline; string-light accent below.
 - **Progress nudge:** icon, concise nudge, subline and thin gold progress bar. Gold text uses `gold-foreground`.
+- **Everyone’s wishlists card:** an exchange-level browse action kept separate from the assigned recipient’s list. Show a small, decorative stack of up to five participant initials (include all available initials, such as “SK” for “Sam K.”) with a `+N` overflow marker, then the participant and gift-idea totals, followed by a neutral “Browse wishlists” link. The initials are `aria-hidden`; the labeled text action remains the only browse control. Use `EveryoneWishlistsCard` so the placement and wording stay consistent on Home and My Wishlists.
 - **Wishlist item:** square festive placeholder/image, title, muted store/domain, priority, optional note and price chips. Reorder controls sit on the owner's card toolbar; gift editing opens from a clear pencil button, and Remove stays with the edit actions.
 - **Wish composer:** one main field that is the gift name or a product link, with optional details below. The add and edit forms share `WishFields` (`src/components/secret-santa/wish-fields.tsx`) so fields, labels, and order always match: gift name (only when the main field holds a link, or when editing), product link (editing only), store or website, price range in whole dollars, priority, notes, photo. On small screens the composer opens in a bottom sheet limited to the visible screen height (keyboard and safe areas included); the fields scroll inside the sheet and the "Add to my list" action stays pinned in its footer.
 - **Form action row:** use the shared `FormActionRow`. On phones, stack primary first at full width, secondary next at full width, then a separated destructive action. On wider screens, place destructive actions on the left and secondary/primary actions on the right. Keep related buttons at least 44px tall with a consistent radius.

@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { and, asc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, lte, ne, or, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { FestiveIllustration, PageHeading, Snowfall } from "@/components/secret-santa/components";
+import { EveryoneWishlistsCard } from "@/components/secret-santa/everyone-wishlists-card";
 import { NudgeButton } from "@/components/secret-santa/nudge-button";
 import { PageContainer } from "@/components/secret-santa/page-container";
 import { RecipientGiftCard } from "@/components/secret-santa/recipient-gift-card";
+import { RefreshOnVisible } from "@/components/secret-santa/refresh-on-visible";
 import { WishlistOwnerGiftCard } from "@/components/secret-santa/wishlist-owner-gift-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +27,7 @@ import {
   wishlistItems,
   wishlists,
 } from "@/lib/schema";
+import { getClaimStates, listBrowsableParticipants } from "@/lib/wishlist-browse";
 
 export default async function Home() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -103,6 +106,10 @@ export default async function Home() {
         .limit(3)
     : [];
 
+  const browsableParticipants = exchangeRows[0]
+    ? await listBrowsableParticipants(exchangeRows[0].id, session.user.id)
+    : [];
+
   const assignmentsByExchange = exchangeRows.length
     ? await db
         .select({
@@ -142,7 +149,7 @@ export default async function Home() {
           previewCurrency: wishlistItems.previewCurrency,
           priceFetchedAt: wishlistItems.priceFetchedAt,
           rowNumber:
-            sql<number>`row_number() over (partition by ${wishlists.exchangeId} order by case when exists (select 1 from ${itemClaims} where ${itemClaims.itemId} = ${wishlistItems.id} and ${itemClaims.giverId} = ${session.user.id}) then 0 else 1 end asc, case ${wishlistItems.priority} when 'most_wanted' then 3 when 'would_like' then 2 else 1 end desc, ${wishlistItems.sortOrder} asc, ${wishlistItems.createdAt} asc)`.as(
+            sql<number>`row_number() over (partition by ${wishlists.exchangeId} order by case when exists (select 1 from ${itemClaims} where ${itemClaims.itemId} = ${wishlistItems.id} and ${itemClaims.giverId} = ${session.user.id}) then 0 else 1 end asc, case when exists (select 1 from ${itemClaims} where ${itemClaims.itemId} = ${wishlistItems.id} and ${itemClaims.giverId} <> ${session.user.id}) then 1 else 0 end asc, case ${wishlistItems.priority} when 'most_wanted' then 3 when 'would_like' then 2 else 1 end desc, ${wishlistItems.sortOrder} asc, ${wishlistItems.createdAt} asc)`.as(
               "row_number"
             ),
         })
@@ -181,21 +188,10 @@ export default async function Home() {
         .where(lte(rankedRecipientItems.rowNumber, 2))
         .orderBy(asc(rankedRecipientItems.exchangeId), asc(rankedRecipientItems.rowNumber))
     : [];
-  const claimedItemRows = recipientPreviewRows.length
-    ? await db
-        .select({ itemId: itemClaims.itemId })
-        .from(itemClaims)
-        .where(
-          and(
-            eq(itemClaims.giverId, session.user.id),
-            inArray(
-              itemClaims.itemId,
-              recipientPreviewRows.map(({ itemId }) => itemId)
-            )
-          )
-        )
-    : [];
-  const claimedIds = new Set(claimedItemRows.map(({ itemId }) => itemId));
+  const claimStates = await getClaimStates(
+    session.user.id,
+    recipientPreviewRows.map(({ itemId }) => itemId)
+  );
   const previewsByExchange = new Map<string, typeof recipientPreviewRows>();
   for (const item of recipientPreviewRows) {
     const items = previewsByExchange.get(item.exchangeId) ?? [];
@@ -209,6 +205,7 @@ export default async function Home() {
   const now = new Date(Date.now());
   return (
     <PageContainer className="relative sm:py-11">
+      <RefreshOnVisible />
       <Snowfall />
       <div className="relative z-10 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="mx-auto w-full max-w-3xl min-w-0">
@@ -396,7 +393,7 @@ export default async function Home() {
                                 key={item.itemId}
                                 item={{ ...item, id: item.itemId }}
                                 exchangeId={exchange.id}
-                                claimed={claimedIds.has(item.itemId)}
+                                claimState={claimStates.get(item.itemId) ?? "available"}
                                 budgetMax={exchange.budgetMax}
                                 claimable={
                                   exchange.status === "drawn" || exchange.status === "revealed"
@@ -428,6 +425,14 @@ export default async function Home() {
                         </p>
                       )}
                     </section>
+                    <EveryoneWishlistsCard
+                      exchangeId={exchange.id}
+                      participants={browsableParticipants.map(({ userId, firstName, itemCount }) => ({
+                        userId,
+                        firstName,
+                        itemCount,
+                      }))}
+                    />
                   </section>
                 );
               })}

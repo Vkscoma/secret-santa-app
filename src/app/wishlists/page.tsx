@@ -2,6 +2,7 @@ import Link from "next/link";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { ArrowRight, CalendarDays, Gift } from "lucide-react";
 import { PageHeading } from "@/components/secret-santa/components";
+import { EveryoneWishlistsCard } from "@/components/secret-santa/everyone-wishlists-card";
 import { PageContainer } from "@/components/secret-santa/page-container";
 import { ProductImage } from "@/components/secret-santa/product-image";
 import { safeRecipientProductImageUrl } from "@/components/secret-santa/recipient-gift-card";
@@ -20,10 +21,11 @@ import {
   wishlistItems,
   wishlists,
 } from "@/lib/schema";
+import { listBrowsableParticipants } from "@/lib/wishlist-browse";
 
 function statusLabel(status: string) {
-  if (status === "drawn" || status === "revealed") return "Names drawn";
-  if (status === "open") return "Names not drawn";
+  if (status === "drawn" || status === "revealed") return "Names ready";
+  if (status === "open") return "Waiting for names";
   return "Closed";
 }
 
@@ -56,6 +58,16 @@ export default async function WishlistsPage() {
   const activeRows = rows.filter((exchange) => exchange.year >= currentYear);
   const pastRows = rows.filter((exchange) => exchange.year < currentYear);
   const activeIds = activeRows.map(({ id }) => id);
+  const browsableParticipants = new Map(
+    await Promise.all(
+      activeRows
+        .filter((exchange) => exchange.status !== "closed")
+        .map(
+          async (exchange) =>
+            [exchange.id, await listBrowsableParticipants(exchange.id, session.user.id)] as const
+        )
+    )
+  );
 
   const [giftRows, recipientRows] = activeIds.length
     ? await Promise.all([
@@ -106,9 +118,8 @@ export default async function WishlistsPage() {
     <PageContainer maxWidth="5xl" className="space-y-7">
       <WishlistBreadcrumb items={[{ label: "Home", href: "/" }, { label: "My Wishlists" }]} />
       <PageHeading
-        eyebrow={`${currentYear} holiday exchanges`}
         title="My Wishlists"
-        description="Open your list to add gift ideas, or see what your recipient wants."
+        description="Open your list to add gift ideas, or see what the person you’re shopping for would like."
       />
 
       {activeRows.map((exchange) => {
@@ -122,113 +133,125 @@ export default async function WishlistsPage() {
         }).format(exchange.exchangeAt);
         const progressCount = Math.min(exchange.itemCount, 3);
         const progressValue = (progressCount / 3) * 100;
-        const progressLabel =
-          exchange.itemCount > 3
-            ? `${exchange.itemCount} gifts`
-            : `${exchange.itemCount} of 3 gifts`;
+        const progressMessage =
+          exchange.itemCount < 3
+            ? `${exchange.itemCount} ${exchange.itemCount === 1 ? "idea" : "ideas"} added. Add at least 3 to help your Santa.`
+            : "Nice list! You can add more anytime.";
 
         return (
-          <Card key={exchange.id} className="border-border/80 overflow-hidden p-0 shadow-sm">
-            <div className="panel-pattern bg-pine text-pine-foreground px-5 py-4 sm:px-6 sm:py-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-pine-foreground/75 text-xs font-bold tracking-wider uppercase">
-                    {exchange.year === currentYear ? "This year" : "Upcoming exchange"}
-                  </p>
-                  <h2 className="mt-1 text-xl leading-tight font-extrabold break-words">
-                    {exchange.name}
-                  </h2>
+          <div key={exchange.id} className="space-y-3">
+            <Card className="border-border/80 overflow-hidden p-0 shadow-sm">
+              <div className="panel-pattern bg-pine text-pine-foreground px-5 py-4 sm:px-6 sm:py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-pine-foreground/75 text-xs font-bold tracking-wider uppercase">
+                      {exchange.year === currentYear ? "This year" : "Upcoming group"}
+                    </p>
+                    <h2 className="mt-1 text-xl leading-tight font-extrabold break-words">
+                      {exchange.name}
+                    </h2>
+                  </div>
+                  <span className="bg-pine-foreground/10 text-pine-foreground mt-0.5 shrink-0 rounded-md px-2 py-1 text-xs font-semibold">
+                    {statusLabel(exchange.status)}
+                  </span>
                 </div>
-                <span className="bg-pine-foreground/10 text-pine-foreground mt-0.5 shrink-0 rounded-md px-2 py-1 text-xs font-semibold">
-                  {statusLabel(exchange.status)}
-                </span>
+                <div className="text-pine-foreground/85 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
+                    Gift day: {giftDay}
+                  </span>
+                  <span>
+                    Budget:{" "}
+                    <strong className="text-pine-foreground">
+                      {formatBudget(exchange.budgetMin, exchange.budgetMax)}
+                    </strong>
+                  </span>
+                </div>
               </div>
-              <div className="text-pine-foreground/85 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-                  Gift day: {giftDay}
-                </span>
-                <span>
-                  Budget:{" "}
-                  <strong className="text-pine-foreground">
-                    {formatBudget(exchange.budgetMin, exchange.budgetMax)}
-                  </strong>
-                </span>
-              </div>
-            </div>
 
-            <section aria-labelledby={`your-list-${exchange.id}`} className="space-y-3 p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-3">
+              <section
+                aria-labelledby={`your-list-${exchange.id}`}
+                className="space-y-3 p-4 sm:p-5"
+              >
                 <h3 id={`your-list-${exchange.id}`} className="font-bold">
                   Your list
                 </h3>
-                <span className="text-muted-foreground text-sm font-semibold">{progressLabel}</span>
-              </div>
-              <div
-                className="bg-muted h-1.5 overflow-hidden rounded-full"
-                role="progressbar"
-                aria-label={`${exchange.name} gift list progress`}
-                aria-valuenow={progressCount}
-                aria-valuemin={0}
-                aria-valuemax={3}
-              >
+                <p className="text-muted-foreground text-sm">{progressMessage}</p>
                 <div
-                  className="bg-gold h-full rounded-full"
-                  style={{ width: `${progressValue}%` }}
-                />
-              </div>
-              {gifts.length > 0 && (
-                <div className="flex items-center gap-2 pt-1" aria-label="Gifts on your list">
-                  {gifts.slice(0, 4).map((gift, index) => (
-                    <ProductImage
-                      key={`${exchange.id}-${index}`}
-                      src={safeRecipientProductImageUrl(gift.imageUrl)}
-                      alt={gift.title}
-                      className="size-10 rounded-lg"
-                      iconClassName="size-4"
-                      placeholderTone="muted"
-                    />
-                  ))}
-                  {exchange.itemCount > 4 && (
-                    <span className="text-muted-foreground text-xs font-medium">
-                      +{exchange.itemCount - 4}
-                    </span>
-                  )}
+                  className="bg-muted h-1.5 overflow-hidden rounded-full"
+                  role="progressbar"
+                  aria-label={`${exchange.name} gift list progress`}
+                  aria-valuenow={progressCount}
+                  aria-valuemin={0}
+                  aria-valuemax={3}
+                  aria-valuetext={progressMessage}
+                >
+                  <div
+                    className="bg-gold h-full rounded-full"
+                    style={{ width: `${progressValue}%` }}
+                  />
                 </div>
-              )}
-              <Button asChild variant="affirmative" className="min-h-11 w-full sm:w-auto">
-                <Link href={`/wishlists/${exchange.id}`}>
-                  Open your list <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </section>
+                {gifts.length > 0 && (
+                  <div className="flex items-center gap-2 pt-1" aria-label="Gifts on your list">
+                    {gifts.slice(0, 4).map((gift, index) => (
+                      <ProductImage
+                        key={`${exchange.id}-${index}`}
+                        src={safeRecipientProductImageUrl(gift.imageUrl)}
+                        alt={gift.title}
+                        className="size-10 rounded-lg"
+                        iconClassName="size-4"
+                        placeholderTone="muted"
+                      />
+                    ))}
+                    {exchange.itemCount > 4 && (
+                      <span className="text-muted-foreground text-xs font-medium">
+                        +{exchange.itemCount - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
+                  <Link href={`/wishlists/${exchange.id}`}>
+                    Open your list <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+              </section>
 
-            <section
-              aria-labelledby={`recipient-${exchange.id}`}
-              className="border-border/80 border-t p-4 sm:p-5"
-            >
-              <h3 id={`recipient-${exchange.id}`} className="font-bold">
-                Your recipient
-              </h3>
-              {recipientName !== undefined ? (
-                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-muted-foreground text-sm">
-                    You’re shopping for{" "}
-                    <span className="text-foreground font-semibold">
-                      {recipientName ?? "your recipient"}
-                    </span>
-                  </p>
-                  <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
-                    <Link href={`/wishlists/${exchange.id}/recipient`}>
-                      View {recipientName ? possessive(recipientName) : "your recipient’s"} list
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-muted-foreground mt-2 text-sm">Names haven’t been drawn yet.</p>
-              )}
-            </section>
-          </Card>
+              <section
+                aria-labelledby={`recipient-${exchange.id}`}
+                className="border-border/80 border-t p-4 sm:p-5"
+              >
+                <h3 id={`recipient-${exchange.id}`} className="font-bold">
+                  Who you’re shopping for
+                </h3>
+                {recipientName !== undefined ? (
+                  <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-muted-foreground text-sm">
+                      You’re shopping for{" "}
+                      <span className="text-foreground font-semibold">
+                        {recipientName ?? "the person you’re shopping for"}
+                      </span>
+                    </p>
+                    <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
+                      <Link href={`/wishlists/${exchange.id}/recipient`}>
+                        View {recipientName ? possessive(recipientName) : "their"} list
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground mt-2 text-sm">Waiting for names.</p>
+                )}
+              </section>
+            </Card>
+            {browsableParticipants.has(exchange.id) && (
+              <EveryoneWishlistsCard
+                exchangeId={exchange.id}
+                participants={(browsableParticipants.get(exchange.id) ?? []).map(
+                  ({ userId, firstName, itemCount }) => ({ userId, firstName, itemCount })
+                )}
+              />
+            )}
+          </div>
         );
       })}
 
@@ -249,12 +272,11 @@ export default async function WishlistsPage() {
                   </p>
                   <h3 className="mt-0.5 font-bold break-words">{exchange.name}</h3>
                   <p className="text-muted-foreground mt-1 text-sm">
-                    {exchange.itemCount} {exchange.itemCount === 1 ? "gift" : "gifts"} · Past
-                    exchange
+                    {exchange.itemCount} {exchange.itemCount === 1 ? "gift" : "gifts"} · Past group
                   </p>
                 </div>
                 <Button asChild variant="neutral" className="min-h-11 w-full shrink-0 sm:w-auto">
-                  <Link href={`/history/${exchange.id}`}>View past exchange</Link>
+                  <Link href={`/history/${exchange.id}`}>View past group</Link>
                 </Button>
               </Card>
             ))}
@@ -265,7 +287,7 @@ export default async function WishlistsPage() {
       {rows.length === 0 && (
         <Card className="space-y-3 p-6 text-center sm:p-8">
           <Gift className="text-primary mx-auto size-8" aria-hidden="true" />
-          <h2 className="text-lg font-bold">You’re not in an exchange yet</h2>
+          <h2 className="text-lg font-bold">You haven’t joined a group yet</h2>
           <p className="text-muted-foreground mx-auto max-w-md text-sm">
             Your wish list will show up here once your organizer adds you. Check your inbox for an
             invitation email or link. If you can’t find one, contact the organizer who invited you.

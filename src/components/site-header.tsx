@@ -12,7 +12,7 @@ export function SiteHeader() {
         Skip to main content
       </a>
       <header
-        className="safe-top border-border/70 dark:border-border/80 bg-card/90 sticky top-0 z-40 border-b shadow-sm backdrop-blur-xl"
+        className="safe-top border-border bg-card sticky top-0 z-50 border-b shadow-sm"
         role="banner"
       >
         <nav

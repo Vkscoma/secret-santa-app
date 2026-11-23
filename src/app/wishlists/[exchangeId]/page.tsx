@@ -7,7 +7,7 @@ import { ConfirmDeleteWishForm } from "@/components/secret-santa/confirm-delete-
 import { PageContainer } from "@/components/secret-santa/page-container";
 import { RefreshWishlistImage } from "@/components/secret-santa/refresh-wishlist-image";
 import { WishFields } from "@/components/secret-santa/wish-fields";
-import { WishlistBreadcrumb } from "@/components/secret-santa/wishlist-breadcrumb";
+import { WishlistBackLink } from "@/components/secret-santa/wishlist-back-link";
 import { WishlistComposerSheet } from "@/components/secret-santa/wishlist-composer-sheet";
 import { WishlistEditForm } from "@/components/secret-santa/wishlist-edit-form";
 import { WishlistEditSection } from "@/components/secret-santa/wishlist-edit-section";
@@ -101,20 +101,10 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
   return (
     <WishlistPasteProvider>
       <PageContainer className="pt-5 pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] sm:pt-10 sm:pb-[calc(5rem+max(1.5rem,env(safe-area-inset-bottom)))] lg:pb-10">
-        <WishlistBreadcrumb
-          items={[
-            { label: "Home", href: "/" },
-            { label: "My Wishlists", href: "/wishlists" },
-            { label: `My List · ${exchange.name} (${exchange.year})` },
-          ]}
-        />
-        <p className="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.16em] uppercase">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          {exchange.year} exchange
-        </p>
+        <WishlistBackLink href="/wishlists" className="mb-5" />
         <PageHeading
-          title="A list full of little joys"
-          description="Add a wish or browse the ideas you’ve already saved. Your Secret Santa will thank you."
+          title="My gift list"
+          description="Add gifts you’d love, or paste a link. Your Secret Santa will see your list."
         />
         <div
           className={
@@ -232,7 +222,10 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                                   showUrl
                                   urlActions={
                                     item.url ? (
-                                      <RefreshWishlistImage exchangeId={exchangeId} itemId={item.id} />
+                                      <RefreshWishlistImage
+                                        exchangeId={exchangeId}
+                                        itemId={item.id}
+                                      />
                                     ) : null
                                   }
                                   defaults={{
@@ -328,8 +321,8 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 {!editable && (
                   <p className="bg-muted text-muted-foreground rounded-xl p-4 text-sm">
                     {exchange.year < new Date().getFullYear()
-                      ? "This past exchange wishlist is read-only in history."
-                      : "This exchange is closed. Its wishlist is saved for history."}
+                      ? "This older list is saved here so you can look back at it."
+                      : "This list is closed and saved for you to look back at."}
                   </p>
                 )}
               </div>
@@ -340,11 +333,17 @@ export default async function WishlistDetailPage({ params, searchParams }: PageP
                 <div className="flex sm:justify-end">
                   <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
                     <Link href={`/wishlists/${exchangeId}/recipient`}>
-                      <Gift className="size-4" /> See {recipientFirstName ? possessive(recipientFirstName) : "my recipient’s"} list
+                      <Gift className="size-4" /> See{" "}
+                      {recipientFirstName ? possessive(recipientFirstName) : "their"} list
                     </Link>
                   </Button>
                 </div>
               )}
+            <div className="flex sm:justify-end">
+              <Button asChild variant="neutral" className="min-h-11 w-full sm:w-auto">
+                <Link href={`/wishlists/${exchangeId}/people`}>Browse wishlists</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </PageContainer>

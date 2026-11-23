@@ -1,13 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, asc, desc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { consumeAuthRateLimit } from "@/lib/auth-rate-limit";
 import { requireExchangeMember } from "@/lib/authz";
 import { db } from "@/lib/db";
 import {
-  assignments,
   exchanges,
   itemClaims,
   exchangeParticipants,
@@ -290,33 +289,50 @@ export async function copyPreviousWishlist(formData: FormData) {
   revalidatePath(`/wishlists/${exchangeId}`);
 }
 
-export async function toggleWishlistClaim(formData: FormData) {
+export async function updateWishlistClaim(formData: FormData) {
   const exchangeId = uuid.parse(field(formData, "exchangeId"));
   const itemId = uuid.parse(field(formData, "itemId"));
+  const intent = z.enum(["claim", "release"]).parse(field(formData, "intent"));
   const session = await requireExchangeMember(exchangeId);
-  await db.transaction(async (tx) => {
+  let result: { ok: true } | { ok: false; code: "taken" | "gone" | "own" | "closed" };
+  try {
+    result = await db.transaction(async (tx) => {
     // Redraw locks this row before deleting assignments and claims. Taking the
     // same lock first serializes toggles with redraw and makes the checks current.
-    const [exchange] = await tx.select({ status: exchanges.status }).from(exchanges)
+    const [exchange] = await tx.select({ status: exchanges.status, year: exchanges.year }).from(exchanges)
       .where(eq(exchanges.id, exchangeId)).for("update");
-    if (!exchange) throw new Error("Exchange not found.");
-    if (exchange.status === "closed") throw new Error("This exchange is closed.");
+    if (!exchange) return { ok: false as const, code: "gone" as const };
+    if (exchange.status === "closed" || exchange.year < new Date().getFullYear()) return { ok: false as const, code: "closed" as const };
     const [membership] = await tx.select({ id: exchangeParticipants.id }).from(exchangeParticipants)
       .where(and(eq(exchangeParticipants.exchangeId, exchangeId), eq(exchangeParticipants.userId, session.user.id))).limit(1);
     if (!membership) throw new Error("You are not a participant in this exchange.");
     const [target] = await tx.select({ ownerId: wishlists.userId }).from(wishlistItems)
       .innerJoin(wishlists, eq(wishlistItems.wishlistId, wishlists.id))
-      .where(and(eq(wishlistItems.id, itemId), eq(wishlists.exchangeId, exchangeId))).limit(1);
-    if (!target) throw new Error("Wishlist item not found.");
-    if (target.ownerId === session.user.id) throw new Error("You can’t claim an item from your own wishlist.");
-    const [assignment] = await tx.select({ id: assignments.id }).from(assignments)
-      .where(and(eq(assignments.exchangeId, exchangeId), eq(assignments.giverId, session.user.id), eq(assignments.receiverId, target.ownerId))).limit(1);
-    if (!assignment) throw new Error("Only the assigned giver can view and claim this wishlist.");
-    const [existing] = await tx.select({ id: itemClaims.id }).from(itemClaims)
-      .where(and(eq(itemClaims.itemId, itemId), eq(itemClaims.giverId, session.user.id))).limit(1);
-    if (existing) await tx.delete(itemClaims).where(eq(itemClaims.id, existing.id));
-    else await tx.insert(itemClaims).values({ itemId, giverId: session.user.id }).onConflictDoNothing();
-  });
+      .where(and(eq(wishlistItems.id, itemId), eq(wishlists.exchangeId, exchangeId)))
+      .for("share").limit(1);
+    if (!target) return { ok: false as const, code: "gone" as const };
+    if (target.ownerId === session.user.id) return { ok: false as const, code: "own" as const };
+    const [ownerMembership] = await tx.select({ id: exchangeParticipants.id }).from(exchangeParticipants)
+      .where(and(eq(exchangeParticipants.exchangeId, exchangeId), eq(exchangeParticipants.userId, target.ownerId))).limit(1);
+    if (!ownerMembership) return { ok: false as const, code: "gone" as const };
+    if (intent === "release") {
+      await tx.delete(itemClaims).where(and(eq(itemClaims.itemId, itemId), eq(itemClaims.giverId, session.user.id)));
+      return { ok: true as const };
+    }
+    const [inserted] = await tx.insert(itemClaims).values({ itemId, giverId: session.user.id })
+      .onConflictDoNothing().returning({ id: itemClaims.id });
+    if (inserted) return { ok: true as const };
+    const [existing] = await tx.select({ isMine: sql<boolean>`${itemClaims.giverId} = ${session.user.id}` })
+      .from(itemClaims).where(eq(itemClaims.itemId, itemId)).limit(1);
+    return existing?.isMine ? { ok: true as const } : { ok: false as const, code: "taken" as const };
+    });
+  } catch (error) {
+    const cause = error as { code?: string; cause?: { code?: string } };
+    if (cause.code === "23503" || cause.cause?.code === "23503") result = { ok: false, code: "gone" };
+    else throw error;
+  }
   revalidatePath(`/wishlists/${exchangeId}/recipient`);
+  revalidatePath(`/wishlists/${exchangeId}/people`);
   revalidatePath("/");
+  return result;
 }

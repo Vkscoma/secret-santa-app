@@ -35,7 +35,9 @@ export function PageHeading({
           {eyebrow}
         </p>
       ) : null}
-      <h1 className="text-3xl font-extrabold tracking-tight wrap-break-word sm:text-4xl">{title}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight wrap-break-word sm:text-4xl">
+        {title}
+      </h1>
       {description ? (
         <p className="text-muted-foreground max-w-2xl text-sm leading-6 sm:text-base">
           {description}
@@ -63,10 +65,22 @@ export function PanelHeader({
         </div>
         {actions ? (
           <div className="flex gap-2">
-            <Button type="button" variant="neutral-inverse" size="icon" className="size-11 rounded-lg" aria-label="List settings">
+            <Button
+              type="button"
+              variant="neutral-inverse"
+              size="icon"
+              className="size-11 rounded-lg"
+              aria-label="List settings"
+            >
               <span aria-hidden="true">⚙</span>
             </Button>
-            <Button type="button" variant="neutral-inverse" size="icon" className="size-11 rounded-lg" aria-label="Share list">
+            <Button
+              type="button"
+              variant="neutral-inverse"
+              size="icon"
+              className="size-11 rounded-lg"
+              aria-label="Share list"
+            >
               <ArrowUpRight aria-hidden="true" />
             </Button>
           </div>
@@ -98,34 +112,26 @@ export function StringLights() {
 }
 
 export function ProgressNudge({ count, target = 3 }: { count: number; target?: number }) {
-  const remaining = Math.max(target - count, 0);
   const value = Math.min((count / target) * 100, 100);
+  const message =
+    count >= target
+      ? "Nice list! You can add more anytime."
+      : `${count} ${count === 1 ? "idea" : "ideas"} added. Add at least ${target} to help your Santa.`;
   return (
     <Card className="border-gold/30 dark:border-gold/70 from-gold/10 via-card to-card flex items-center gap-4 bg-gradient-to-r p-4 shadow-none">
       <div className="bg-gold/20 text-gold-foreground dark:text-gold grid size-11 shrink-0 place-items-center rounded-full">
         <Sparkles className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline justify-between gap-1">
-          <p className="text-sm font-bold">
-            {remaining
-              ? `Add ${remaining} more ${remaining === 1 ? "gift" : "gifts"}`
-              : "Your list is looking lovely"}
-          </p>
-          <span className="text-muted-foreground text-xs font-medium">
-            {count}/{target}
-          </span>
-        </div>
-        <p className="text-muted-foreground mt-0.5 text-xs">
-          Tell your Secret Santa what you’d really like.
-        </p>
+        <p className="text-sm leading-5 font-semibold">{message}</p>
         <div
           className="bg-muted mt-3 h-1.5 overflow-hidden rounded-full"
           role="progressbar"
-          aria-label="Wishlist progress"
-          aria-valuenow={count}
+          aria-label="Suggested gift idea goal"
+          aria-valuenow={Math.min(count, target)}
           aria-valuemin={0}
           aria-valuemax={target}
+          aria-valuetext={message}
         >
           <div
             className="bg-gold h-full rounded-full transition-[width]"
@@ -158,7 +164,13 @@ export function WishlistItemCard({
   return (
     <article className="group border-border/80 bg-card flex gap-3 rounded-xl border p-3 shadow-sm transition hover:shadow-md sm:gap-4 sm:p-4">
       {!readOnly ? (
-        <Button type="button" variant="ghost" size="icon" className="mt-1 hidden shrink-0 cursor-grab sm:flex" aria-label={`Reorder ${item.title}`}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="mt-1 hidden shrink-0 cursor-grab sm:flex"
+          aria-label={`Reorder ${item.title}`}
+        >
           <span aria-hidden="true">⠿</span>
         </Button>
       ) : null}
@@ -178,10 +190,7 @@ export function WishlistItemCard({
           ) : null}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className="bg-muted text-muted-foreground h-5 px-2 text-[10px]"
-          >
+          <Badge variant="outline" className="bg-muted text-muted-foreground h-5 px-2 text-[10px]">
             {item.priority}
           </Badge>
           {item.price ? (
@@ -197,7 +206,13 @@ export function WishlistItemCard({
         </div>
       </div>
       {!readOnly ? (
-        <Button type="button" variant="destructive" size="icon" className="-mt-1 -mr-1 size-11 shrink-0 rounded-full" aria-label={`Remove ${item.title}`}>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          className="-mt-1 -mr-1 size-11 shrink-0 rounded-full"
+          aria-label={`Remove ${item.title}`}
+        >
           <Trash2 aria-hidden="true" />
         </Button>
       ) : null}
@@ -317,7 +332,13 @@ export function HobbiesCard({
           <UserRound className="text-pine dark:text-pine-foreground size-4" />
           <h3 className="font-bold">Things I like</h3>
         </div>
-        <Button type="button" variant="ghost" size="icon" className="size-11 rounded-full" aria-label="More hobbies options">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 rounded-full"
+          aria-label="More hobbies options"
+        >
           <MoreHorizontal />
         </Button>
       </div>
@@ -355,7 +376,7 @@ export function FestiveIllustration() {
       aria-label="Snowy holiday scene with a tree and gifts"
       role="img"
     >
-      <div className="absolute inset-x-8 bottom-7 h-24 rounded-[50%] bg-gold/70 blur-2xl" />
+      <div className="bg-gold/70 absolute inset-x-8 bottom-7 h-24 rounded-[50%] blur-2xl" />
       <svg
         viewBox="0 0 320 320"
         className="relative w-full drop-shadow-sm"
